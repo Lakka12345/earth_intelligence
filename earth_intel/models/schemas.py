@@ -56,6 +56,8 @@ class DomainName(str, Enum):
     coastal_processes = "Coastal Processes"
     disaster_management = "Disaster Management"
     environmental_monitoring = "Environmental Monitoring"
+    urban_planning = "Urban Planning"
+    civil_engineering = "Civil Engineering"
 
 
 class EventType(str, Enum):
@@ -228,6 +230,27 @@ class ScientificIntentOutput(BaseModel):
     user_intent_type: UserIntentType
     ambiguity_level: AmbiguityLevel
     retrieval_readiness: RetrievalReadiness
+
+    hazard_type: EventType = Field(
+        default=EventType.unknown,
+        description=(
+            "Primary hazard/event type identified from the query "
+            "(Cyclone, Flood, Storm Surge, Heatwave, Drought, Landslide, "
+            "Tsunami), or Unknown if the query does not state or clearly "
+            "imply one."
+        ),
+    )
+    hazard_mechanism_reasoning: str = Field(
+        default="Unknown",
+        description=(
+            "Physical mechanism/subtype reasoning for the identified "
+            "hazard_type (e.g. whether a flood is pluvial/urban-drainage, "
+            "riverine/fluvial, coastal/storm-surge, or flash), including "
+            "any ambiguity about the underlying mechanism that downstream "
+            "agents should resolve. 'Unknown' if hazard_type is Unknown or "
+            "the query gives no basis to reason about mechanism."
+        ),
+    )
 
     research_questions: List[ResearchQuestion] = Field(min_length=1)
     decision_context: DecisionContext
