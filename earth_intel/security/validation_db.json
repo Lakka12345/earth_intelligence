@@ -1,0 +1,141 @@
+{
+  "validation_reports": [
+    {
+      "validation_id": "772d92a5-4788-4025-914e-2082e40a7a07",
+      "dataset_id": "ghrsst_mur_sst_2023_bay_of_bengal",
+      "dataset_name": "GHRSST MUR SST v4.1",
+      "provider": "NASA / GHRSST",
+      "validation_timestamp": "2026-07-01T04:20:56.723030+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: tmppj9_dkob.nc, size: 35 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "8/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 0.95,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset declares global coverage."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset is ongoing (extends to 2026); covers (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "4/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: a1b2c3d4e5f60718..."
+      },
+      "overall_validation": true,
+      "validation_score": 0.9925,
+      "confidence_score": 1.0,
+      "validation_summary": "PASSED — all 7 required stages succeeded. Score: 0.99, Confidence: 1.00.",
+      "validation_errors": [],
+      "validation_warnings": []
+    },
+    {
+      "validation_id": "01571274-3e42-4c28-b201-1e1b06f311a8",
+      "dataset_id": "bloomberg_stock_2024",
+      "dataset_name": "Global Stock Market Prices",
+      "provider": "Bloomberg Finance",
+      "validation_timestamp": "2026-07-01T04:20:56.727530+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: tmpvy4x4ccf.nc, size: 30 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "8/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Required variable 'sea_surface_temperature' not found in dataset. Dataset declares: ['stock_price', 'volume', 'market_cap']"
+        ],
+        "warnings": [],
+        "details": "0/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 0.85,
+        "errors": [],
+        "warnings": [],
+        "details": "Spatial match via 'bay of bengal' hierarchy: 'New York Stock Exchange, Global Exchanges' covers 'Bay of Bengal'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.5,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection."
+        ],
+        "details": "2/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Integrity verification failed: Checksum mismatch — file may be corrupted."
+        ],
+        "warnings": [],
+        "details": ""
+      },
+      "overall_validation": false,
+      "validation_score": 0.5775,
+      "confidence_score": 0.59,
+      "validation_summary": "FAILED — 2 stage(s) failed: variable validation, integrity validation. Score: 0.58, Confidence: 0.59.",
+      "validation_errors": [
+        "[variable_validation] Required variable 'sea_surface_temperature' not found in dataset. Dataset declares: ['stock_price', 'volume', 'market_cap']",
+        "[integrity_validation] Integrity verification failed: Checksum mismatch — file may be corrupted."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection."
+      ]
+    }
+  ]
+}

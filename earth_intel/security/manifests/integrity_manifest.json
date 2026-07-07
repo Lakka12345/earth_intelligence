@@ -1,0 +1,13 @@
+[
+  {
+    "dataset_id": "demo_dataset_001",
+    "dataset_name": "Demo Dataset",
+    "provider": "Demo Provider",
+    "filename": "demo_dataset.txt",
+    "file_path": "C:\\Users\\dell\\AppData\\Local\\Temp\\tmpewfoyuf3\\demo_dataset.txt",
+    "file_size": 40,
+    "algorithm": "SHA-256",
+    "checksum": "e3fa6f8166047158546e71968d83dd2828b92249cb6240127e809a5489ca580d",
+    "timestamp": "2026-06-29T10:03:58.128884+00:00"
+  }
+]

@@ -1,0 +1,340 @@
+{
+  "reports": [
+    {
+      "provider_name": "NASA",
+      "provider_url": "https://earthdata.nasa.gov",
+      "requested_task": "flood_analysis",
+      "evaluation_timestamp": "2026-07-01T07:05:47.583783+00:00",
+      "authority_score": {
+        "score": 0.9,
+        "explanation": "Authority derived from: is a government agency (+0.22); holds an official regulatory mandate for this data domain (+0.15); domain suffix '.gov' associated with government/treaty bodies (+0.10); established 68 years ago (+0.10); collaborates with 4 recognized partner agencies (+0.08)."
+      },
+      "freshness_score": {
+        "score": 0.9465,
+        "explanation": "Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.4571,
+        "explanation": "3/7 keywords for task 'flood_analysis' matched provider data domains (['precipitation', 'rainfall', 'soil_moisture'])."
+      },
+      "resolution_score": {
+        "score": 1.0,
+        "explanation": "Resolution derived from: spatial resolution 1.0km vs required 5.0km (ratio 1.00); temporal resolution 1.0h vs required 6.0h (ratio 1.00)."
+      },
+      "completeness_score": {
+        "score": 0.96,
+        "explanation": "Completeness derived from: 3/3 expected variables present (['precipitation', 'soil_moisture', 'surface_temperature']); declared spatial/temporal coverage 98.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.93,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.93 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.9259,
+        "explanation": "48 successful / 2 failed retrievals on record (raw success rate 96.00%), Bayesian-smoothed toward the neutral prior for sample size (n=50) to avoid overconfidence on small histories."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.8333,
+        "explanation": "Scientific acceptance derived from: 1800 scientific citations (scaled score 0.90); 620 peer-reviewed publications referencing this provider; used operationally by 6 other known agencies."
+      },
+      "real_time_availability_score": {
+        "score": 0.9517,
+        "explanation": "Real-time availability derived from: API uptime 99.5%; average response latency 180ms; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.8627,
+      "trust_level": "High Trust",
+      "ranking_reason": "Overall trust score 0.86 (High Trust) is driven most positively by 'resolution' (score 1.00) and most negatively by 'relevance' (score 0.46), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "resolution: Resolution derived from: spatial resolution 1.0km vs required 5.0km (ratio 1.00); temporal resolution 1.0h vs required 6.0h (ratio 1.00).",
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "completeness: Completeness derived from: 3/3 expected variables present (['precipitation', 'soil_moisture', 'surface_temperature']); declared spatial/temporal coverage 98.0%; documentation is available."
+      ],
+      "weaknesses": [
+        "authority: Authority derived from: is a government agency (+0.22); holds an official regulatory mandate for this data domain (+0.15); domain suffix '.gov' associated with government/treaty bodies (+0.10); established 68 years ago (+0.10); collaborates with 4 recognized partner agencies (+0.08).",
+        "scientific_acceptance: Scientific acceptance derived from: 1800 scientific citations (scaled score 0.90); 620 peer-reviewed publications referencing this provider; used operationally by 6 other known agencies.",
+        "relevance: 3/7 keywords for task 'flood_analysis' matched provider data domains (['precipitation', 'rainfall', 'soil_moisture'])."
+      ],
+      "recommendations": [
+        "No individual criterion fell below the Low Trust threshold (0.40)."
+      ]
+    },
+    {
+      "provider_name": "NOAA",
+      "provider_url": "https://www.noaa.gov",
+      "requested_task": "flood_analysis",
+      "evaluation_timestamp": "2026-07-01T07:05:47.587287+00:00",
+      "authority_score": {
+        "score": 0.88,
+        "explanation": "Authority derived from: is a government agency (+0.22); holds an official regulatory mandate for this data domain (+0.15); domain suffix '.gov' associated with government/treaty bodies (+0.10); established 56 years ago (+0.10); collaborates with 3 recognized partner agencies (+0.06)."
+      },
+      "freshness_score": {
+        "score": 0.9465,
+        "explanation": "Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.3214,
+        "explanation": "2/7 keywords for task 'flood_analysis' matched provider data domains (['rainfall', 'weather'])."
+      },
+      "resolution_score": {
+        "score": 1.0,
+        "explanation": "Resolution derived from: spatial resolution 2.0km vs required 5.0km (ratio 1.00); temporal resolution 1.0h vs required 6.0h (ratio 1.00)."
+      },
+      "completeness_score": {
+        "score": 0.8422,
+        "explanation": "Completeness derived from: 2/3 expected variables present (['precipitation', 'surface_temperature']); declared spatial/temporal coverage 96.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.9,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.90 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.9388,
+        "explanation": "44 successful / 1 failed retrievals on record (raw success rate 97.78%), Bayesian-smoothed toward the neutral prior for sample size (n=45) to avoid overconfidence on small histories."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.7167,
+        "explanation": "Scientific acceptance derived from: 1500 scientific citations (scaled score 0.75); 540 peer-reviewed publications referencing this provider; used operationally by 4 other known agencies."
+      },
+      "real_time_availability_score": {
+        "score": 0.9457,
+        "explanation": "Real-time availability derived from: API uptime 99.2%; average response latency 210ms; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.8144,
+      "trust_level": "High Trust",
+      "ranking_reason": "Overall trust score 0.81 (High Trust) is driven most positively by 'resolution' (score 1.00) and most negatively by 'relevance' (score 0.32), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "resolution: Resolution derived from: spatial resolution 2.0km vs required 5.0km (ratio 1.00); temporal resolution 1.0h vs required 6.0h (ratio 1.00).",
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "freshness: Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      ],
+      "weaknesses": [
+        "completeness: Completeness derived from: 2/3 expected variables present (['precipitation', 'surface_temperature']); declared spatial/temporal coverage 96.0%; documentation is available.",
+        "scientific_acceptance: Scientific acceptance derived from: 1500 scientific citations (scaled score 0.75); 540 peer-reviewed publications referencing this provider; used operationally by 4 other known agencies.",
+        "relevance: 2/7 keywords for task 'flood_analysis' matched provider data domains (['rainfall', 'weather'])."
+      ],
+      "recommendations": [
+        "Improve or verify 'relevance' before relying on this provider (current score 0.32)."
+      ]
+    },
+    {
+      "provider_name": "INCOIS",
+      "provider_url": "https://incois.gov.in",
+      "requested_task": "flood_analysis",
+      "evaluation_timestamp": "2026-07-01T07:05:47.615437+00:00",
+      "authority_score": {
+        "score": 0.86,
+        "explanation": "Authority derived from: is a government agency (+0.22); holds an official regulatory mandate for this data domain (+0.15); domain suffix '.gov' associated with government/treaty bodies (+0.10); established 27 years ago (+0.10); collaborates with 2 recognized partner agencies (+0.04)."
+      },
+      "freshness_score": {
+        "score": 0.9465,
+        "explanation": "Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.3214,
+        "explanation": "2/7 keywords for task 'flood_analysis' matched provider data domains (['rainfall', 'weather'])."
+      },
+      "resolution_score": {
+        "score": 1.0,
+        "explanation": "Resolution derived from: spatial resolution 4.0km vs required 5.0km (ratio 1.00); temporal resolution 3.0h vs required 6.0h (ratio 1.00)."
+      },
+      "completeness_score": {
+        "score": 0.6778,
+        "explanation": "Completeness derived from: 1/3 expected variables present (['precipitation']); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.82,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.82 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.875,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.8205,
+        "explanation": "30 successful / 5 failed retrievals on record (raw success rate 85.71%), Bayesian-smoothed toward the neutral prior for sample size (n=35) to avoid overconfidence on small histories."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.1933,
+        "explanation": "Scientific acceptance derived from: 320 scientific citations (scaled score 0.16); 110 peer-reviewed publications referencing this provider; used operationally by 2 other known agencies."
+      },
+      "real_time_availability_score": {
+        "score": 0.9167,
+        "explanation": "Real-time availability derived from: API uptime 97.0%; average response latency 340ms; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.7127,
+      "trust_level": "Moderate Trust",
+      "ranking_reason": "Overall trust score 0.71 (Moderate Trust) is driven most positively by 'resolution' (score 1.00) and most negatively by 'scientific_acceptance' (score 0.19), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "resolution: Resolution derived from: spatial resolution 4.0km vs required 5.0km (ratio 1.00); temporal resolution 3.0h vs required 6.0h (ratio 1.00).",
+        "freshness: Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05).",
+        "real_time_availability: Real-time availability derived from: API uptime 97.0%; average response latency 340ms; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "completeness: Completeness derived from: 1/3 expected variables present (['precipitation']); declared spatial/temporal coverage 80.0%; documentation is available.",
+        "relevance: 2/7 keywords for task 'flood_analysis' matched provider data domains (['rainfall', 'weather']).",
+        "scientific_acceptance: Scientific acceptance derived from: 320 scientific citations (scaled score 0.16); 110 peer-reviewed publications referencing this provider; used operationally by 2 other known agencies."
+      ],
+      "recommendations": [
+        "Improve or verify 'relevance' before relying on this provider (current score 0.32).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.19)."
+      ]
+    },
+    {
+      "provider_name": "CMEMS",
+      "provider_url": "https://marine.copernicus.eu",
+      "requested_task": "flood_analysis",
+      "evaluation_timestamp": "2026-07-01T07:05:47.623143+00:00",
+      "authority_score": {
+        "score": 0.74,
+        "explanation": "Authority derived from: is an international/treaty-based organization (+0.18); holds an official regulatory mandate for this data domain (+0.15); established 11 years ago (+0.10); collaborates with 3 recognized partner agencies (+0.06)."
+      },
+      "freshness_score": {
+        "score": 0.9465,
+        "explanation": "Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.05,
+        "explanation": "None of the keywords for task 'flood_analysis' (['flood', 'hydrology', 'precipitation', 'rainfall', 'river_discharge', 'soil_moisture', 'weather']) matched provider data domains (['currents', 'marine', 'ocean', 'salinity', 'sea_surface_temperature'])."
+      },
+      "resolution_score": {
+        "score": 1.0,
+        "explanation": "Resolution derived from: spatial resolution 3.0km vs required 5.0km (ratio 1.00); temporal resolution 6.0h vs required 6.0h (ratio 1.00)."
+      },
+      "completeness_score": {
+        "score": 0.6,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 90.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.88,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.88 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.8936,
+        "explanation": "40 successful / 3 failed retrievals on record (raw success rate 93.02%), Bayesian-smoothed toward the neutral prior for sample size (n=43) to avoid overconfidence on small histories."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.4833,
+        "explanation": "Scientific acceptance derived from: 900 scientific citations (scaled score 0.45); 300 peer-reviewed publications referencing this provider; used operationally by 4 other known agencies."
+      },
+      "real_time_availability_score": {
+        "score": 0.9353,
+        "explanation": "Real-time availability derived from: API uptime 98.6%; average response latency 260ms; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.6984,
+      "trust_level": "Moderate Trust",
+      "ranking_reason": "Overall trust score 0.70 (Moderate Trust) is driven most positively by 'resolution' (score 1.00) and most negatively by 'relevance' (score 0.05), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "resolution: Resolution derived from: spatial resolution 3.0km vs required 5.0km (ratio 1.00); temporal resolution 6.0h vs required 6.0h (ratio 1.00).",
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "freshness: Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      ],
+      "weaknesses": [
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 90.0%; documentation is available.",
+        "scientific_acceptance: Scientific acceptance derived from: 900 scientific citations (scaled score 0.45); 300 peer-reviewed publications referencing this provider; used operationally by 4 other known agencies.",
+        "relevance: None of the keywords for task 'flood_analysis' (['flood', 'hydrology', 'precipitation', 'rainfall', 'river_discharge', 'soil_moisture', 'weather']) matched provider data domains (['currents', 'marine', 'ocean', 'salinity', 'sea_surface_temperature'])."
+      ],
+      "recommendations": [
+        "Improve or verify 'relevance' before relying on this provider (current score 0.05)."
+      ]
+    },
+    {
+      "provider_name": "Bloomberg Finance",
+      "provider_url": "https://www.bloomberg.com",
+      "requested_task": "flood_analysis",
+      "evaluation_timestamp": "2026-07-01T07:05:47.631342+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: established 45 years ago (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.9465,
+        "explanation": "Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.05,
+        "explanation": "None of the keywords for task 'flood_analysis' (['flood', 'hydrology', 'precipitation', 'rainfall', 'river_discharge', 'soil_moisture', 'weather']) matched provider data domains (['bonds', 'commodities', 'currency_exchange', 'equities', 'financial_markets'])."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.6333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 100.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.5,
+        "explanation": "No cross-provider comparison data supplied; scored at neutral baseline."
+      },
+      "metadata_quality_score": {
+        "score": 0.55,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=False; has_metadata_standard=False; license_type='restricted' (+0.00)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.06,
+        "explanation": "Scientific acceptance derived from: 40 scientific citations (scaled score 0.02); 5 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.968,
+        "explanation": "Real-time availability derived from: API uptime 99.9%; average response latency 90ms; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4271,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.43 (Low Trust) is driven most positively by 'real_time_availability' (score 0.97) and most negatively by 'relevance' (score 0.05), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "real_time_availability: Real-time availability derived from: API uptime 99.9%; average response latency 90ms; endpoint reported as currently accessible.",
+        "freshness: Freshness derived from: last updated 0.3 days ago against a declared 1-day update cycle (0.30 cycles behind); provider flags a recent dataset as available (+0.05).",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 100.0%; documentation is available."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 40 scientific citations (scaled score 0.02); 5 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: None of the keywords for task 'flood_analysis' (['flood', 'hydrology', 'precipitation', 'rainfall', 'river_discharge', 'soil_moisture', 'weather']) matched provider data domains (['bonds', 'commodities', 'currency_exchange', 'equities', 'financial_markets'])."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.05).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.06)."
+      ]
+    }
+  ],
+  "historical_data": {
+    "NASA": {
+      "successful_retrievals": 48,
+      "failed_retrievals": 2,
+      "last_retrieval": "2026-07-01T07:05:47.521006+00:00"
+    },
+    "NOAA": {
+      "successful_retrievals": 44,
+      "failed_retrievals": 1,
+      "last_retrieval": "2026-07-01T07:05:47.521373+00:00"
+    },
+    "INCOIS": {
+      "successful_retrievals": 30,
+      "failed_retrievals": 5,
+      "last_retrieval": "2026-07-01T07:05:47.521386+00:00"
+    },
+    "CMEMS": {
+      "successful_retrievals": 40,
+      "failed_retrievals": 3,
+      "last_retrieval": "2026-07-01T07:05:47.521392+00:00"
+    }
+  }
+}
