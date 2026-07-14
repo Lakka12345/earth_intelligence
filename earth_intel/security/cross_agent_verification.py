@@ -1140,22 +1140,27 @@ def run_demo() -> None:
               f"trust={entry['trust_report'].get('overall_trust_score', 0.0):.4f}")
 
     # ----------------------------------------------------------------
-    # SCENARIO 1: Agent 3 selects NASA -- its own top-ranked, highest
-    # trust provider. Verification should PASS / VERIFIED.
+    # SCENARIO 1: Agent 3 intentionally selects INCOIS instead of the
+    # highest-ranked provider. This tests whether the verification
+    # module correctly detects ranking deviations.
     # ----------------------------------------------------------------
-    _print_header("SCENARIO 1: Agent 3 selects NASA (top-ranked, highest trust)")
+
+    _print_header("SCENARIO 1: Agent 3 selects INCOIS instead of the top-ranked provider")
+
     scenario_1_justification = (
-        "NASA was selected because it has the highest overall trust score among all "
-        "candidates, strong relevance to flood analysis through its rainfall and soil "
-        "moisture variables, complete documentation and metadata, and a proven "
-        "historical retrieval record."
+        "INCOIS was selected because it provides regional Indian Ocean and "
+        "Bay of Bengal expertise that is valuable for Indian flood analysis. "
+        "Although it is not Agent 3's highest-ranked provider, its regional "
+        "specialization was considered beneficial for this study."
     )
+
     report_1 = generate_verification_report(
         user_query=user_query,
         ranked_providers=ranked_providers,
-        selected_provider_name="NASA",
+        selected_provider_name="NOAA",
         agent3_justification=scenario_1_justification,
     )
+
     _print_report(report_1)
     save_verification_report(report_1)
 

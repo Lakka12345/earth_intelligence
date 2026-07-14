@@ -44,6 +44,7 @@ def _build_context(entries: List[AdaptiveRankingEntry], requested_variables: Lis
             url=c.url,
             api_type=(c.api_type.value if getattr(c, "api_type", None) else "unknown"),
             dataset_type=str(getattr(c, "dataset_type", "unknown")),
+            variables_available=list(getattr(c, "variables_available", []) or []),
             login_url=getattr(c, "login_url", None),
             price_estimate=getattr(c, "price_estimate", None),
         )

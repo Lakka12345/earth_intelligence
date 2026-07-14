@@ -24,10 +24,16 @@ from urllib.parse import urljoin
 import requests
 
 from agents.agent4_connectors.base import BaseConnector, Credentials, FetchRequest
-from models.agent4_schemas import SizeEstimate, format_bytes
+from models.agent4_schemas import DatasetMetadata, SizeEstimate, format_bytes
 from models.website_analysis_schemas import SourceSnapshot
 
 _CHUNK_SIZE = 1024 * 1024
+
+
+def _raise_if_html(resp: requests.Response) -> None:
+    content_type = (resp.headers.get("Content-Type") or "").lower()
+    if "text/html" in content_type:
+        raise RuntimeError("ERDDAP returned an HTML response instead of NetCDF data.")
 
 
 class ERDDAPConnector(BaseConnector):
@@ -81,6 +87,83 @@ class ERDDAPConnector(BaseConnector):
             print(f"[ERDDAPConnector] Size probe failed for {snapshot.source_id} (non-fatal): {exc}")
         return SizeEstimate(source_id=snapshot.source_id, method="unavailable")
 
+    def _metadata_url(self, snapshot: SourceSnapshot) -> Optional[str]:
+        dataset_id = self._dataset_id_from_url(snapshot.url)
+        if not dataset_id:
+            return None
+        base = re.sub(r"/(?:griddap|tabledap)/.*", "/", snapshot.url)
+        return urljoin(base, f"info/{dataset_id}/index.json")
+
+    def probe_metadata(self, snapshot: SourceSnapshot, fetch_request: FetchRequest) -> DatasetMetadata:
+        dataset_id = self._dataset_id_from_url(snapshot.url) or snapshot.source_id
+        metadata_url = self._metadata_url(snapshot)
+        subset_url = self._build_subset_url(snapshot, fetch_request)
+        full_url = snapshot.url if dataset_id is None else re.sub(r"(/griddap/[^/.?]+).*", r"\1.nc", snapshot.url)
+
+        variables = list(snapshot.variables_available or fetch_request.variables or [])
+        spatial_coverage = "Unknown"
+        temporal_coverage = "Unknown"
+        unavailable_reason = ""
+
+        if metadata_url:
+            try:
+                resp = requests.get(metadata_url, timeout=15)
+                resp.raise_for_status()
+                table = resp.json().get("table", {})
+                rows = table.get("rows", [])
+                variable_names = [
+                    str(row[1]) for row in rows
+                    if len(row) > 2 and str(row[0]).lower() == "variable"
+                ]
+                if variable_names:
+                    variables = variable_names
+                attrs = {
+                    str(row[2]).lower(): str(row[4])
+                    for row in rows
+                    if len(row) > 4 and str(row[0]).lower() == "attribute"
+                }
+                spatial_coverage = attrs.get("geospatial_lat_min", "Unknown")
+                if spatial_coverage != "Unknown" and attrs.get("geospatial_lat_max"):
+                    spatial_coverage = (
+                        f"lat {attrs.get('geospatial_lat_min')} to {attrs.get('geospatial_lat_max')}, "
+                        f"lon {attrs.get('geospatial_lon_min', 'Unknown')} to {attrs.get('geospatial_lon_max', 'Unknown')}"
+                    )
+                temporal_coverage = attrs.get("time_coverage_start", "Unknown")
+                if temporal_coverage != "Unknown" and attrs.get("time_coverage_end"):
+                    temporal_coverage = f"{temporal_coverage} to {attrs.get('time_coverage_end')}"
+            except Exception as exc:
+                unavailable_reason = f"ERDDAP metadata endpoint could not be read: {exc}"
+        else:
+            unavailable_reason = "Could not derive ERDDAP /info metadata endpoint from source URL."
+
+        size = None
+        content_type = None
+        try:
+            head = requests.head(subset_url or full_url, allow_redirects=True, timeout=15)
+            content_length = head.headers.get("Content-Length")
+            size = float(content_length) if content_length else None
+            content_type = head.headers.get("Content-Type")
+        except Exception:
+            pass
+
+        return DatasetMetadata(
+            source_id=snapshot.source_id,
+            dataset_id=dataset_id,
+            collection=snapshot.dataset_type,
+            product=snapshot.name,
+            download_endpoint=subset_url or full_url,
+            api_endpoint=re.sub(r"/(?:griddap|tabledap)/.*", "/", snapshot.url),
+            metadata_endpoint=metadata_url,
+            file_size_bytes=size,
+            variables=variables,
+            spatial_coverage=spatial_coverage,
+            temporal_coverage=temporal_coverage,
+            file_format="NetCDF",
+            content_type=content_type,
+            retrieval_method="ERDDAP /info metadata",
+            unavailable_reason=unavailable_reason,
+        )
+
     def fetch_subset(self, snapshot: SourceSnapshot, fetch_request: FetchRequest, credentials: Optional[Credentials] = None) -> str:
         subset_url = self._build_subset_url(snapshot, fetch_request)
         if not subset_url:
@@ -93,6 +176,7 @@ class ERDDAPConnector(BaseConnector):
         os.makedirs(os.path.dirname(fetch_request.dest_path) or ".", exist_ok=True)
         with requests.get(subset_url, stream=True, timeout=60) as resp:
             resp.raise_for_status()
+            _raise_if_html(resp)
             with open(fetch_request.dest_path, "wb") as f:
                 for chunk in resp.iter_content(chunk_size=_CHUNK_SIZE):
                     if chunk:
@@ -106,6 +190,7 @@ class ERDDAPConnector(BaseConnector):
         os.makedirs(os.path.dirname(fetch_request.dest_path) or ".", exist_ok=True)
         with requests.get(full_url, stream=True, timeout=60) as resp:
             resp.raise_for_status()
+            _raise_if_html(resp)
             with open(fetch_request.dest_path, "wb") as f:
                 for chunk in resp.iter_content(chunk_size=_CHUNK_SIZE):
                     if chunk:

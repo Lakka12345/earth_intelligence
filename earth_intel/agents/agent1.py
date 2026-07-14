@@ -6,7 +6,7 @@ import os
 from groq import Groq
 from pydantic import BaseModel, ValidationError
 
-from models.schemas import ScientificIntentOutput
+from models.schemas import DomainName, ScientificIntentOutput
 from prompts.agent1_prompt import build_system_prompt
 from config.settings import MAX_RETRIES
 
@@ -48,6 +48,47 @@ def pydantic_schema_for_anthropic(model_class: type[BaseModel]) -> dict:
 SCHEMA = pydantic_schema_for_anthropic(
     ScientificIntentOutput
 )
+
+
+DOMAIN_SYNONYMS: dict[str, DomainName] = {
+    "geography": DomainName.gis,
+    "geographic information science": DomainName.gis,
+    "geospatial science": DomainName.gis,
+    "geospatial analysis": DomainName.gis,
+    "cartography": DomainName.gis,
+    "earth observation": DomainName.remote_sensing,
+    "satellite remote sensing": DomainName.remote_sensing,
+    "climatology": DomainName.climate_science,
+    "climate": DomainName.climate_science,
+    "weather science": DomainName.meteorology,
+    "atmospheric science": DomainName.meteorology,
+    "water resources": DomainName.hydrology,
+    "water resource management": DomainName.hydrology,
+    "coastal engineering": DomainName.coastal_processes,
+    "coastal geomorphology": DomainName.coastal_processes,
+    "environmental science": DomainName.environmental_monitoring,
+    "environmental management": DomainName.environmental_monitoring,
+    "disaster risk reduction": DomainName.disaster_management,
+    "emergency management": DomainName.disaster_management,
+    "urban studies": DomainName.urban_planning,
+    "city planning": DomainName.urban_planning,
+    "infrastructure engineering": DomainName.civil_engineering,
+}
+
+
+def _normalize_domain_name(value: str) -> str:
+    return re.sub(r"\s+", " ", value.strip()).lower()
+
+
+def _canonical_domain(value: str) -> str | None:
+    normalized = _normalize_domain_name(value)
+
+    for domain in DomainName:
+        if normalized == _normalize_domain_name(domain.value):
+            return domain.value
+
+    synonym = DOMAIN_SYNONYMS.get(normalized)
+    return synonym.value if synonym else None
 
 
 def _build_abbreviation_map(scientific_variables: list[dict]) -> dict[str, str]:
@@ -160,6 +201,45 @@ def normalize_measurement_references(parsed: dict) -> dict:
     return parsed
 
 
+def normalize_domain_references(parsed: dict) -> dict:
+    """
+    Rewrite synonymous scientific domain names to the canonical DomainName
+    enum values before strict Pydantic validation.
+
+    This keeps downstream agents seeing the same canonical domain strings
+    they already expect, while allowing common LLM equivalents such as
+    "Geography" or "Earth observation" to validate when they clearly map to
+    an existing project domain.
+    """
+    for domain_confidence in parsed.get("domain_confidences", []):
+        if not isinstance(domain_confidence, dict):
+            continue
+        raw = domain_confidence.get("domain", "")
+        canonical = _canonical_domain(raw)
+        if canonical and canonical != raw:
+            print(
+                f"[Agent 1] Normalizing domain reference: "
+                f"'{raw}' -> '{canonical}'"
+            )
+            domain_confidence["domain"] = canonical
+
+    for dependency in parsed.get("cross_domain_dependencies", []):
+        if not isinstance(dependency, dict):
+            continue
+        normalized_domains = []
+        for raw in dependency.get("domains", []):
+            canonical = _canonical_domain(raw)
+            if canonical and canonical != raw:
+                print(
+                    f"[Agent 1] Normalizing cross-domain reference: "
+                    f"'{raw}' -> '{canonical}'"
+                )
+            normalized_domains.append(canonical or raw)
+        dependency["domains"] = normalized_domains
+
+    return parsed
+
+
 def run_agent1(query: str) -> ScientificIntentOutput:
 
     if not query or not query.strip():
@@ -232,6 +312,7 @@ User query:
             # form. This rewrites abbreviated references to the canonical name so
             # the schema validator's cross-reference check always passes.
             parsed = normalize_measurement_references(parsed)
+            parsed = normalize_domain_references(parsed)
 
             return (
                 ScientificIntentOutput

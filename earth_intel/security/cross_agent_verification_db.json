@@ -1,0 +1,170 @@
+{
+  "reports": [
+    {
+      "verification_id": "c15a3125-e2f6-423a-b303-abab60ac0d3c",
+      "verification_timestamp": "2026-07-14T09:32:20.815145+00:00",
+      "user_query": {
+        "query_text": "Assess flood risk for the upcoming monsoon season using recent rainfall and soil moisture data.",
+        "requested_task": "flood_analysis",
+        "required_variables": [
+          "precipitation",
+          "soil_moisture"
+        ]
+      },
+      "selected_provider": "NOAA",
+      "selected_provider_score": 0.8116,
+      "highest_ranked_provider": "NASA",
+      "highest_ranked_score": 0.8599,
+      "ranking_verification": {
+        "status": "FLAGGED",
+        "score": 0.5,
+        "confidence": 0.8,
+        "explanation": "Selected provider 'NOAA' was ranked #2 (top candidate was 'NASA'). A justification was supplied for this deviation and requires downstream review to confirm it is sound."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 0.9517,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.81) is only marginally below the highest-trust alternative 'NASA' (0.86); gap of 0.05 is within the acceptable threshold of 0.15."
+      },
+      "relevance_verification": {
+        "status": "FAIL",
+        "score": 0.3214,
+        "confidence": 1.0,
+        "explanation": "Relevance score 0.32 for task 'flood_analysis' (falls short of the 0.60 PASS threshold). Underlying provider_trust.py finding: 2/7 keywords for task 'flood_analysis' matched provider data domains (['rainfall', 'weather'])."
+      },
+      "metadata_verification": {
+        "status": "PASS",
+        "score": 0.8333,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['soil_moisture']; has_documentation=True; provider_trust.py metadata_quality_score=1.00."
+      },
+      "availability_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=True, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 0.7543,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.81) is consistent with the candidate pool (mean=0.70, stdev=0.15, z=0.74)."
+      },
+      "policy_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider complies with all active security policy rules."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.2,
+        "confidence": 0.7,
+        "explanation": "Agent 3's justification does not address: the relevance shortfall for the requested task. The stated explanation is inconsistent with the other verification findings."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.7323,
+      "verification_confidence": 0.955,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'NOAA' for task 'flood_analysis' resulted in 'NOT VERIFIED' (verification_score=0.73, verification_confidence=0.95). 3 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[ranking] Selected provider 'NOAA' was ranked #2 (top candidate was 'NASA'). A justification was supplied for this deviation and requires downstream review to confirm it is sound.",
+        "[relevance] Relevance score 0.32 for task 'flood_analysis' (falls short of the 0.60 PASS threshold). Underlying provider_trust.py finding: 2/7 keywords for task 'flood_analysis' matched provider data domains (['rainfall', 'weather']).",
+        "[explanation] Agent 3's justification does not address: the relevance shortfall for the requested task. The stated explanation is inconsistent with the other verification findings."
+      ],
+      "recommendations": [
+        "Confirm whether 'NASA' (Agent 3's own top-ranked provider) should have been selected instead, or strengthen the justification for overriding it.",
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "7b764534-8fa0-4812-bc2d-6b1217e8753e",
+      "verification_timestamp": "2026-07-14T09:32:20.832079+00:00",
+      "user_query": {
+        "query_text": "Assess flood risk for the upcoming monsoon season using recent rainfall and soil moisture data.",
+        "requested_task": "flood_analysis",
+        "required_variables": [
+          "precipitation",
+          "soil_moisture"
+        ]
+      },
+      "selected_provider": "Bloomberg Finance",
+      "selected_provider_score": 0.4243,
+      "highest_ranked_provider": "NASA",
+      "highest_ranked_score": 0.8599,
+      "ranking_verification": {
+        "status": "FLAGGED",
+        "score": 0.5,
+        "confidence": 0.8,
+        "explanation": "Selected provider 'Bloomberg Finance' was ranked #5 (top candidate was 'NASA'). A justification was supplied for this deviation and requires downstream review to confirm it is sound."
+      },
+      "trust_verification": {
+        "status": "FAIL",
+        "score": 0.5644,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.42) is significantly lower than 'NASA' (0.86) -- a gap of 0.44, exceeding the 0.15 threshold for a significant difference. A materially higher-trust provider appears to have been available and was not selected."
+      },
+      "relevance_verification": {
+        "status": "FAIL",
+        "score": 0.05,
+        "confidence": 1.0,
+        "explanation": "Relevance score 0.05 for task 'flood_analysis' (falls short of the 0.60 PASS threshold). Underlying provider_trust.py finding: None of the keywords for task 'flood_analysis' (['flood', 'hydrology', 'precipitation', 'rainfall', 'river_discharge', 'soil_moisture', 'weather']) matched provider data domains (['bonds', 'commodities', 'currency_exchange', 'equities', 'financial_markets'])."
+      },
+      "metadata_verification": {
+        "status": "WARNING",
+        "score": 0.5167,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['precipitation', 'soil_moisture']; has_documentation=True; provider_trust.py metadata_quality_score=0.55."
+      },
+      "availability_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=False, availability_reported=True, download_endpoint=missing."
+      },
+      "scientific_consistency_verification": {
+        "status": "FLAGGED",
+        "score": 0.3912,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.42) is a statistical outlier below the candidate pool (mean=0.70, stdev=0.15, z=-1.83); flagged for review, not rejected."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.42 is below the minimum policy threshold of 0.55; provider category 'commercial_financial_data_vendor' is not in the accepted list ['government_agency', 'international_agency', 'research_institution']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.2,
+        "confidence": 0.7,
+        "explanation": "Agent 3's justification does not address: deviation from the top-ranked provider; the trust-score gap versus a higher-trust alternative; the relevance shortfall for the requested task. The stated explanation is inconsistent with the other verification findings."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.3795,
+      "verification_confidence": 0.955,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'Bloomberg Finance' for task 'flood_analysis' resulted in 'NOT VERIFIED' (verification_score=0.38, verification_confidence=0.95). 8 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[ranking] Selected provider 'Bloomberg Finance' was ranked #5 (top candidate was 'NASA'). A justification was supplied for this deviation and requires downstream review to confirm it is sound.",
+        "[trust] Selected provider trust score (0.42) is significantly lower than 'NASA' (0.86) -- a gap of 0.44, exceeding the 0.15 threshold for a significant difference. A materially higher-trust provider appears to have been available and was not selected.",
+        "[relevance] Relevance score 0.05 for task 'flood_analysis' (falls short of the 0.60 PASS threshold). Underlying provider_trust.py finding: None of the keywords for task 'flood_analysis' (['flood', 'hydrology', 'precipitation', 'rainfall', 'river_discharge', 'soil_moisture', 'weather']) matched provider data domains (['bonds', 'commodities', 'currency_exchange', 'equities', 'financial_markets']).",
+        "[metadata] Metadata verification: missing required variable(s): ['precipitation', 'soil_moisture']; has_documentation=True; provider_trust.py metadata_quality_score=0.55.",
+        "[availability] Dataset availability checks: dataset_exists=False, availability_reported=True, download_endpoint=missing.",
+        "[scientific_consistency] Selected provider trust score (0.42) is a statistical outlier below the candidate pool (mean=0.70, stdev=0.15, z=-1.83); flagged for review, not rejected.",
+        "[policy] Policy violation(s): trust score 0.42 is below the minimum policy threshold of 0.55; provider category 'commercial_financial_data_vendor' is not in the accepted list ['government_agency', 'international_agency', 'research_institution'].",
+        "[explanation] Agent 3's justification does not address: deviation from the top-ranked provider; the trust-score gap versus a higher-trust alternative; the relevance shortfall for the requested task. The stated explanation is inconsistent with the other verification findings."
+      ],
+      "recommendations": [
+        "Confirm whether 'NASA' (Agent 3's own top-ranked provider) should have been selected instead, or strengthen the justification for overriding it.",
+        "Re-evaluate the trust gap against the higher-trust alternative before proceeding.",
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Manually review the selection given its statistical divergence from other candidates.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    }
+  ]
+}

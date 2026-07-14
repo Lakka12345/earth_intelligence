@@ -1,0 +1,760 @@
+[
+  {
+    "assessment_id": "ffcda3b6-119c-450e-a78c-4cfce9e2f2af",
+    "timestamp": "2026-07-13T10:49:37.690384+00:00",
+    "overall_security_score": 98.7,
+    "overall_risk_level": "SAFE",
+    "recommended_action": "ALLOW",
+    "confidence_score": 1.0,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "All security checks passed. Pipeline may proceed normally."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 95.0,
+        "weight": 0.2,
+        "weighted": 19.0,
+        "flags": [],
+        "summary": "Provider 'NOAA ERDDAP' trust score is 95/100 [HIGH]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 98.0,
+        "weight": 0.15,
+        "weighted": 14.7,
+        "flags": [],
+        "summary": "Validation passed (score 98/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.1,
+        "weighted": 10.0,
+        "flags": [],
+        "summary": "All agent outputs are consistent (score 100/100)."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.1,
+        "weighted": 10.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 100/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "a18af2f3-1500-474a-a613-b79761a65ccd",
+    "timestamp": "2026-07-13T10:49:37.691443+00:00",
+    "overall_security_score": 62.9,
+    "overall_risk_level": "HIGH",
+    "recommended_action": "BLOCK",
+    "confidence_score": 0.97,
+    "active_flags": [
+      "prompt_injection_detected"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "CRITICAL: Block this request immediately — prompt injection was detected.",
+      "Review and sanitise all user-supplied input before any retry."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 0.5,
+        "weight": 0.3,
+        "weighted": 0.15,
+        "flags": [
+          "prompt_injection_detected"
+        ],
+        "summary": "Prompt injection DETECTED — pipeline input must not be trusted."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 80.0,
+        "weight": 0.2,
+        "weighted": 16.0,
+        "flags": [],
+        "summary": "Provider 'Copernicus CDS' trust score is 80/100 [HIGH]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 95.0,
+        "weight": 0.15,
+        "weighted": 14.25,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 95/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 92.0,
+        "weight": 0.15,
+        "weighted": 13.8,
+        "flags": [],
+        "summary": "Validation passed (score 92/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 97.0,
+        "weight": 0.1,
+        "weighted": 9.7,
+        "flags": [],
+        "summary": "All agent outputs are consistent (score 97/100)."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "3da17860-a21d-4342-a32c-9f94f23eb8cf",
+    "timestamp": "2026-07-13T10:49:37.694151+00:00",
+    "overall_security_score": 66.56,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.81,
+    "active_flags": [
+      "provider_untrusted"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation"
+    ],
+    "reports_missing": [
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Reject or quarantine data from this untrusted provider.",
+      "Attempt to find an equivalent dataset from a provider with a higher trust score.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 95.0,
+        "weight": 0.3,
+        "weighted": 28.5,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 95/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 0.0,
+        "weight": 0.2,
+        "weighted": 0.0,
+        "flags": [
+          "provider_untrusted"
+        ],
+        "summary": "Provider 'UnknownSource-42' is UNTRUSTED (score 0/100)."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 85.0,
+        "weight": 0.15,
+        "weighted": 12.75,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 85/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 80.0,
+        "weight": 0.15,
+        "weighted": 12.0,
+        "flags": [],
+        "summary": "Validation passed (score 80/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "b7547bd6-7e18-47d6-8b5f-2cb05eef2a7f",
+    "timestamp": "2026-07-13T10:49:37.698178+00:00",
+    "overall_security_score": 76.89,
+    "overall_risk_level": "HIGH",
+    "recommended_action": "BLOCK",
+    "confidence_score": 0.97,
+    "active_flags": [
+      "integrity_failed"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "CRITICAL: Dataset integrity check failed — do not use this data.",
+      "Re-download the dataset from a trusted source and repeat integrity verification."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 88.0,
+        "weight": 0.2,
+        "weighted": 17.6,
+        "flags": [],
+        "summary": "Provider 'NASA Earthdata' trust score is 88/100 [HIGH]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 0.25,
+        "weight": 0.15,
+        "weighted": 0.04,
+        "flags": [
+          "integrity_failed"
+        ],
+        "summary": "Integrity check FAILED — tamper evidence present. Issues: SHA-256 mismatch; unexpected trailing bytes."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 75.0,
+        "weight": 0.15,
+        "weighted": 11.25,
+        "flags": [],
+        "summary": "Validation passed (score 75/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 88.0,
+        "weight": 0.1,
+        "weighted": 8.8,
+        "flags": [],
+        "summary": "All agent outputs are consistent (score 88/100)."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 92.0,
+        "weight": 0.1,
+        "weighted": 9.2,
+        "flags": [],
+        "summary": "Provenance confirmed (score 92/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "23b52dc7-926e-4558-b0d8-78f122385953",
+    "timestamp": "2026-07-13T10:49:37.699238+00:00",
+    "overall_security_score": 82.0,
+    "overall_risk_level": "LOW",
+    "recommended_action": "ALLOW",
+    "confidence_score": 0.68,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Risk is low. Consider adding missing security reports to increase confidence."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.3,
+        "weighted": 27.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 90/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 70.0,
+        "weight": 0.2,
+        "weighted": 14.0,
+        "flags": [],
+        "summary": "Provider 'BCO-DMO' trust score is 70/100 [MEDIUM]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "e2d6364d-61ed-40f6-bc24-acbe3600747d",
+    "timestamp": "2026-07-13T10:49:43.861920+00:00",
+    "overall_security_score": 98.7,
+    "overall_risk_level": "SAFE",
+    "recommended_action": "ALLOW",
+    "confidence_score": 1.0,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "All security checks passed. Pipeline may proceed normally."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 95.0,
+        "weight": 0.2,
+        "weighted": 19.0,
+        "flags": [],
+        "summary": "Provider 'NOAA ERDDAP' trust score is 95/100 [HIGH]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 98.0,
+        "weight": 0.15,
+        "weighted": 14.7,
+        "flags": [],
+        "summary": "Validation passed (score 98/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.1,
+        "weighted": 10.0,
+        "flags": [],
+        "summary": "All agent outputs are consistent (score 100/100)."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.1,
+        "weighted": 10.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 100/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "bdfdcade-f4b8-4518-aa6a-45fa4efc036e",
+    "timestamp": "2026-07-13T10:49:43.864282+00:00",
+    "overall_security_score": 62.9,
+    "overall_risk_level": "HIGH",
+    "recommended_action": "BLOCK",
+    "confidence_score": 0.97,
+    "active_flags": [
+      "prompt_injection_detected"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "CRITICAL: Block this request immediately — prompt injection was detected.",
+      "Review and sanitise all user-supplied input before any retry."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 0.5,
+        "weight": 0.3,
+        "weighted": 0.15,
+        "flags": [
+          "prompt_injection_detected"
+        ],
+        "summary": "Prompt injection DETECTED — pipeline input must not be trusted."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 80.0,
+        "weight": 0.2,
+        "weighted": 16.0,
+        "flags": [],
+        "summary": "Provider 'Copernicus CDS' trust score is 80/100 [HIGH]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 95.0,
+        "weight": 0.15,
+        "weighted": 14.25,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 95/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 92.0,
+        "weight": 0.15,
+        "weighted": 13.8,
+        "flags": [],
+        "summary": "Validation passed (score 92/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 97.0,
+        "weight": 0.1,
+        "weighted": 9.7,
+        "flags": [],
+        "summary": "All agent outputs are consistent (score 97/100)."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "82f3422d-991d-4d70-9bf6-c7f24ff42452",
+    "timestamp": "2026-07-13T10:49:43.865948+00:00",
+    "overall_security_score": 66.56,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.81,
+    "active_flags": [
+      "provider_untrusted"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation"
+    ],
+    "reports_missing": [
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Reject or quarantine data from this untrusted provider.",
+      "Attempt to find an equivalent dataset from a provider with a higher trust score.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 95.0,
+        "weight": 0.3,
+        "weighted": 28.5,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 95/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 0.0,
+        "weight": 0.2,
+        "weighted": 0.0,
+        "flags": [
+          "provider_untrusted"
+        ],
+        "summary": "Provider 'UnknownSource-42' is UNTRUSTED (score 0/100)."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 85.0,
+        "weight": 0.15,
+        "weighted": 12.75,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 85/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 80.0,
+        "weight": 0.15,
+        "weighted": 12.0,
+        "flags": [],
+        "summary": "Validation passed (score 80/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "026383ba-ccd4-4722-806a-0d9f7015294e",
+    "timestamp": "2026-07-13T10:49:43.867814+00:00",
+    "overall_security_score": 76.89,
+    "overall_risk_level": "HIGH",
+    "recommended_action": "BLOCK",
+    "confidence_score": 0.97,
+    "active_flags": [
+      "integrity_failed"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "CRITICAL: Dataset integrity check failed — do not use this data.",
+      "Re-download the dataset from a trusted source and repeat integrity verification."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 88.0,
+        "weight": 0.2,
+        "weighted": 17.6,
+        "flags": [],
+        "summary": "Provider 'NASA Earthdata' trust score is 88/100 [HIGH]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 0.25,
+        "weight": 0.15,
+        "weighted": 0.04,
+        "flags": [
+          "integrity_failed"
+        ],
+        "summary": "Integrity check FAILED — tamper evidence present. Issues: SHA-256 mismatch; unexpected trailing bytes."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 75.0,
+        "weight": 0.15,
+        "weighted": 11.25,
+        "flags": [],
+        "summary": "Validation passed (score 75/100)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 88.0,
+        "weight": 0.1,
+        "weighted": 8.8,
+        "flags": [],
+        "summary": "All agent outputs are consistent (score 88/100)."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 92.0,
+        "weight": 0.1,
+        "weighted": 9.2,
+        "flags": [],
+        "summary": "Provenance confirmed (score 92/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "53d28c9f-ae60-4171-b569-afab786d5bf5",
+    "timestamp": "2026-07-13T10:49:43.869632+00:00",
+    "overall_security_score": 82.0,
+    "overall_risk_level": "LOW",
+    "recommended_action": "ALLOW",
+    "confidence_score": 0.68,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Risk is low. Consider adding missing security reports to increase confidence."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.3,
+        "weighted": 27.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 90/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 70.0,
+        "weight": 0.2,
+        "weighted": 14.0,
+        "flags": [],
+        "summary": "Provider 'BCO-DMO' trust score is 70/100 [MEDIUM]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  }
+]

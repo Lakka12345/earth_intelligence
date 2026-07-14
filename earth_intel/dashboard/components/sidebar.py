@@ -1,11 +1,10 @@
-"""
-components/sidebar.py
-Renders the left sidebar: logo, query input, example queries, settings,
-Run and Reset buttons.
-"""
+"""Navigation sidebar plus analysis controls."""
 
 import streamlit as st
+
+from components.auth import logout_user
 from utils.session_manager import reset_session
+
 
 EXAMPLE_QUERIES = [
     "Find chlorophyll concentration datasets around Lakshadweep between 2018 and 2024.",
@@ -15,115 +14,100 @@ EXAMPLE_QUERIES = [
     "Get wave height and ocean current datasets for the Arabian Sea 2020-2024.",
 ]
 
+NAV_ITEMS = [
+    ("Dashboard", "◇"),
+    ("New Analysis", "+"),
+    ("Previous Analyses", "◷"),
+    ("Pipeline", "▣"),
+    ("Agent Outputs", "▤"),
+    ("Security Reports", "◈"),
+    ("Downloads", "⇩"),
+    ("Settings", "⚙"),
+    ("Help", "?"),
+]
+
+
+def _render_nav() -> None:
+    st.markdown("<div class='nav-label'>Workspace</div>", unsafe_allow_html=True)
+    current = st.session_state.get("active_page", "Dashboard")
+    for label, icon in NAV_ITEMS:
+        active = label == current
+        button_label = f"{icon}  {label}"
+        if st.button(button_label, key=f"nav_{label}", use_container_width=True, type="primary" if active else "secondary"):
+            st.session_state.active_page = label
+            st.rerun()
+
 
 def render_sidebar() -> tuple[str, bool]:
-    """
-    Render the full sidebar.
-
-    Returns
-    -------
-    query : str
-        The query the user has typed (may be empty).
-    run_clicked : bool
-        True on the frame the Run Analysis button is pressed.
-    """
+    """Render navigation and analysis controls. Returns query and run click."""
     with st.sidebar:
-        # ── Logo / branding ──────────────────────────────────────────── #
+        user = st.session_state.get("auth_user") or {}
         st.markdown(
-            """
-            <div style='text-align:center; padding: 16px 0 8px 0;'>
-                <div style='font-size:32px;'>🌍</div>
-                <div style='font-size:16px; font-weight:800; color:#1e293b;
-                            letter-spacing:0.04em; margin-top:4px;'>
-                    Earth Intelligence
+            f"""
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">EI</div>
+                <div>
+                    <strong>Earth Intelligence</strong>
+                    <span>Scientific AI Platform</span>
                 </div>
-                <div style='font-size:11px; color:#94a3b8; margin-top:2px;'>
-                    Scientific Dataset Discovery
+            </div>
+            <div class="sidebar-user">
+                <div class="sidebar-avatar">{user.get('avatar', 'EI')}</div>
+                <div>
+                    <strong>{user.get('name', 'Research User')}</strong>
+                    <span>{user.get('email', '')}</span>
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+        _render_nav()
         st.divider()
 
-        # ── Research query ───────────────────────────────────────────── #
-        st.markdown("**🔍 Research Query**")
+        st.markdown("**Research Query**")
         query = st.text_area(
             label="Query",
             label_visibility="collapsed",
             placeholder="Describe your scientific data need...",
-            height=110,
+            height=120,
             key="sidebar_query",
         )
 
-        # ── Example queries ──────────────────────────────────────────── #
-        with st.expander("💡 Example Queries", expanded=False):
+        with st.expander("Example Queries", expanded=False):
             for i, example in enumerate(EXAMPLE_QUERIES):
-                if st.button(
-                    f"{'📍' if i == 0 else '📌'} {example[:55]}...",
-                    key=f"example_{i}",
-                    use_container_width=True,
-                ):
+                if st.button(example[:62] + "...", key=f"example_{i}", use_container_width=True):
                     st.session_state["sidebar_query"] = example
+                    st.session_state.active_page = "New Analysis"
                     st.rerun()
 
-        st.markdown("")
-
-        # ── Action buttons ───────────────────────────────────────────── #
         run_clicked = st.button(
-            "🚀  Run Analysis",
+            "Run Analysis",
             type="primary",
             use_container_width=True,
             disabled=(st.session_state.pipeline_stage not in ("idle", "done", "error")),
         )
 
-        if st.button("🔄  Reset", use_container_width=True):
-            reset_session()
-            st.rerun()
+        reset_col, logout_col = st.columns(2)
+        with reset_col:
+            if st.button("Reset", use_container_width=True):
+                reset_session()
+                st.rerun()
+        with logout_col:
+            if st.button("Logout", use_container_width=True):
+                logout_user()
+                st.rerun()
 
         st.divider()
-
-        # ── Settings ─────────────────────────────────────────────────── #
-        st.markdown("**⚙️ Settings**")
-
-        st.session_state.max_datasets = st.slider(
-            "Maximum Datasets",
-            min_value=3,
-            max_value=25,
-            value=st.session_state.get("max_datasets", 10),
-            step=1,
-        )
-
-        st.session_state.enable_clarification = st.toggle(
-            "Enable Clarification",
-            value=st.session_state.get("enable_clarification", True),
-        )
-
-        st.session_state.show_reasoning = st.toggle(
-            "Show Reasoning",
-            value=st.session_state.get("show_reasoning", True),
-        )
-
-        st.session_state.dark_mode = st.toggle(
-            "Dark Mode (coming soon)",
-            value=False,
-            disabled=True,
-        )
-
-        st.divider()
-
-        # ── Pipeline status summary ───────────────────────────────────── #
         stage = st.session_state.pipeline_stage
         stage_labels = {
-            "idle":        ("⬜", "Idle"),
-            "running_a1":  ("🔵", "Running Agent 1"),
-            "running_a2":  ("🔵", "Running Agent 2"),
-            "clarifying":  ("🟡", "Waiting for Input"),
-            "running_a3":  ("🔵", "Running Agent 3"),
-            "done":        ("🟢", "Complete"),
-            "error":       ("🔴", "Error"),
+            "idle": "Idle",
+            "running_a1": "Running Planner",
+            "running_a2": "Clarifying",
+            "clarifying": "Waiting for Input",
+            "running_a3": "Discovering Datasets",
+            "done": "Complete",
+            "error": "Error",
         }
-        icon, label = stage_labels.get(stage, ("⬜", stage.title()))
-        st.markdown(f"**Status:** {icon} {label}")
+        st.markdown(f"<div class='status-pill'>Status: {stage_labels.get(stage, stage.title())}</div>", unsafe_allow_html=True)
 
     return query, run_clicked

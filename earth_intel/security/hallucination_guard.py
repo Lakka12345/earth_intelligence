@@ -21,6 +21,26 @@ def validate_agent2_consistency(
         raise HallucinationException(
             "Plan cannot be ready while critical gaps remain."
         )
+       #Rule 1b
+    if (
+        output.retrieval_readiness
+        == Agent2RetrievalReadiness.ready
+        and output.remaining_gaps
+    ):
+
+        raise HallucinationException(
+            "Plan cannot be ready while remaining gaps exist."
+        )
+       #Rule 1c
+    if (
+        output.retrieval_readiness
+        == Agent2RetrievalReadiness.ready
+        and output.completeness_score != 1.0
+    ):
+
+        raise HallucinationException(
+            "Ready plans must have completeness_score=1.0."
+        )
        #Rule 2
     if (
         output.clarification_needed is False
@@ -29,6 +49,17 @@ def validate_agent2_consistency(
 
         raise HallucinationException(
             "Clarification questions exist despite clarification_needed=False."
+        )
+        # Rule 2b
+    if (
+        output.clarification_needed is False
+        and output.retrieval_readiness
+        == Agent2RetrievalReadiness.clarification_required
+    ):
+
+        raise HallucinationException(
+            "clarification_needed=False conflicts with "
+            "retrieval_readiness=clarification_required."
         )
         # Rule 3
 

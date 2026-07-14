@@ -37,6 +37,16 @@ def init_session_state() -> None:
         "enable_clarification": True,
         "show_reasoning": True,
         "dark_mode": False,
+
+        # Frontend-only authentication and navigation
+        "is_authenticated": False,
+        "auth_user": None,
+        "remember_me": False,
+        "last_login": None,
+        "show_welcome": False,
+        "welcome_dismissed": False,
+        "active_page": "Dashboard",
+        "saved_analyses": [],
     }
     for key, value in defaults.items():
         if key not in st.session_state:

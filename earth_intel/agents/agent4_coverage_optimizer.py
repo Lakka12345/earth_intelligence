@@ -19,6 +19,48 @@ from typing import Dict, List, Optional, Set
 
 from models.website_analysis_schemas import SourceSnapshot, WebsiteAnalysisResult
 
+VARIABLE_ALIASES = {
+    "greenhouse gas emissions": {"greenhouse gas", "greenhouse gases", "ghg", "co2", "carbon dioxide", "methane", "ch4", "emissions"},
+    "land use change": {"land use", "land cover", "land_use_land_cover", "lulc", "worldcover", "landcover"},
+    "temperature anomaly": {"temperature anomaly", "temp anomaly", "temperature anomalies", "anomaly"},
+}
+
+
+def _normalize_variable(value: str) -> str:
+    return " ".join(str(value or "").lower().replace("_", " ").replace("-", " ").split())
+
+
+def _variable_terms(value: str) -> Set[str]:
+    normalized = _normalize_variable(value)
+    terms = {normalized}
+    terms.update(_normalize_variable(alias) for alias in VARIABLE_ALIASES.get(normalized, set()))
+    return {term for term in terms if term}
+
+
+def _matches_requested_variable(requested: str, candidate: str) -> bool:
+    requested_terms = _variable_terms(requested)
+    candidate_terms = _variable_terms(candidate)
+    for req in requested_terms:
+        for cand in candidate_terms:
+            if req == cand or req in cand or cand in req:
+                return True
+    return False
+
+
+def _source_variables(
+    sid: str,
+    website_analyses: Dict[str, WebsiteAnalysisResult],
+    source_snapshots: Optional[Dict[str, SourceSnapshot]] = None,
+) -> List[str]:
+    analysis = website_analyses.get(sid)
+    variables = []
+    if analysis is not None:
+        variables.extend(analysis.availability.covered_variables or [])
+    snapshot = (source_snapshots or {}).get(sid)
+    if snapshot is not None:
+        variables.extend(snapshot.variables_available or [])
+    return variables
+
 
 @dataclass
 class CoveragePlan:
@@ -37,6 +79,7 @@ def build_coverage_plan(
     website_analyses: Dict[str, WebsiteAnalysisResult],
     requested_variables: List[str],
     excluded_source_ids: Optional[Set[str]] = None,
+    source_snapshots: Optional[Dict[str, SourceSnapshot]] = None,
 ) -> CoveragePlan:
     """
     Greedy, rank-order-respecting set cover.
@@ -55,7 +98,8 @@ def build_coverage_plan(
     still-higher-ranked alternative is always tried before a lower one.
     """
     excluded = excluded_source_ids or set()
-    requested = {v.lower().strip() for v in requested_variables}
+    requested_lookup = {_normalize_variable(v): v for v in requested_variables}
+    requested = set(requested_lookup.keys())
     plan = CoveragePlan(uncovered_variables=set(requested))
 
     if not requested:
@@ -74,11 +118,15 @@ def build_coverage_plan(
             continue
 
         analysis = website_analyses.get(sid)
-        if analysis is None:
+        snapshot = (source_snapshots or {}).get(sid)
+        if analysis is None and snapshot is None:
             continue
 
-        source_vars = {v.lower().strip() for v in analysis.availability.covered_variables}
-        new_coverage = source_vars & plan.uncovered_variables
+        source_vars = _source_variables(sid, website_analyses, source_snapshots)
+        new_coverage = {
+            req for req in plan.uncovered_variables
+            if any(_matches_requested_variable(req, source_var) for source_var in source_vars)
+        }
         if not new_coverage:
             # This source (even if highly ranked) adds nothing beyond
             # what higher-ranked picks already cover -- skip it. This
@@ -86,10 +134,12 @@ def build_coverage_plan(
             continue
 
         plan.selected_source_ids.append(sid)
-        plan.per_source_new_coverage[sid] = sorted(new_coverage)
+        plan.per_source_new_coverage[sid] = [requested_lookup.get(v, v) for v in sorted(new_coverage)]
         plan.covered_variables |= new_coverage
         plan.uncovered_variables -= new_coverage
 
+    plan.covered_variables = {requested_lookup.get(v, v) for v in plan.covered_variables}
+    plan.uncovered_variables = {requested_lookup.get(v, v) for v in plan.uncovered_variables}
     return plan
 
 

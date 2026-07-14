@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# VS Code
+.vscode/
+
+# JetBrains
+.idea/
+
+# Environment Variables
+.env
+.env.*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
+# Build
+build/
+dist/
+
+# Logs
+*.log
+
+# Local downloads
+downloads/
+data/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets
+credentials.json
+tokens.json
+*.pem
+*.key
+
+# Temporary
+tmp/
+temp/

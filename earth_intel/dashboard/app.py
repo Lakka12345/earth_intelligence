@@ -28,6 +28,17 @@ from utils.session_manager import init_session_state, append_log
 from utils.styles import inject_styles
 
 # ── Dashboard components ──────────────────────────────────────────────────── #
+from components.auth import render_login_page, render_profile_header, render_welcome_modal
+from components.pages import (
+    render_agent_outputs_page,
+    render_download_center,
+    render_help_page,
+    render_pipeline_page,
+    render_previous_analyses,
+    render_security_reports,
+    render_settings_page,
+    save_completed_analysis,
+)
 from components.sidebar      import render_sidebar
 from components.pipeline     import render_pipeline
 from components.logs         import render_logs
@@ -62,6 +73,10 @@ st.set_page_config(
 inject_styles()
 init_session_state()
 
+if not st.session_state.get("is_authenticated", False):
+    render_login_page()
+    st.stop()
+
 
 # ─────────────────────────────────────────────────────────────────────────── #
 # Sidebar
@@ -72,19 +87,31 @@ sidebar_query, run_clicked = render_sidebar()
 # ─────────────────────────────────────────────────────────────────────────── #
 # Page header
 # ─────────────────────────────────────────────────────────────────────────── #
-st.markdown(
-    """
-    <div style='padding: 4px 0 20px 0;'>
-        <h1 style='margin:0;font-size:28px;font-weight:800;color:#0f172a;'>
-            🌍 Scientific Dataset Discovery Assistant
-        </h1>
-        <p style='margin:4px 0 0 0;color:#64748b;font-size:14px;'>
-            Multi-agent AI pipeline for intelligent scientific dataset discovery and ranking.
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+render_profile_header()
+render_welcome_modal()
+
+active_page = st.session_state.get("active_page", "Dashboard")
+if active_page == "Previous Analyses":
+    render_previous_analyses()
+    st.stop()
+if active_page == "Pipeline":
+    render_pipeline_page(render_pipeline, render_logs)
+    st.stop()
+if active_page == "Agent Outputs":
+    render_agent_outputs_page(render_agent1_panel, render_agent3_panel, render_dataset_detail)
+    st.stop()
+if active_page == "Security Reports":
+    render_security_reports()
+    st.stop()
+if active_page == "Downloads":
+    render_download_center()
+    st.stop()
+if active_page == "Settings":
+    render_settings_page()
+    st.stop()
+if active_page == "Help":
+    render_help_page()
+    st.stop()
 
 
 # ─────────────────────────────────────────────────────────────────────────── #
@@ -336,6 +363,8 @@ elif st.session_state.pipeline_stage == "running_a3":
 # ─────────────────────────────────────────────────────────────────────────── #
 
 stage = st.session_state.pipeline_stage
+if stage == "done":
+    save_completed_analysis()
 
 with content_col:
 

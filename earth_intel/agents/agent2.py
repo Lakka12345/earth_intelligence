@@ -431,6 +431,48 @@ def _time_period_is_missing(agent1_plan: ScientificIntentOutput) -> bool:
     return date_range in vague_markers and event_window in vague_markers
 
 
+def _has_known_location(
+    agent1_plan: ScientificIntentOutput,
+    parsed: dict | None = None,
+    merged_resolved: list[dict] | None = None,
+) -> bool:
+    """
+    Canonical location-state check used as a Python backstop before any
+    location rediscovery question is allowed to survive.
+
+    This intentionally looks beyond Agent 1's original spatial_context:
+    previous clarification answers and the current parsed
+    resolved_information are authoritative too. That prevents later
+    rounds from asking for a location that the user already supplied.
+    """
+    if not _location_is_missing(agent1_plan):
+        return True
+
+    return _resolved_concept_is_known(
+        "location",
+        parsed=parsed,
+        merged_resolved=merged_resolved,
+    )
+
+
+def _has_known_time_period(
+    agent1_plan: ScientificIntentOutput,
+    parsed: dict | None = None,
+    merged_resolved: list[dict] | None = None,
+) -> bool:
+    """
+    Canonical time-state check mirroring _has_known_location().
+    """
+    if not _time_period_is_missing(agent1_plan):
+        return True
+
+    return _resolved_concept_is_known(
+        "time_period",
+        parsed=parsed,
+        merged_resolved=merged_resolved,
+    )
+
+
 def _build_time_period_question_dict() -> dict:
     """
     The deterministic, Python-owned version of the time-period
@@ -769,6 +811,676 @@ def _ensure_scope_question_present(
     return parsed
 
 
+# ──────────────────────────────────────────────────────────────────────
+_FIELD_CONCEPT_ALIASES = {
+    "location": {
+        "location",
+        "study_area",
+        "study area",
+        "area",
+        "region",
+        "spatial",
+        "coordinate",
+        "coordinates",
+        "bounding box",
+        "geographic",
+        "place",
+        "coastline",
+    },
+    "time_period": {
+        "time_period",
+        "time period",
+        "temporal",
+        "date",
+        "date range",
+        "year",
+        "season",
+        "event",
+        "event_window",
+        "event window",
+    },
+}
+
+
+def _normalise_concept_text(value) -> str:
+    return _re.sub(r"[^a-z0-9_ ]+", " ", str(value or "").lower()).strip()
+
+
+def _resolved_entry_matches_concept(entry: dict, concept: str) -> bool:
+    if not isinstance(entry, dict):
+        return False
+
+    if concept == "location" and (
+        entry.get("is_location_question") or entry.get("is_scope_question")
+    ):
+        return True
+
+    if concept == "time_period" and entry.get("is_time_period_question"):
+        return True
+
+    aliases = _FIELD_CONCEPT_ALIASES.get(concept, {concept})
+
+    explicit_concepts = entry.get("resolved_concepts") or []
+    if isinstance(explicit_concepts, str):
+        explicit_concepts = [explicit_concepts]
+
+    for item in explicit_concepts:
+        normalized = _normalise_concept_text(item)
+        if any(alias in normalized for alias in aliases):
+            return True
+
+    text = " ".join(
+        [
+            _normalise_concept_text(entry.get("field_name")),
+            _normalise_concept_text(entry.get("question")),
+            _normalise_concept_text(entry.get("resolved_value")),
+        ]
+    )
+
+    return any(alias in text for alias in aliases)
+
+
+def _resolved_concept_is_known(
+    concept: str,
+    parsed: dict | None = None,
+    merged_resolved: list[dict] | None = None,
+) -> bool:
+    entries: list[dict] = []
+
+    if merged_resolved:
+        entries.extend(
+            entry for entry in merged_resolved if isinstance(entry, dict)
+        )
+
+    if isinstance(parsed, dict):
+        resolved = parsed.get("resolved_information")
+        if isinstance(resolved, list):
+            entries.extend(
+                entry for entry in resolved if isinstance(entry, dict)
+            )
+
+        rsp = parsed.get("refined_scientific_plan")
+        if isinstance(rsp, dict):
+            refined_resolved = rsp.get("resolved_information")
+            if isinstance(refined_resolved, list):
+                entries.extend(
+                    entry
+                    for entry in refined_resolved
+                    if isinstance(entry, dict)
+                )
+
+    for entry in entries:
+        if _resolved_entry_matches_concept(entry, concept):
+            value = str(entry.get("resolved_value", "")).strip()
+            if value:
+                return True
+
+    return False
+
+
+def _question_targets_concept(question: dict, concept: str) -> bool:
+    if not isinstance(question, dict):
+        return False
+
+    if concept == "location" and question.get("is_location_question"):
+        return True
+
+    if concept == "time_period" and question.get("is_time_period_question"):
+        return True
+
+    aliases = _FIELD_CONCEPT_ALIASES.get(concept, {concept})
+    resolves = question.get("resolves_gaps") or []
+    if isinstance(resolves, str):
+        resolves = [resolves]
+
+    resolve_text = " ".join(_normalise_concept_text(item) for item in resolves)
+    question_text = _normalise_concept_text(question.get("question"))
+
+    return any(alias in resolve_text or alias in question_text for alias in aliases)
+
+
+def _gap_targets_concept(gap: dict, concept: str) -> bool:
+    if not isinstance(gap, dict):
+        return False
+
+    aliases = _FIELD_CONCEPT_ALIASES.get(concept, {concept})
+    gap_text = " ".join(
+        [
+            _normalise_concept_text(gap.get("gap_name")),
+            _normalise_concept_text(gap.get("description")),
+        ]
+    )
+
+    return any(alias in gap_text for alias in aliases)
+
+
+def _filter_redundant_questions_from_known_state(
+    parsed: dict,
+    agent1_plan: ScientificIntentOutput,
+    merged_resolved: list[dict],
+) -> dict:
+    """
+    Removes clarification questions that ask for information already
+    known in the canonical state. The LLM may still emit a repeated
+    "which area" or "what time period" question despite the prompt; this
+    function makes the Python layer authoritative.
+
+    Scope questions are intentionally preserved when location is known:
+    a broad known area may still need narrowing, but it must not be
+    rediscovered as if absent.
+    """
+    questions = parsed.get("prioritized_questions")
+    if not isinstance(questions, list):
+        return parsed
+
+    known_location = _has_known_location(
+        agent1_plan,
+        parsed=parsed,
+        merged_resolved=merged_resolved,
+    )
+    known_time = _has_known_time_period(
+        agent1_plan,
+        parsed=parsed,
+        merged_resolved=merged_resolved,
+    )
+
+    filtered = []
+    removed_gap_names: set[str] = set()
+
+    for question in questions:
+        if not isinstance(question, dict):
+            filtered.append(question)
+            continue
+
+        remove = False
+
+        if (
+            known_location
+            and not question.get("is_scope_question")
+            and _question_targets_concept(question, "location")
+        ):
+            remove = True
+
+        if known_time and _question_targets_concept(question, "time_period"):
+            remove = True
+
+        if remove:
+            for gap in question.get("resolves_gaps") or []:
+                if isinstance(gap, str):
+                    removed_gap_names.add(gap.strip().lower())
+            continue
+
+        filtered.append(question)
+
+    parsed["prioritized_questions"] = filtered
+
+    if removed_gap_names:
+        for key in ("critical_gaps", "non_critical_gaps", "remaining_gaps"):
+            gaps = parsed.get(key)
+            if not isinstance(gaps, list):
+                continue
+            parsed[key] = [
+                gap for gap in gaps
+                if not (
+                    isinstance(gap, dict)
+                    and gap.get("gap_name", "").strip().lower()
+                    in removed_gap_names
+                )
+            ]
+
+    critical_gaps = parsed.get("critical_gaps")
+    has_blocking_gap = (
+        isinstance(critical_gaps, list)
+        and any(
+            isinstance(gap, dict) and gap.get("blocks_retrieval")
+            for gap in critical_gaps
+        )
+    )
+
+    if not filtered and not has_blocking_gap:
+        parsed["clarification_needed"] = False
+        if parsed.get("retrieval_readiness") == "clarification_required":
+            parsed["retrieval_readiness"] = "ready"
+
+        rsp = parsed.get("refined_scientific_plan")
+        if isinstance(rsp, dict) and (
+            rsp.get("retrieval_readiness") == "clarification_required"
+        ):
+            rsp["retrieval_readiness"] = parsed["retrieval_readiness"]
+
+    return parsed
+
+
+def _gap_is_obsolete(
+    gap: dict,
+    agent1_plan: ScientificIntentOutput,
+    parsed: dict,
+    merged_resolved: list[dict],
+) -> bool:
+    if not isinstance(gap, dict):
+        return False
+
+    if (
+        _has_known_location(
+            agent1_plan,
+            parsed=parsed,
+            merged_resolved=merged_resolved,
+        )
+        and _gap_targets_concept(gap, "location")
+    ):
+        return True
+
+    if (
+        _has_known_time_period(
+            agent1_plan,
+            parsed=parsed,
+            merged_resolved=merged_resolved,
+        )
+        and _gap_targets_concept(gap, "time_period")
+    ):
+        return True
+
+    return False
+
+
+def _normalise_gap_list(
+    gaps,
+    agent1_plan: ScientificIntentOutput,
+    parsed: dict,
+    merged_resolved: list[dict],
+) -> list[dict]:
+    if not isinstance(gaps, list):
+        return []
+
+    normalized = []
+    seen = set()
+
+    for gap in gaps:
+        if not isinstance(gap, dict):
+            continue
+
+        if _gap_is_obsolete(gap, agent1_plan, parsed, merged_resolved):
+            continue
+
+        key = (
+            str(gap.get("gap_name", "")).strip().lower(),
+            str(gap.get("description", "")).strip().lower(),
+        )
+        if key in seen:
+            continue
+
+        seen.add(key)
+        normalized.append(gap)
+
+    return normalized
+
+
+def _sync_final_state_from_canonical_knowledge(
+    parsed: dict,
+    agent1_plan: ScientificIntentOutput,
+    merged_resolved: list[dict],
+) -> dict:
+    """
+    Final authoritative consistency pass.
+
+    Earlier post-processors may remove questions, inject resolved
+    information, or force clarification. This pass runs after all of
+    them and derives readiness, clarification_needed, remaining_gaps,
+    completeness_score, and confidence_score from one canonical view so
+    the final JSON cannot say "ready" while still carrying an obsolete
+    critical gap or a 0.0 completeness score.
+    """
+    if "refined_scientific_plan" not in parsed or not isinstance(
+        parsed.get("refined_scientific_plan"), dict
+    ):
+        parsed["refined_scientific_plan"] = {}
+
+    questions = parsed.get("prioritized_questions")
+    if not isinstance(questions, list):
+        questions = []
+    parsed["prioritized_questions"] = questions
+
+    critical_gaps = _normalise_gap_list(
+        parsed.get("critical_gaps"),
+        agent1_plan,
+        parsed,
+        merged_resolved,
+    )
+    non_critical_gaps = _normalise_gap_list(
+        parsed.get("non_critical_gaps"),
+        agent1_plan,
+        parsed,
+        merged_resolved,
+    )
+    remaining_gaps = _normalise_gap_list(
+        parsed.get("remaining_gaps"),
+        agent1_plan,
+        parsed,
+        merged_resolved,
+    )
+
+    remaining_keys = {
+        (
+            str(gap.get("gap_name", "")).strip().lower(),
+            str(gap.get("description", "")).strip().lower(),
+        )
+        for gap in remaining_gaps
+    }
+
+    for gap in critical_gaps + non_critical_gaps:
+        key = (
+            str(gap.get("gap_name", "")).strip().lower(),
+            str(gap.get("description", "")).strip().lower(),
+        )
+        if key not in remaining_keys:
+            remaining_gaps.append(gap)
+            remaining_keys.add(key)
+
+    parsed["critical_gaps"] = critical_gaps
+    parsed["non_critical_gaps"] = non_critical_gaps
+    parsed["remaining_gaps"] = remaining_gaps
+
+    blocking_critical_gaps = [
+        gap for gap in critical_gaps
+        if isinstance(gap, dict) and gap.get("blocks_retrieval")
+    ]
+
+    has_questions = bool(questions)
+    has_blocking_gaps = bool(blocking_critical_gaps)
+    has_any_gaps = bool(remaining_gaps)
+
+    if has_questions or has_blocking_gaps:
+        readiness = "clarification_required"
+        clarification_needed = True
+    elif has_any_gaps:
+        readiness = "proceed_with_assumptions"
+        clarification_needed = False
+    else:
+        readiness = "ready"
+        clarification_needed = False
+
+    parsed["retrieval_readiness"] = readiness
+    parsed["clarification_needed"] = clarification_needed
+
+    if readiness == "ready":
+        completeness = 1.0
+        confidence = 1.0
+    elif readiness == "proceed_with_assumptions":
+        completeness = 0.8
+        confidence = 0.8
+    else:
+        answered = len(parsed.get("resolved_information") or [])
+        unresolved = max(1, len(remaining_gaps))
+        completeness = max(0.1, min(0.65, answered / (answered + unresolved)))
+        confidence = min(completeness + 0.25, 0.8)
+
+    parsed["completeness_score"] = round(completeness, 2)
+    parsed["confidence_score"] = round(confidence, 2)
+
+    rsp = parsed["refined_scientific_plan"]
+    rsp["remaining_gaps"] = remaining_gaps
+    rsp["resolved_information"] = parsed.get("resolved_information") or []
+    rsp["active_assumptions"] = parsed.get("active_assumptions") or []
+    rsp["retrieval_readiness"] = readiness
+    rsp["completeness_score"] = parsed["completeness_score"]
+
+    return parsed
+
+
+# DRILL-DOWN GUARD: bare-category / action-with-no-target detection
+# ──────────────────────────────────────────────────────────────────────
+#
+# Mirrors the pattern of _ensure_location_question_present /
+# _ensure_time_period_question_present / _ensure_scope_question_present:
+# rather than trusting the LLM to self-police the "DRILL DOWN UNTIL THE
+# ANSWER IS ACTUALLY APPLICABLE" prompt rule every single round, we
+# detect the failure case deterministically in Python and force another
+# round if the LLM slipped through anyway.
+#
+# WHAT THIS CATCHES: the user's latest free-text answer (this round's
+# response to a modification/category-drill-down question) names only
+# a bare category ("variables") or an action with no target ("remove
+# an existing variable", "add one", "change the priority") -- but the
+# LLM nonetheless wrote it into resolved_information / marked
+# clarification resolved, exactly like the original bug.
+#
+# WHAT THIS DOES NOT DO: this is a heuristic safety net, not a full
+# semantic parser. It cannot detect every possible way of restating
+# "remove one" in English. It exists to catch the common, high-risk
+# phrasings deterministically; the prompt rule is still the first line
+# of defense for everything else.
+
+_ACTION_VERBS = {
+    "remove", "delete", "drop", "add", "include", "change", "adjust", "swap",
+}
+
+_CATEGORY_NOUNS = {
+    "variable", "variables", "objective", "objectives", "goal", "goals",
+    "measurement", "measurements", "requirement", "requirements",
+    "parameter", "parameters", "priority", "priorities", "dataset",
+}
+
+# Words that never count as a "concrete target" on their own -- articles,
+# prepositions, and generic quantifiers/intensifiers. NOTE: this list is
+# intentionally static (not derived from what the regex happened to
+# match), because deriving it from the match span previously swallowed
+# real target words that appeared inside the match's wildcard gap (e.g.
+# "remove the humidity variable" -- "humidity" sat inside the
+# action-to-category gap and was wrongly discarded as if it were part of
+# the action/category phrase itself).
+_FILLER_WORDS = {
+    "a", "an", "one", "some", "existing", "the", "from", "analysis",
+    "to", "of", "for", "in", "on", "with", "and", "or", "it", "them",
+    "this", "that", "please", "just", "out", "up", "more", "another",
+    "different", "new",
+}
+
+_BARE_CATEGORY_WORDS = {
+    "variables", "variable", "location", "the goal", "goal",
+    "measurements", "measurement", "objectives", "objective",
+    "dataset requirements", "dataset requirement", "priority",
+    "priorities", "time period",
+}
+
+_ACTION_ONLY_NO_TARGET_PATTERNS = [
+    # "remove/add/delete/... <filler words> variable/objective/..."
+    # e.g. "remove an existing variable from the analysis"
+    _re.compile(
+        r"\b(remove|delete|drop|add|include|change|adjust|swap)\b"
+        r".{0,40}\b"
+        r"(variable|objective|goal|measurement|dataset requirement|"
+        r"parameter|priority)s?\b",
+        _re.IGNORECASE,
+    ),
+    # action verb aimed at a bare pronoun with nothing else concrete,
+    # e.g. "remove it", "swap it out", "change it", "add one"
+    _re.compile(
+        r"\b(remove|delete|drop|add|include|change|adjust|swap)\b"
+        r"\s+(it|them|one|some)\b(\s+(out|up))?\s*$",
+        _re.IGNORECASE,
+    ),
+]
+
+
+def _looks_like_action_with_no_target(answer_text: str) -> bool:
+    """
+    Heuristic: True if the answer matches an action-on-a-category
+    pattern (e.g. "remove an existing variable from the analysis",
+    "add one more measurement", "swap it out") WITHOUT also containing
+    something that looks like an actual named target -- a quoted
+    string, or any leftover word that isn't an action verb, a category
+    noun, or a filler word.
+
+    Deliberately conservative -- false negatives (missing a genuinely
+    vague answer) are far less costly here than false positives
+    (blocking a real, specific answer from ever resolving). When in
+    doubt, this function returns False and lets the LLM's own prompt
+    rule be the deciding layer.
+
+    Unit-tested against both the original bug case ("Remove an existing
+    variable from the analysis" -> True) and adjacent concrete-answer
+    cases that must NOT be flagged (e.g. "Remove the humidity variable",
+    "swap rainfall for humidity" -> False), to guard against exactly the
+    kind of false positive an earlier draft of this function had.
+    """
+    text = (answer_text or "").strip()
+
+    if not text:
+        return False
+
+    lower = text.lower()
+
+    if lower in _BARE_CATEGORY_WORDS:
+        return True
+
+    matched_action = any(
+        pat.search(text) for pat in _ACTION_ONLY_NO_TARGET_PATTERNS
+    )
+
+    if not matched_action:
+        return False
+
+    has_quoted_target = bool(_re.search(r'"[^"]+"|\'[^\']+\'', text))
+
+    words = _re.findall(r"[a-zA-Z]+", lower)
+    leftover = [
+        w for w in words
+        if w not in _FILLER_WORDS
+        and w not in _ACTION_VERBS
+        and w not in _CATEGORY_NOUNS
+    ]
+    has_leftover_target_word = len(leftover) > 0
+
+    return not (has_quoted_target or has_leftover_target_word)
+
+
+def _ensure_drill_down_on_action_only_answer(
+    parsed: dict,
+    responses: list[dict],
+) -> dict:
+    """
+    Deterministic backstop for the prompt's "DRILL DOWN UNTIL THE
+    ANSWER IS ACTUALLY APPLICABLE" rule. Applies every round (not just
+    round 1) -- unlike the location/time-period/scope guards, this
+    check is about THIS round's answer, which can arrive at any round
+    number.
+
+    If the latest user response looks like an action-with-no-target
+    (or a bare category) per _looks_like_action_with_no_target, but the
+    LLM nonetheless returned retrieval_readiness != "clarification_required"
+    (i.e. it treated the answer as resolved), we override that decision:
+    force clarification_required, ensure clarification_needed is true,
+    and -- if the LLM didn't already add a follow-up question for it --
+    add a generic drill-down question so the user isn't left stuck with
+    no question to answer.
+
+    We deliberately do NOT try to fabricate the LLM's ideal, context-
+    aware options list here (e.g. the real variable names from the
+    plan) -- that requires the semantic understanding only the LLM has.
+    Instead, when we must inject a fallback question, we pull concrete
+    candidate names directly from agent1_plan_preserved so the options
+    are still real, named items rather than generic placeholders.
+    """
+    if not responses:
+        return parsed
+
+    # Only the most recent response(s) are relevant -- this guard is
+    # about whether THIS round's answer was prematurely accepted.
+    latest_answers = [
+        (r.get("user_answer") or "") for r in responses
+        if isinstance(r, dict)
+    ]
+
+    flagged = any(
+        _looks_like_action_with_no_target(a) for a in latest_answers
+    )
+
+    if not flagged:
+        return parsed
+
+    if parsed.get("retrieval_readiness") == "clarification_required":
+        # LLM already agrees more info is needed -- nothing to override,
+        # but still make sure a follow-up question exists (see below).
+        pass
+    else:
+        parsed["retrieval_readiness"] = "clarification_required"
+
+    parsed["clarification_needed"] = True
+
+    if isinstance(parsed.get("refined_scientific_plan"), dict):
+        parsed["refined_scientific_plan"]["retrieval_readiness"] = (
+            "clarification_required"
+        )
+
+    questions = parsed.get("prioritized_questions")
+    if not isinstance(questions, list):
+        questions = []
+
+    already_has_drill_down = any(
+        isinstance(q, dict) and q.get("is_drill_down_question")
+        for q in questions
+    )
+
+    if not already_has_drill_down:
+        # Try to build real options from whatever candidate names exist
+        # on the plan, so the fallback isn't pure filler. Falls back to
+        # an empty options list (free-text only) if nothing usable is
+        # found -- still correct, just less convenient for the user.
+        fallback_options = []
+        try:
+            rsp = parsed.get("refined_scientific_plan") or {}
+            preserved = rsp.get("agent1_plan_preserved") or {}
+            variables = preserved.get("scientific_variables") or []
+            for v in variables:
+                name = (
+                    v.get("variable") or v.get("variable_name") or v.get("name")
+                    if isinstance(v, dict) else None
+                )
+                if name:
+                    fallback_options.append(str(name))
+        except Exception:
+            fallback_options = []
+
+        fallback_options = fallback_options[:3] + [_LOCATION_CATCHALL_TEXT]
+
+        questions = [
+            {
+                "question": (
+                    "Which one specifically would you like to change? "
+                    "Please name it directly."
+                ),
+                "reason": (
+                    "The previous answer named an action or category "
+                    "but not a specific target, so nothing in the plan "
+                    "can be edited yet."
+                ),
+                "priority": "critical",
+                "resolves_gaps": ["modification_target"],
+                "options": fallback_options,
+                "is_drill_down_question": True,
+            }
+        ] + questions
+
+        parsed["prioritized_questions"] = questions[:6]
+
+    # Undo any premature resolved_information write for this round's
+    # action-only answer(s), so it doesn't get frozen into the plan as
+    # if it were a real, concrete modification.
+    resolved = parsed.get("resolved_information")
+    if isinstance(resolved, list):
+        parsed["resolved_information"] = [
+            entry for entry in resolved
+            if not (
+                isinstance(entry, dict)
+                and _looks_like_action_with_no_target(
+                    entry.get("resolved_value", "")
+                )
+            )
+        ]
+
+    return parsed
+
+
 def preprocess_agent2_payload(parsed: dict) -> dict:
     """
     Applies scoped, pre-validation fixes to the raw parsed JSON dict
@@ -866,6 +1578,12 @@ def _build_merged_resolved_information(
                     "resolved_value": answer,
                     "resolution_source": "user",
                     "round": round_dict.get("round_number", "?"),
+                    "resolved_concepts": q.get("resolves_gaps", []),
+                    "is_location_question": bool(q.get("is_location_question")),
+                    "is_time_period_question": bool(
+                        q.get("is_time_period_question")
+                    ),
+                    "is_scope_question": bool(q.get("is_scope_question")),
                 }
         else:
             # "Modify the understanding" round: main.py's
@@ -929,7 +1647,7 @@ def _extract_agent1_compact_context(plan: ScientificIntentOutput) -> dict:
         "spatial_context": rsp.get("spatial_context") or d.get("spatial_context"),
         "temporal_context": rsp.get("temporal_context") or d.get("temporal_context"),
     }
-    
+
     return {k: v for k, v in compact.items() if v}
 
 
@@ -1131,6 +1849,10 @@ Optional user clarification responses (latest round):
 
     for attempt in range(MAX_RETRIES):
         try:
+            print("\n" + "=" * 80)
+            print("PROMPT SENT TO AGENT 2")
+            print(prompt)
+            print("=" * 80 + "\n")
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
@@ -1183,6 +1905,30 @@ Optional user clarification responses (latest round):
             )
 
             # ---------------------------------------------------------- #
+            # Remove redundant questions after all deterministic         #
+            # injections. If location/time/scope are already known from  #
+            # Agent 1, prior rounds, resolved info, or the current       #
+            # parsed answer, Python wins over any stale LLM question.    #
+            # ---------------------------------------------------------- #
+            parsed = _filter_redundant_questions_from_known_state(
+                parsed,
+                agent1_plan,
+                merged_resolved,
+            )
+
+            # ---------------------------------------------------------- #
+            # Deterministic backstop for the "drill down until the       #
+            # answer is applicable" prompt rule -- catches action-only   #
+            # / bare-category answers the LLM prematurely accepted as    #
+            # resolved (e.g. "remove an existing variable" with no       #
+            # named target), at ANY round, not just round 1.             #
+            # ---------------------------------------------------------- #
+            parsed = _ensure_drill_down_on_action_only_answer(
+                parsed,
+                responses,
+            )
+
+            # ---------------------------------------------------------- #
             # Guarantee top-level resolved_information carries every     #
             # answer the user has given so far, even if the LLM dropped  #
             # one -- reconciliation (models/plan_reconciliation.py) and  #
@@ -1203,6 +1949,18 @@ Optional user clarification responses (latest round):
                 agent1_plan,
                 merged_resolved,
                 round_number,
+            )
+
+            # ---------------------------------------------------------- #
+            # Final authoritative consistency pass. All fields that      #
+            # describe readiness are derived together here so the output #
+            # cannot be "ready" while retaining obsolete critical gaps   #
+            # or a stale 0.0 completeness score.                         #
+            # ---------------------------------------------------------- #
+            parsed = _sync_final_state_from_canonical_knowledge(
+                parsed,
+                agent1_plan,
+                merged_resolved,
             )
 
             print(

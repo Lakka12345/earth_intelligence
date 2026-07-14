@@ -18,7 +18,7 @@ from models.schemas import UserResponse, ClarificationRound
 from formatting.understanding_summary import render_understanding_summary_banner
 
 
-MAX_CLARIFICATION_ROUNDS = 1
+MAX_CLARIFICATION_ROUNDS = 3
 MAX_REVISION_ROUNDS = 5
 
 
@@ -51,7 +51,7 @@ def _ask_single_question(question, round_number, idx):
     is_catchall_last = "none of the above" in options[-1].lower()
 
     while True:
-        raw = input("\nYour choice (enter a number, or type your own answer): ").strip()
+        raw = input("\nYour choice (enter a number): ").strip()
 
         if not raw:
             print("Please enter a number or your answer.")
@@ -107,7 +107,7 @@ def _maybe_narrow_broad_place(place: str) -> str:
     print("  3. A specific city, district, or shorter stretch")
 
     while True:
-        raw = input("\nYour choice (enter a number, or type your own answer): ").strip()
+        raw = input("\nYour choice (enter a number): ").strip()
 
         if raw == "1":
             return f"{place} (entire area)"
@@ -154,7 +154,7 @@ def _ask_location_question(question):
         print(f"  {opt_idx}. {option_text}")
 
     while True:
-        raw = input("\nYour choice (enter a number, or type your own answer): ").strip()
+        raw = input("\nYour choice (enter a number): ").strip()
 
         if raw == "1" or (options and raw.strip() == options[0]):
             lat = input("  Latitude: ").strip()
@@ -165,9 +165,7 @@ def _ask_location_question(question):
             place = input("  Place name / region / coastline: ").strip()
             return _maybe_narrow_broad_place(place)
 
-        if raw == "3" or (
-            len(options) > 2 and "none of the above" in options[2].lower()
-        ):
+        if raw == "3" or (options and raw.strip() == options[-1]):
             follow_up = input("\nPlease type your answer: ").strip()
             if follow_up:
                 return _maybe_narrow_broad_place(follow_up)
@@ -198,7 +196,7 @@ def _ask_time_period_question(question):
         print(f"  {opt_idx}. {option_text}")
 
     while True:
-        raw = input("\nYour choice (enter a number, or type your own answer): ").strip()
+        raw = input("\nYour choice (enter a number): ").strip()
 
         # Option 1: specific date range -> ask for start and end.
         if raw == "1" or (options and raw.strip() == options[0]):
@@ -223,9 +221,7 @@ def _ask_time_period_question(question):
             continue
 
         # Option 4 / catch-all: free text.
-        if raw == "4" or (
-            len(options) > 3 and "none of the above" in options[3].lower()
-        ):
+        if raw == "4" or (options and raw.strip() == options[-1]):
             follow_up = input("\nPlease type your answer: ").strip()
             if follow_up:
                 return follow_up
@@ -256,7 +252,7 @@ def _ask_scope_question(question):
         print(f"  {opt_idx}. {option_text}")
 
     while True:
-        raw = input("\nYour choice (enter a number, or type your own answer): ").strip()
+        raw = input("\nYour choice (enter a number): ").strip()
 
         # Option 1: the entire broad area -- already a complete answer.
         if raw == "1" or (options and raw.strip() == options[0]):
@@ -279,9 +275,7 @@ def _ask_scope_question(question):
             continue
 
         # Option 4 / catch-all: free text.
-        if raw == "4" or (
-            len(options) > 3 and "none of the above" in options[3].lower()
-        ):
+        if raw == "4" or (options and raw.strip() == options[-1]):
             follow_up = input("\nPlease type your answer: ").strip()
             if follow_up:
                 return follow_up
@@ -361,6 +355,162 @@ def _ask_clarification_questions(agent2_result, round_number):
     return user_responses
 
 
+def _critical_blocking_gaps(agent2_result):
+    """
+    Returns only the remaining gaps that are BOTH severity=critical AND
+    blocks_retrieval=True -- the ones that actually justify stopping the
+    loop or synthesizing an assumption. (Agent 2 can carry non-critical
+    or non-blocking gaps too; those never trigger this path.)
+    """
+    return [
+        g for g in agent2_result.remaining_gaps
+        if g.severity.value == "critical" and g.blocks_retrieval
+    ]
+
+
+def _synthesize_assumption_dict(gap) -> dict:
+    """
+    Deterministic, Python-owned fallback Assumption for a critical gap
+    that survived all MAX_CLARIFICATION_ROUNDS unresolved. Only used
+    once the hard round cap has actually been hit AND the user has
+    chosen (or defaulted, via the safety net) to proceed anyway --
+    never invented silently. Confidence is deliberately low, since this
+    was never actually resolved with the user.
+    """
+    return {
+        "assumption": (
+            f'Proceeding with a default interpretation for '
+            f'"{gap.gap_name}": {gap.description}'
+        ),
+        "reason": (
+            "This could not be resolved after "
+            f"{MAX_CLARIFICATION_ROUNDS} rounds of clarification, so a "
+            "reasonable default is being used so retrieval can proceed."
+        ),
+        "confidence": 0.4,
+        "risk_if_wrong": (
+            "Retrieved datasets may not match what was actually "
+            "intended for this part of the request -- review the "
+            "results with that in mind."
+        ),
+    }
+
+
+def _force_proceed_with_assumptions(agent2_result, gaps_to_assume):
+    """
+    Patches agent2_result so retrieval can proceed: synthesizes an
+    Assumption for every gap in gaps_to_assume (skipping any whose
+    assumption text is already present, so this is safe to call more
+    than once), clears prioritized_questions, and sets
+    retrieval_readiness to proceed_with_assumptions at both the top
+    level and inside refined_scientific_plan (the schema requires the
+    two to match).
+    """
+    patched = agent2_result.model_dump()
+
+    existing_text = {
+        a["assumption"].lower()
+        for a in patched.get("active_assumptions", [])
+    }
+
+    for gap in gaps_to_assume:
+        candidate = _synthesize_assumption_dict(gap)
+        if candidate["assumption"].lower() not in existing_text:
+            patched["active_assumptions"].append(candidate)
+            patched["refined_scientific_plan"]["active_assumptions"].append(
+                candidate
+            )
+            existing_text.add(candidate["assumption"].lower())
+
+    patched["retrieval_readiness"] = "proceed_with_assumptions"
+    patched["refined_scientific_plan"]["retrieval_readiness"] = (
+        "proceed_with_assumptions"
+    )
+    patched["prioritized_questions"] = []
+
+    from models.schemas import ClarificationAgentOutput
+    return ClarificationAgentOutput.model_validate(patched)
+
+
+def _handle_unresolved_critical_gaps(
+    agent1_result, agent2_result, clarification_history
+):
+    """
+    Called when the hard MAX_CLARIFICATION_ROUNDS cap has been reached
+    and critical, retrieval-blocking gaps still remain -- i.e. the cap
+    (a safety limit) fired before the real stopping condition ("no
+    critical gaps remain") was met.
+
+    Rather than silently forcing proceed_with_assumptions, this:
+      1. Tells the user exactly which critical information is still
+         missing.
+      2. States plainly how that will affect retrieval quality.
+      3. Lets the user choose to proceed with assumptions, or provide
+         the missing information now (one more explicit round, outside
+         the automatic cap since it's now an informed choice).
+    """
+    critical_gaps = _critical_blocking_gaps(agent2_result)
+
+    if not critical_gaps:
+        # Nothing critical actually remains (e.g. only non-critical
+        # gaps were left) -- nothing to explain, just finalize.
+        return _force_proceed_with_assumptions(agent2_result, [])
+
+    print(
+        f"\nAfter {MAX_CLARIFICATION_ROUNDS} rounds of clarification, "
+        "the following information is still missing:"
+    )
+    for g in critical_gaps:
+        print(f"  - {g.gap_name}: {g.description}")
+
+    print(
+        "\nWithout this, dataset discovery will have to guess at these "
+        "details, which may return datasets that don't fully match "
+        "what you actually need."
+    )
+
+    print("\nWould you like to:")
+    print("  1. Continue anyway, using reasonable assumptions for the above")
+    print("  2. Provide the missing information now")
+
+    choice = input("\n> ").strip()
+
+    if choice != "2":
+        return _force_proceed_with_assumptions(agent2_result, critical_gaps)
+
+    round_number = len(clarification_history) + 1
+
+    user_responses = _ask_clarification_questions(
+        agent2_result, round_number
+    )
+
+    clarification_history.append(
+        ClarificationRound(
+            round_number=round_number,
+            questions_asked=agent2_result.prioritized_questions,
+            responses_received=user_responses,
+        )
+    )
+
+    print(f"\nRunning Agent 2 (Clarification Round {round_number})...\n")
+
+    agent2_result = run_agent2(
+        agent1_output=agent1_result,
+        user_responses=user_responses,
+        clarification_history=clarification_history,
+        round_number=round_number,
+    )
+
+    if agent2_result.retrieval_readiness == "clarification_required":
+        # Don't loop forever -- finalize with assumptions for whatever
+        # critical gaps are still open after this one extra round.
+        agent2_result = _force_proceed_with_assumptions(
+            agent2_result, _critical_blocking_gaps(agent2_result)
+        )
+
+    return agent2_result
+
+
 def _run_clarification_loop(agent1_result):
     """
     Repeats Agent 2 calls while retrieval_readiness == clarification_required,
@@ -427,21 +577,15 @@ def _run_clarification_loop(agent1_result):
 
         round_number = next_round
 
-        # Python-level fallback: if we've hit the hard cap and the LLM
-        # still returned clarification_required (e.g. only non-critical gaps),
-        # force proceed_with_assumptions so the loop exits cleanly.
+        # Primary stopping condition is "no critical gaps remain" --
+        # MAX_CLARIFICATION_ROUNDS is only a safety cap. If the cap is
+        # hit while critical gaps are still open, hand off to the
+        # explain-and-choose flow instead of silently forcing a result.
         if round_number > MAX_CLARIFICATION_ROUNDS:
             if agent2_result.retrieval_readiness == "clarification_required":
-                print(
-                    f"\nClarification round complete. "
-                    "Proceeding with current understanding and assumptions.\n"
+                agent2_result = _handle_unresolved_critical_gaps(
+                    agent1_result, agent2_result, clarification_history
                 )
-                patched = agent2_result.model_dump()
-                patched["retrieval_readiness"] = "proceed_with_assumptions"
-                patched["refined_scientific_plan"]["retrieval_readiness"] = "proceed_with_assumptions"
-                patched["prioritized_questions"] = []
-                from models.schemas import ClarificationAgentOutput
-                agent2_result = ClarificationAgentOutput.model_validate(patched)
             break
 
     return agent2_result, clarification_history
@@ -715,7 +859,10 @@ def main():
         print("\nHanding downloaded data to Agent 5 for preprocessing...")
         # TODO: run_agent5(agent4_result) once Agent 5 exists.
     else:
-        print(f"\nDone. {len(agent4_result.manifest)} file(s) written to: {agent4_result.download_location}")
+        print(
+            f"\nDone. {agent4_result.successful_download_count} validated file(s) written to: "
+            f"{agent4_result.download_location}"
+        )
 
 if __name__ == "__main__":
     main()
