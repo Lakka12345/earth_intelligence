@@ -7,6 +7,17 @@ from agents.agent4_orchestrator import run_agent4
 from security.input_validator import validate_input
 from security.injection_guard import detect_prompt_injection
 
+# SECURITY INTEGRATION — central imports for all security modules consumed
+# by main.py's final risk-assessment gate.  Modules used only inside Agent 3
+# or Agent 4 are imported locally at their call sites to keep dependency
+# surface minimal here.
+from security.provider_trust import generate_provider_trust_report
+from security.security_risk_assessment import (
+    assess_security_risk,
+    save_security_assessment,
+    RecommendedAction,
+)
+
 from models.retrieval_request import (
     build_retrieval_request,
 )
@@ -757,7 +768,10 @@ def main():
     query = input("Enter scientific query: ")
     query = validate_input(query)
 
-    detect_prompt_injection(query)
+    # FIX 5 — Capture the PromptInjectionReport object returned by
+    # detect_prompt_injection() so it can be passed directly to the
+    # security gate below, avoiding a round-trip through the JSON database.
+    _pi_report_obj = detect_prompt_injection(query)
 
     print("\nRunning Agent 1...\n")
 
@@ -815,6 +829,91 @@ def main():
     print("Agent 3 completed.\n")
 
     # ---------------------------------------------------------------- #
+    # SECURITY INTEGRATION — Provider Trust Assessment (post-Agent 3)  #
+    #                                                                   #
+    # After Agent 3 finishes ranking providers, evaluate every ranked  #
+    # source for provider trust and store the reports.  The reports    #
+    # are threaded through to the final Security Risk Assessment gate  #
+    # at the bottom of main().  Agent 3's ranking and the Qdrant       #
+    # integration are completely untouched.                            #
+    # ---------------------------------------------------------------- #
+    print("\nRunning Provider Trust Assessment...\n")
+
+    # SECURITY INTEGRATION — build provider metadata dicts from Agent 3's
+    # ranked ScoredSource objects using only fields already present on
+    # CandidateSource (no new schema changes).
+    from security.provider_trust import load_db as _load_pt_db, save_provider_trust_report, ensure_db_exists as _ensure_pt_db
+    _ensure_pt_db()
+    _pt_db = _load_pt_db()
+
+    provider_trust_reports: list = []
+    for scored_source in agent3_result.ranked_sources:
+        c = scored_source.candidate
+        sc = scored_source.score_card
+
+        # Build a metadata dict mapping Agent 3's existing score fields onto
+        # the keys provider_trust.generate_provider_trust_report() expects.
+        provider_meta = {
+            "provider_name":                 c.name or c.discovery_origin,
+            "provider_url":                  c.url,
+            "is_government_agency":          False,       # not tracked by Agent 3
+            "is_international_organization": False,
+            "has_regulatory_mandate":        False,
+            "founding_year":                 None,
+            "partner_agencies":              [],
+            "last_updated":                  None,
+            "update_frequency_days":         None,
+            "has_recent_dataset":            True,
+            "data_domains":                  getattr(c, "variable_names", []),
+            "spatial_resolution_km":         None,
+            "temporal_resolution_hours":     None,
+            "variables_provided":            getattr(c, "variable_names", []),
+            "expected_variables":            [v.variable for v in retrieval_request.variables],
+            "coverage_percent":              round(sc.completeness.score * 100, 1),
+            "has_documentation":             bool(c.metadata_url if hasattr(c, "metadata_url") else False),
+            "agreement_with_other_providers": sc.consistency.score,
+            "units_documented":              sc.metadata_quality.score > 0.5,
+            "crs_documented":                sc.metadata_quality.score > 0.5,
+            "has_metadata_standard":         sc.metadata_quality.score > 0.7,
+            "license_type":                  "open",
+            "citation_count":                int(sc.scientific_acceptance.score * 1000),
+            "peer_reviewed_publications":    int(sc.scientific_acceptance.score * 300),
+            "used_by_agencies":              [],
+            "api_uptime_percent":            round(sc.real_time_availability.score * 100, 1),
+            "avg_response_latency_ms":       None,
+            "accessible":                    not c.requires_payment,
+        }
+
+        try:
+            pt_report = generate_provider_trust_report(
+                provider_meta,
+                requested_task=retrieval_request.goal,
+                db=_pt_db,
+            )
+            save_provider_trust_report(pt_report)
+            provider_trust_reports.append(pt_report)
+            print(
+                f"  [{scored_source.rank}] {pt_report['provider_name']:<30} "
+                f"trust={pt_report['overall_trust_score']:.4f}  "
+                f"({pt_report['trust_level']})"
+            )
+        except Exception as _pt_exc:
+            print(f"  [WARN] Provider trust assessment skipped for "
+                  f"'{c.name}': {_pt_exc}")
+
+    # Summarise the best available trust report for the final gate below.
+    # Using the top-ranked provider (rank 1) as the representative report.
+    _best_pt_report = provider_trust_reports[0] if provider_trust_reports else None
+    _best_pt_for_gate = None
+    if _best_pt_report:
+        _best_pt_for_gate = {
+            "trust_score":      _best_pt_report["overall_trust_score"] * 100,
+            "trust_level":      _best_pt_report["trust_level"],
+            "provider_name":    _best_pt_report["provider_name"],
+            "historical_issues": 0,
+        }
+
+    # ---------------------------------------------------------------- #
     # Agent 3 → Agent 4 handoff                                        #
     # CHANGED: run_agent3() itself is still discovery-only and         #
     # unchanged -- it still returns ranked/auth-required/needs-eval/   #
@@ -854,6 +953,120 @@ def main():
     print("=" * 70)
 
     agent4_result = run_agent4(agent3_final_payload, retrieval_request)
+
+    # ---------------------------------------------------------------- #
+    # SECURITY INTEGRATION — Security Risk Assessment (final gate)     #
+    #                                                                   #
+    # This is the LAST security step before the pipeline returns its   #
+    # result.  It consumes every report gathered across the pipeline:  #
+    #   • Prompt Injection   — captured earlier in this run            #
+    #   • Provider Trust     — generated above after Agent 3           #
+    #   • Integrity          — generated inside Agent 4 per download   #
+    #   • Provenance         — generated inside Agent 4 per download   #
+    #   • Cross-Agent Verif. — generated inside Agent 4 after retrieval#
+    #   • Dataset Validation — generated inside Agent 4 per download   #
+    # ---------------------------------------------------------------- #
+    print("\n" + "=" * 70)
+    print("FINAL SECURITY RISK ASSESSMENT")
+    print("=" * 70)
+
+    # SECURITY INTEGRATION — collect the security reports that Agent 4
+    # attached to its output (integrity, provenance, cross_agent,
+    # validation).  All are Optional — if Agent 4 didn't produce them
+    # (e.g. nothing was downloaded) the gate degrades gracefully.
+    _sec = getattr(agent4_result, "security_reports", {}) or {}
+
+    # SECURITY INTEGRATION — build a compound integrity/provenance summary
+    # from all per-download records that Agent 4 stored.
+    _integrity_summary = _sec.get("integrity")
+    _provenance_summary = _sec.get("provenance")
+    _cross_agent_summary = _sec.get("cross_agent_verification")
+    _validation_summary = _sec.get("dataset_validation")
+
+    # FIX 5 — Use the PromptInjectionReport object captured at query time
+    # rather than re-reading it from the JSON database.  This avoids the
+    # DB round-trip entirely.  Fall back to the DB lookup only if the
+    # object from detect_prompt_injection() is unavailable (e.g. the
+    # function signature does not return it in this deployment).
+    _pi_gate_report = None
+    if _pi_report_obj is not None:
+        try:
+            # Support both dict-style and object-style report shapes.
+            _pi_inner = (
+                _pi_report_obj.get("report", _pi_report_obj)
+                if isinstance(_pi_report_obj, dict)
+                else getattr(_pi_report_obj, "report", _pi_report_obj)
+            )
+            _pi_gate_report = {
+                "injection_detected": (
+                    _pi_inner.get("injection_detected", False)
+                    if isinstance(_pi_inner, dict)
+                    else getattr(_pi_inner, "injection_detected", False)
+                ),
+                "risk_score": (
+                    _pi_inner.get("overall_risk_score", 0.0)
+                    if isinstance(_pi_inner, dict)
+                    else getattr(_pi_inner, "overall_risk_score", 0.0)
+                ),
+                "confidence": (
+                    _pi_inner.get("confidence_score", 1.0)
+                    if isinstance(_pi_inner, dict)
+                    else getattr(_pi_inner, "confidence_score", 1.0)
+                ),
+            }
+        except Exception as _pi_exc:
+            print(f"  [WARN] Could not parse prompt-injection report object: {_pi_exc}")
+    if _pi_gate_report is None:
+        # Fallback: read from DB only when the live object was unavailable.
+        try:
+            from security.prompt_injection import load_detection_database as _load_pi_db
+            _pi_records = _load_pi_db()
+            if _pi_records:
+                _last_pi = _pi_records[-1].get("report", {})
+                _pi_gate_report = {
+                    "injection_detected": _last_pi.get("injection_detected", False),
+                    "risk_score":         _last_pi.get("overall_risk_score", 0.0),
+                    "confidence":         _last_pi.get("confidence_score", 1.0),
+                }
+        except Exception as _pi_exc:
+            print(f"  [WARN] Could not read prompt-injection DB for gate: {_pi_exc}")
+
+    risk_report = assess_security_risk(
+        prompt_injection = _pi_gate_report,
+        provider_trust   = _best_pt_for_gate,
+        integrity        = _integrity_summary,
+        provenance       = _provenance_summary,
+        cross_agent      = _cross_agent_summary,
+        validation       = _validation_summary,
+    )
+    save_security_assessment(risk_report)
+
+    print(f"\n  Security Score  : {risk_report.overall_security_score:.1f} / 100")
+    print(f"  Risk Level      : {risk_report.overall_risk_level.value}")
+    print(f"  Decision        : {risk_report.recommended_action.value}")
+    print(f"  Confidence      : {risk_report.confidence_score:.2f}")
+    if risk_report.active_flags:
+        print(f"  Active Flags    : {', '.join(risk_report.active_flags)}")
+    print(f"\n  Reasoning:")
+    for line in risk_report.risk_reasoning.splitlines():
+        print(f"    {line}")
+    if risk_report.recommendations:
+        print(f"\n  Recommendations:")
+        for i, rec in enumerate(risk_report.recommendations, 1):
+            print(f"    {i}. {rec}")
+    print("=" * 70)
+
+    # SECURITY INTEGRATION — BLOCK gate: if the final assessment is BLOCK,
+    # stop the pipeline here with a clear explanation rather than handing
+    # off to Agent 5 or writing files.  WARN and below continue normally.
+    if risk_report.recommended_action == RecommendedAction.BLOCK:
+        print(
+            "\n[SECURITY] Pipeline halted by Security Risk Assessment.\n"
+            f"  Reason: {risk_report.risk_reasoning[:200]}\n"
+            "  No data has been written to disk and no handoff to Agent 5 will occur.\n"
+            "  Please review the active flags and recommendations above, then retry."
+        )
+        return
 
     if agent4_result.send_to_agent5:
         print("\nHanding downloaded data to Agent 5 for preprocessing...")

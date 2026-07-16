@@ -276,6 +276,89 @@
         "[scientific_validation] No units declared — cannot verify measurement standard.",
         "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection."
       ]
+    },
+    {
+      "validation_id": "0921011a-c705-4a5b-93b5-ad352f701b50",
+      "dataset_id": "noaaSanctSound_Dection_Files",
+      "dataset_name": "NOAA GFS via NOMADS",
+      "provider": null,
+      "validation_timestamp": "2026-07-16T07:15:22.556655+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat, size: 136,512 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.5,
+        "errors": [
+          "Required metadata field missing: 'provider'.",
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "4/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'The entire Bay of Bengal', 'geographic_extent': 'The entire Bay of Bengal', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Marine'}' found in coverage '{'location': 'The entire Bay of Bengal', 'geographic_extent': 'The entire Bay of Bengal', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Marine'}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 6d93f0aa89218004..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.78,
+      "confidence_score": 0.56,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.78, Confidence: 0.56.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'provider'.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
     }
   ]
 }
