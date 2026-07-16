@@ -136,6 +136,229 @@
         "[scientific_validation] No units declared — cannot verify measurement standard.",
         "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection."
       ]
+    },
+    {
+      "validation_id": "5e1d13c5-0aab-49b4-8948-f3f272d6c7fc",
+      "dataset_id": "ghrsst_mur_sst_2023_bay_of_bengal",
+      "dataset_name": "GHRSST MUR SST v4.1",
+      "provider": "NASA / GHRSST",
+      "validation_timestamp": "2026-07-14T21:12:53.807339+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: tmp6whbi1ox.nc, size: 35 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "8/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 0.95,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset declares global geographic coverage."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset is ongoing (extends to 2026); covers (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "4/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: a1b2c3d4e5f60718..."
+      },
+      "overall_validation": true,
+      "validation_score": 0.9925,
+      "confidence_score": 1.0,
+      "validation_summary": "PASSED — all 7 required stages succeeded. Score: 0.99, Confidence: 1.00.",
+      "validation_errors": [],
+      "validation_warnings": []
+    },
+    {
+      "validation_id": "02aa4379-c6ab-4270-a872-24fb8f2334cf",
+      "dataset_id": "bloomberg_stock_2024",
+      "dataset_name": "Global Stock Market Prices",
+      "provider": "Bloomberg Finance",
+      "validation_timestamp": "2026-07-14T21:12:53.820191+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: tmp7_futpi_.nc, size: 30 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "8/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Required variable 'sea_surface_temperature' not found in dataset. Dataset declares: ['stock_price', 'volume', 'market_cap']"
+        ],
+        "warnings": [],
+        "details": "0/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Dataset does not appear to be a geospatial or Earth-observation dataset. Non-geospatial signals detected: bloomberg, stock. Spatial validation cannot be applied to this dataset."
+        ],
+        "warnings": [],
+        "details": "Domain gate failed — non-geospatial dataset."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.5,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection."
+        ],
+        "details": "2/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Integrity verification failed: Checksum mismatch — file may be corrupted."
+        ],
+        "warnings": [],
+        "details": ""
+      },
+      "overall_validation": false,
+      "validation_score": 0.45,
+      "confidence_score": 0.49,
+      "validation_summary": "FAILED — 3 stage(s) failed: variable validation, spatial validation, integrity validation. Score: 0.45, Confidence: 0.49.",
+      "validation_errors": [
+        "[variable_validation] Required variable 'sea_surface_temperature' not found in dataset. Dataset declares: ['stock_price', 'volume', 'market_cap']",
+        "[spatial_validation] Dataset does not appear to be a geospatial or Earth-observation dataset. Non-geospatial signals detected: bloomberg, stock. Spatial validation cannot be applied to this dataset.",
+        "[integrity_validation] Integrity verification failed: Checksum mismatch — file may be corrupted."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection."
+      ]
+    },
+    {
+      "validation_id": "0921011a-c705-4a5b-93b5-ad352f701b50",
+      "dataset_id": "noaaSanctSound_Dection_Files",
+      "dataset_name": "NOAA GFS via NOMADS",
+      "provider": null,
+      "validation_timestamp": "2026-07-16T07:15:22.556655+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat, size: 136,512 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.5,
+        "errors": [
+          "Required metadata field missing: 'provider'.",
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "4/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'The entire Bay of Bengal', 'geographic_extent': 'The entire Bay of Bengal', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Marine'}' found in coverage '{'location': 'The entire Bay of Bengal', 'geographic_extent': 'The entire Bay of Bengal', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Marine'}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 6d93f0aa89218004..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.78,
+      "confidence_score": 0.56,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.78, Confidence: 0.56.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'provider'.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
     }
   ]
 }

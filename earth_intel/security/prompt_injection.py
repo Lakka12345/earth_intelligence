@@ -72,6 +72,13 @@ ACTION_BLOCK               = "block"
 # --------------------------------------------------------------------------- #
 
 # (upper_bound_exclusive, severity, recommended_action)
+#
+# NOTE: These numeric thresholds are now a FALLBACK, used only for cases
+# the rule-based decision engine below doesn't already resolve (e.g. a
+# single isolated MEDIUM or HIGH finding with no aggravating factors).
+# Any finding that is CRITICAL, in an always-block category, or part of
+# a multi-finding pattern is decided by _determine_severity_and_action()
+# directly, before these thresholds are ever consulted.
 RISK_THRESHOLDS: List[Tuple[float, str, str]] = [
     (10,  SEVERITY_LOW,      ACTION_ALLOW),
     (30,  SEVERITY_LOW,      ACTION_WARN),
@@ -80,6 +87,45 @@ RISK_THRESHOLDS: List[Tuple[float, str, str]] = [
     (85,  SEVERITY_HIGH,     ACTION_BLOCK),
     (101, SEVERITY_CRITICAL, ACTION_BLOCK),
 ]
+
+
+# --------------------------------------------------------------------------- #
+# Rule-based decision-engine configuration                                    #
+# --------------------------------------------------------------------------- #
+#
+# The decision engine (_determine_severity_and_action) is rule-first:
+# it decides BLOCK / WARN / ALLOW primarily from *what kind* of attack was
+# found (category, severity, how many findings), and only falls back to
+# the numeric RISK_THRESHOLDS above for ambiguous, low-signal cases.
+# The constants below are the tunable knobs for that policy — change
+# these to make the platform stricter or looser without touching any
+# detection regex, keyword list, or scoring math.
+
+# Attack categories that always result in BLOCK, regardless of numeric
+# risk score. These represent attacks with system-level or irreversible
+# impact: arbitrary code execution, disabling security controls,
+# obtaining elevated privileges, or hijacking the agent pipeline itself.
+# (In practice every definition in these categories is already tagged
+# SEVERITY_CRITICAL, so this list mostly acts as a second, independent
+# line of defense — if a future detector in one of these categories is
+# ever added at a lower severity, it is still guaranteed to BLOCK.)
+_ALWAYS_BLOCK_CATEGORIES: frozenset = frozenset({
+    "Code Injection",
+    "Security Bypass",
+    "Privilege Escalation",
+    "Agent Manipulation",
+})
+
+# 2+ independent HIGH-severity findings in the same query is treated as
+# BLOCK even if no single finding is CRITICAL — stacked HIGH-severity
+# evidence indicates a deliberate, multi-pronged attack rather than one
+# ambiguous phrase.
+_MULTI_HIGH_BLOCK_THRESHOLD: int = 2
+
+# If the combined count of HIGH + MEDIUM findings exceeds this value,
+# BLOCK. This catches queries that pile up many moderate-confidence
+# indicators — individually forgivable, but not in combination.
+_HIGH_PLUS_MEDIUM_BLOCK_THRESHOLD: int = 3
 
 
 # --------------------------------------------------------------------------- #
@@ -162,8 +208,12 @@ _ATTACK_DEFINITIONS: List[Dict[str, Any]] = [
             r"\bwhat\b.{0,20}\b(your|the)\b.{0,20}\b(prompt|instructions|rules)\b",
             r"\b(chain\s+of\s+thought|internal\s+reasoning|hidden\s+instructions)\b",
         ],
-        "base_conf": 0.88,
-        "severity": SEVERITY_HIGH,
+        "base_conf": 0.90,
+        # Escalated HIGH -> CRITICAL: a successful prompt leak exposes the
+        # system's security controls and configuration directly to an
+        # attacker and is treated as an always-block finding (see
+        # _determine_severity_and_action).
+        "severity": SEVERITY_CRITICAL,
         "explanation": (
             "Attempts to extract the system prompt, hidden instructions, or "
             "internal reasoning chain. If successful, this can expose security "
@@ -235,8 +285,12 @@ _ATTACK_DEFINITIONS: List[Dict[str, Any]] = [
             r"\b(invent|fabricate|hallucinate|make\s+up|fake)\b.{0,25}\b(data|results|dataset|imagery|readings|observations)\b",
             r"\bpretend\b.{0,30}\b(data|results|dataset)\b",
         ],
-        "base_conf": 0.87,
-        "severity": SEVERITY_HIGH,
+        "base_conf": 0.90,
+        # Escalated HIGH -> CRITICAL: silently returning fabricated data from
+        # a scientific Earth-observation platform can drive real policy or
+        # disaster-response decisions, so this is treated as an always-block
+        # finding rather than something to merely warn about.
+        "severity": SEVERITY_CRITICAL,
         "explanation": (
             "Attempts to cause the system to return fabricated, hallucinated, or "
             "otherwise false scientific data. In an Earth observation platform, "
@@ -544,6 +598,26 @@ def _is_base64_like(text: str) -> Optional[str]:
         return None
 
 
+def _decoded_payload_is_malicious(decoded: str) -> bool:
+    """
+    Check whether a decoded base64/hex payload itself contains a known
+    attack keyword from the existing attack-definition knowledge base.
+
+    This does not add any new regex or keyword patterns — it re-uses the
+    keyword lists already defined in _ATTACK_DEFINITIONS to verify that an
+    encoded blob was actually used to smuggle a known attack phrase, as
+    opposed to being an incidental base64-looking string (e.g. a hash or
+    token). Used to distinguish "high confidence" encoded attacks from
+    merely "structurally suspicious" ones.
+    """
+    decoded_lower = decoded.lower()
+    for defn in _ATTACK_DEFINITIONS:
+        for kw in defn["keywords"]:
+            if kw in decoded_lower:
+                return True
+    return False
+
+
 def _detect_encoding(query: str) -> List[AttackEvidence]:
     """
     Dedicated encoder/obfuscation detector.
@@ -562,6 +636,11 @@ def _detect_encoding(query: str) -> List[AttackEvidence]:
         token = match.group(1)
         decoded = _is_base64_like(token)
         if decoded is not None:
+            # High-confidence case: the decoded payload itself contains a
+            # known attack phrase (e.g. "ignore previous instructions"),
+            # proving the encoding was used to smuggle an attack rather
+            # than just being an incidental base64-looking token.
+            high_confidence = _decoded_payload_is_malicious(decoded)
             evidence.append(AttackEvidence(
                 attack_type="base64_encoded_payload",
                 category="Encoded Attack",
@@ -570,9 +649,14 @@ def _detect_encoding(query: str) -> List[AttackEvidence]:
                     f"Base64-encoded token found. Decoded preview: '{decoded}'. "
                     "Encoding is used to hide malicious instructions from "
                     "keyword-based filters."
+                    + (
+                        " The decoded content matches a known attack phrase, "
+                        "confirming this is an active evasion attempt."
+                        if high_confidence else ""
+                    )
                 ),
-                confidence=0.80,
-                severity=SEVERITY_HIGH,
+                confidence=0.90 if high_confidence else 0.82,
+                severity=SEVERITY_CRITICAL if high_confidence else SEVERITY_HIGH,
             ))
 
     # ── hex sequences ──────────────────────────────────────────────────── #
@@ -827,18 +911,24 @@ def _compute_risk_score(evidence: List[AttackEvidence]) -> float:
     Strategy:
       - Base score starts at 0.
       - Each finding contributes points proportional to its confidence and severity.
-      - Severity multipliers: LOW=5, MEDIUM=12, HIGH=22, CRITICAL=35.
+      - Severity multipliers: LOW=5, MEDIUM=14, HIGH=26, CRITICAL=42.
       - Multiple findings compound but are capped at 100.
-      - A single CRITICAL finding with confidence ≥ 0.85 produces a score ≥ 75.
+      - A single CRITICAL finding with confidence ≥ 0.85 produces a score ≥ 85.
+
+    NOTE: This score is now a SECONDARY signal. The primary BLOCK / WARN /
+    ALLOW decision is made by _determine_severity_and_action() from the
+    attack categories and severities themselves (see the rule-based
+    decision-engine configuration above); the score mainly drives
+    confidence reporting and the fallback thresholds for ambiguous cases.
     """
     if not evidence:
         return 0.0
 
     severity_weight = {
         SEVERITY_LOW:      5.0,
-        SEVERITY_MEDIUM:  12.0,
-        SEVERITY_HIGH:    22.0,
-        SEVERITY_CRITICAL: 35.0,
+        SEVERITY_MEDIUM:  14.0,
+        SEVERITY_HIGH:    26.0,
+        SEVERITY_CRITICAL: 42.0,
     }
 
     score = 0.0
@@ -883,10 +973,67 @@ def _apply_scientific_anchor(query: str, score: float) -> float:
 
 def _determine_severity_and_action(
     score: float,
+    evidence: List[AttackEvidence],
 ) -> Tuple[str, str]:
     """
-    Map an overall risk score to a severity label and recommended action.
+    Determine the overall severity and recommended action.
+
+    This is a RULE-BASED decision engine: the decision depends primarily
+    on *what* was found (attack categories, severities, how many
+    independent findings) rather than on the numeric risk score alone.
+    The score only breaks ties for the ambiguous, low-signal cases left
+    over after the rules below are applied.
+
+    Rule priority (first match wins):
+      1. No findings at all                              -> ALLOW
+      2. Any CRITICAL-severity finding                    -> BLOCK
+      3. Any finding in an always-block attack category
+         (Code Injection, Security Bypass,
+          Privilege Escalation, Agent Manipulation)        -> BLOCK
+      4. Two or more independent HIGH-severity findings    -> BLOCK
+      5. (HIGH count + MEDIUM count) exceeds the
+         configurable stacking threshold                   -> BLOCK
+      6. Only LOW-severity findings present                -> WARN
+      7. Otherwise: fall back to the numeric RISK_THRESHOLDS
+         (e.g. a single isolated MEDIUM or HIGH finding).
+
+    Args:
+        score:    the numeric 0-100 risk score (secondary signal).
+        evidence: the full list of AttackEvidence findings for this query.
+
+    Returns:
+        (severity, action) tuple.
     """
+    if not evidence:
+        return SEVERITY_LOW, ACTION_ALLOW
+
+    categories    = {ev.category for ev in evidence}
+    critical_count = sum(1 for ev in evidence if ev.severity == SEVERITY_CRITICAL)
+    high_count     = sum(1 for ev in evidence if ev.severity == SEVERITY_HIGH)
+    medium_count   = sum(1 for ev in evidence if ev.severity == SEVERITY_MEDIUM)
+    low_count      = sum(1 for ev in evidence if ev.severity == SEVERITY_LOW)
+
+    # Rule 1: any CRITICAL finding overrides everything, including the score.
+    if critical_count > 0:
+        return SEVERITY_CRITICAL, ACTION_BLOCK
+
+    # Rule 2: always-block attack categories, regardless of score.
+    if categories & _ALWAYS_BLOCK_CATEGORIES:
+        return SEVERITY_HIGH, ACTION_BLOCK
+
+    # Rule 3: multiple independent HIGH-severity findings.
+    if high_count >= _MULTI_HIGH_BLOCK_THRESHOLD:
+        return SEVERITY_HIGH, ACTION_BLOCK
+
+    # Rule 4: HIGH + MEDIUM findings stacked past the configurable threshold.
+    if (high_count + medium_count) > _HIGH_PLUS_MEDIUM_BLOCK_THRESHOLD:
+        return SEVERITY_HIGH, ACTION_BLOCK
+
+    # Rule 5: only LOW-severity findings present -> warn, don't block.
+    if low_count > 0 and high_count == 0 and medium_count == 0:
+        return SEVERITY_LOW, ACTION_WARN
+
+    # Rule 6 (fallback): ambiguous, low-signal case — use the numeric score.
     for threshold, severity, action in RISK_THRESHOLDS:
         if score < threshold:
             return severity, action
@@ -1094,7 +1241,7 @@ def analyze_query(query: str) -> PromptInjectionReport:
     cleaned  = _clean_query(query)
     evidence = detect_prompt_injection(query)
     score    = calculate_risk_score(evidence, query)
-    severity, action = _determine_severity_and_action(score)
+    severity, action = _determine_severity_and_action(score, evidence)
     conf     = _aggregate_confidence(evidence)
     summary  = _build_reasoning_summary(evidence, score, severity, action)
 

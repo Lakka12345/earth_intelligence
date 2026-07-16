@@ -165,6 +165,257 @@
         "Resolve the listed security policy violation(s) before this selection can be trusted.",
         "Request a clearer, more complete justification from Agent 3 for this selection."
       ]
+    },
+    {
+      "verification_id": "18a3a3d7-9f4d-4174-b071-a8b68ec43f3f",
+      "verification_timestamp": "2026-07-16T05:59:09.382207+00:00",
+      "user_query": {
+        "query_text": "Understand the environmental conditions and spatial distribution of algal blooms in the Bay of Bengal during May 2024.",
+        "requested_task": "Understand the environmental conditions and spatial distribution of algal blooms in the Bay of Bengal during May 2024.",
+        "required_variables": [
+          "bloom index",
+          "chlorophyll-a concentration",
+          "nutrient availability",
+          "sea surface temperature",
+          "water column depth"
+        ]
+      },
+      "selected_provider": "INCOIS",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "INCOIS",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'INCOIS' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 0.5,
+        "explanation": "No other candidate providers were supplied for comparison; trust verification is trivially satisfied."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'Understand the environmental conditions and spatial distribution of algal blooms in the Bay of Bengal during May 2024.'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['bloom index', 'chlorophyll-a concentration', 'nutrient availability', 'sea surface temperature', 'water column depth']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 0.7,
+        "confidence": 0.3,
+        "explanation": "Fewer than 3 candidate providers supplied; statistical outlier detection is not meaningful."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.5967,
+      "verification_confidence": 0.71,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'INCOIS' for task 'Understand the environmental conditions and spatial distribution of algal blooms in the Bay of Bengal during May 2024.' resulted in 'NOT VERIFIED' (verification_score=0.60, verification_confidence=0.71). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'Understand the environmental conditions and spatial distribution of algal blooms in the Bay of Bengal during May 2024.'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['bloom index', 'chlorophyll-a concentration', 'nutrient availability', 'sea surface temperature', 'water column depth']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "5cf2fb65-7e91-4db9-891e-cfe01f423bde",
+      "verification_timestamp": "2026-07-16T07:15:22.657113+00:00",
+      "user_query": {
+        "query_text": "To analyze the sea surface temperature in the Bay of Bengal for the month of May 2024.",
+        "requested_task": "To analyze the sea surface temperature in the Bay of Bengal for the month of May 2024.",
+        "required_variables": [
+          "location",
+          "sea surface temperature",
+          "time"
+        ]
+      },
+      "selected_provider": "IMD (India Meteorological Department)",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "IMD (India Meteorological Department)",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'IMD (India Meteorological Department)' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'INCOIS THREDDS \u2014 romssst' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in the Bay of Bengal for the month of May 2024.'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['location', 'sea surface temperature', 'time']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'IMD (India Meteorological Department)' for task 'To analyze the sea surface temperature in the Bay of Bengal for the month of May 2024.' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in the Bay of Bengal for the month of May 2024.'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['location', 'sea surface temperature', 'time']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "d1436a54-bad5-457d-a8e0-e3e6decc1b6e",
+      "verification_timestamp": "2026-07-16T10:22:54.723855+00:00",
+      "user_query": {
+        "query_text": "To analyze sea surface temperature in the Bay of Bengal during May 2024.",
+        "requested_task": "To analyze sea surface temperature in the Bay of Bengal during May 2024.",
+        "required_variables": [
+          "salinity",
+          "sea surface temperature",
+          "wind speed"
+        ]
+      },
+      "selected_provider": "NOAA CoastWatch ERDDAP",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "NOAA CoastWatch ERDDAP",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'NOAA CoastWatch ERDDAP' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'NOAA IOOS ERDDAP' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze sea surface temperature in the Bay of Bengal during May 2024.'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['salinity', 'sea surface temperature', 'wind speed']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'NOAA CoastWatch ERDDAP' for task 'To analyze sea surface temperature in the Bay of Bengal during May 2024.' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze sea surface temperature in the Bay of Bengal during May 2024.'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['salinity', 'sea surface temperature', 'wind speed']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
     }
   ]
 }
