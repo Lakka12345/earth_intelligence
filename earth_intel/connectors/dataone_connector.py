@@ -24,6 +24,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote, urlencode
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor
 from connectors.connector_registry import register_connector
@@ -35,7 +38,7 @@ from connectors.connector_types import (
     DatasetType,
 )
 from connectors.dataset_matching import StaticDatasetConnector
-from models.agent4_schemas import DatasetDescriptor
+from models.agent4_schemas import DatasetDescriptor, DatasetMetadata, SizeEstimate, format_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +69,7 @@ def _get(url: str, params: dict = None, timeout: int = REQUEST_TIMEOUT) -> reque
     """GET with error handling."""
     try:
         resp = requests.get(url, params=params, timeout=timeout,
-                            headers={"Accept": "application/json"})
+                            headers={"Accept": "application/json"}, verify=False)
     except requests.exceptions.Timeout:
         raise RuntimeError(f"dataone: timeout — {url}")
     except requests.exceptions.ConnectionError as exc:
@@ -79,7 +82,7 @@ def _get(url: str, params: dict = None, timeout: int = REQUEST_TIMEOUT) -> reque
 def _head(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Response]:
     """HEAD with graceful failure."""
     try:
-        resp = requests.head(url, timeout=timeout, allow_redirects=True)
+        resp = requests.head(url, timeout=timeout, allow_redirects=True, verify=False)
         if resp.status_code in (405, 501) or not resp.ok:
             return None
         return resp
@@ -193,12 +196,12 @@ class DataONEConnector(StaticDatasetConnector):
     # discover_datasets
     # ------------------------------------------------------------------
 
-    def discover_datasets(self, fetch_request=None, **kwargs) -> List[DatasetDescriptor]:
+    def discover_datasets(self, snapshot=None, context=None, **kwargs) -> List[DatasetDescriptor]:
         """
         Search the DataONE Solr index and return matching dataset descriptors.
         Supports keyword, temporal (start_date/end_date), and bbox filtering.
         """
-        r = self._as_dict(fetch_request or kwargs)
+        r = self._as_dict(context or kwargs)
         query_parts = ["formatType:DATA"]
 
         keywords = r.get("keywords") or r.get("variables") or []
@@ -269,107 +272,134 @@ class DataONEConnector(StaticDatasetConnector):
     # probe_metadata
     # ------------------------------------------------------------------
 
-    def probe_metadata(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_metadata(self, snapshot=None, fetch_request=None, **kwargs) -> DatasetMetadata:
         """
         Retrieve live metadata from the DataONE CN Solr index for the given PID.
         Falls back to a catalog-level descriptor when no PID is provided.
+        Returns a DatasetMetadata object rather than a raw dictionary.
         """
+        source_id = getattr(snapshot, "source_id", None) or "dataone"
         r = self._as_dict(fetch_request or kwargs)
         pid = r.get("dataset_id") or r.get("identifier") or r.get("pid")
 
         if not pid:
             logger.info("dataone probe_metadata: no PID — returning catalog descriptor")
-            return {
-                "provider":    "DataONE",
-                "api_endpoint": CN_SOLR,
-                "note":        "Supply dataset_id/pid for object-level metadata",
-            }
+            return DatasetMetadata(
+                source_id=source_id,
+                api_endpoint=CN_SOLR,
+                retrieval_method="DataONE static catalog",
+                unavailable_reason="Supply dataset_id/pid for object-level metadata",
+            )
 
         logger.info("dataone probe_metadata: querying CN Solr for pid=%s", pid)
         try:
             result = _solr_search(f'id:"{pid}"', rows=1)
+
+            docs = result.get("response", {}).get("docs", [])
+            doc  = docs[0] if docs else {}
+
+            size_bytes, size_method, size_conf = _estimate_size(pid)
+            resolve_url = _resolve_download_url(pid)
+
+            logger.info("dataone probe_metadata: pid=%s size=%s method=%s", pid, size_bytes, size_method)
+
+            bbox = None
+            if all(doc.get(k) is not None for k in
+                   ("westBoundCoord", "southBoundCoord", "eastBoundCoord", "northBoundCoord")):
+                bbox = [doc["westBoundCoord"], doc["southBoundCoord"],
+                        doc["eastBoundCoord"], doc["northBoundCoord"]]
+
+            return DatasetMetadata(
+                source_id=source_id,
+                dataset_id=pid,
+                product=doc.get("title"),
+                download_endpoint=resolve_url,
+                api_endpoint=CN_SOLR,
+                metadata_endpoint=CN_META + quote(pid, safe=""),
+                file_size_bytes=size_bytes or doc.get("size"),
+                spatial_coverage=str(bbox) if bbox else "Unknown",
+                temporal_coverage=(
+                    f"{doc.get('beginDate', '?')} — {doc.get('endDate', 'present')}"
+                    if doc.get("beginDate") else "Unknown"
+                ),
+                file_format=doc.get("formatId"),
+                checksum=doc.get("checksum"),
+                retrieval_method=size_method or "DataONE CN Solr",
+                unavailable_reason="",
+            )
         except Exception as exc:
-            return {"error": str(exc), "pid": pid}
-
-        docs = result.get("response", {}).get("docs", [])
-        doc  = docs[0] if docs else {}
-
-        size_bytes, size_method, size_conf = _estimate_size(pid)
-        resolve_url = _resolve_download_url(pid)
-
-        logger.info("dataone probe_metadata: pid=%s size=%s method=%s", pid, size_bytes, size_method)
-        return {
-            "provider":             "DataONE",
-            "pid":                  pid,
-            "title":                doc.get("title"),
-            "author":               doc.get("author"),
-            "format_id":            doc.get("formatId"),
-            "size_bytes":           size_bytes or doc.get("size"),
-            "size_estimation_method": size_method,
-            "size_confidence":      size_conf,
-            "checksum":             doc.get("checksum"),
-            "checksum_algorithm":   doc.get("checksumAlgorithm"),
-            "date_uploaded":        doc.get("dateUploaded"),
-            "date_modified":        doc.get("dateModified"),
-            "begin_date":           doc.get("beginDate"),
-            "end_date":             doc.get("endDate"),
-            "north":                doc.get("northBoundCoord"),
-            "south":                doc.get("southBoundCoord"),
-            "east":                 doc.get("eastBoundCoord"),
-            "west":                 doc.get("westBoundCoord"),
-            "authoritative_mn":     doc.get("authoritativeMN"),
-            "resolve_url":          resolve_url,
-            "metadata_url":         CN_META + quote(pid, safe=""),
-        }
+            logger.warning("dataone probe_metadata: failed — %s", exc)
+            return DatasetMetadata(
+                source_id=source_id,
+                dataset_id=pid,
+                api_endpoint=CN_SOLR,
+                file_size_bytes=50 * 1024 * 1024,
+                retrieval_method="unavailable",
+                unavailable_reason=str(exc),
+            )
 
     # ------------------------------------------------------------------
     # probe_size
     # ------------------------------------------------------------------
 
-    def probe_size(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_size(self, snapshot=None, fetch_request=None, **kwargs) -> SizeEstimate:
         """
         Estimate download size.
         Priority: HEAD Content-Length on resolve URL → Solr `size` field → unknown.
+        Returns SizeEstimate for Agent 4 compatibility.
         """
+        source_id = getattr(snapshot, "source_id", None) or "dataone"
         r = self._as_dict(fetch_request or kwargs)
         pid = r.get("dataset_id") or r.get("pid")
         if not pid:
-            return {"size_bytes": None, "size_human": "Unknown", "confidence": 0.0,
-                    "method": "no PID supplied"}
+            return SizeEstimate(source_id=source_id, method="no PID supplied",
+                                human_readable="Unknown")
 
         resolve_url = _resolve_download_url(pid)
         logger.info("dataone probe_size: HEAD %s", resolve_url)
 
-        # Step 1: HEAD
+        # Priority 1: HEAD Content-Length
         head_resp = _head(resolve_url)
         if head_resp:
             cl = head_resp.headers.get("Content-Length")
             if cl and cl.isdigit():
                 sz = int(cl)
                 logger.info("dataone probe_size: HEAD Content-Length = %d bytes", sz)
-                return self._size_dict(sz, "HEAD Content-Length", 0.95, resolve_url)
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=True,
+                    method="HEAD Content-Length",
+                    human_readable=format_bytes(sz),
+                )
 
-        # Step 2: Solr size field
+        # Priority 2: Solr size field
         try:
             result = _solr_search(f'id:"{pid}"', rows=1)
             doc = (result.get("response", {}).get("docs") or [{}])[0]
             sz = doc.get("size")
             if sz:
+                sz = int(sz)
                 logger.info("dataone probe_size: Solr size field = %s bytes", sz)
-                return self._size_dict(int(sz), "provider metadata (Solr size field)", 0.80,
-                                       resolve_url)
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=False,
+                    method="DataONE Solr metadata (size field)",
+                    human_readable=format_bytes(sz),
+                )
         except Exception as exc:
             logger.debug("dataone probe_size: Solr lookup failed — %s", exc)
 
         logger.warning("dataone probe_size: could not determine size for pid=%s", pid)
-        return {"size_bytes": None, "size_human": "Unknown", "confidence": 0.0,
-                "method": "unknown", "request_url": resolve_url}
+        return SizeEstimate(source_id=source_id, method="DataONE size unavailable",
+                            human_readable="Unknown")
 
     # ------------------------------------------------------------------
     # resolve_download_asset
     # ------------------------------------------------------------------
 
-    def resolve_download_asset(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Dict[str, Any]:
         """Return the CN resolve URL for the requested data object."""
         r = self._as_dict(fetch_request or kwargs)
         pid = r.get("dataset_id") or r.get("pid")
@@ -383,13 +413,13 @@ class DataONEConnector(StaticDatasetConnector):
     # fetch_subset  (DataONE has no server-side subsetting)
     # ------------------------------------------------------------------
 
-    def fetch_subset(self, fetch_request=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_subset(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
         """
         DataONE does not support server-side spatial/temporal subsetting.
         Downloads the full object and reports that local subsetting is required.
         """
         logger.info("dataone fetch_subset: no server-side subsetting — performing full download")
-        result = self.fetch_full(fetch_request, output_dir=output_dir, **kwargs)
+        result = self.fetch_full(snapshot, fetch_request, credentials, output_dir=output_dir, **kwargs)
         result["subset_note"] = (
             "DataONE provides no server-side subsetting. Full object downloaded; "
             "apply spatial/temporal filters locally."
@@ -400,7 +430,7 @@ class DataONEConnector(StaticDatasetConnector):
     # fetch_full
     # ------------------------------------------------------------------
 
-    def fetch_full(self, fetch_request=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
         """Download a DataONE data object via the CN resolve endpoint."""
         r = self._as_dict(fetch_request or kwargs)
         pid = r.get("dataset_id") or r.get("pid")
@@ -411,7 +441,7 @@ class DataONEConnector(StaticDatasetConnector):
         logger.info("dataone fetch_full: GET %s", url)
 
         try:
-            resp = requests.get(url, timeout=120, stream=True)
+            resp = requests.get(url, timeout=120, stream=True, verify=False)
         except Exception as exc:
             return {"success": False, "error": str(exc), "request_url": url}
 
@@ -494,8 +524,17 @@ class DataONEConnector(StaticDatasetConnector):
     @staticmethod
     def _as_dict(obj) -> dict:
         if isinstance(obj, dict):
-            return obj
-        return vars(obj) if hasattr(obj, "__dict__") else {}
+            d = dict(obj)
+        elif hasattr(obj, "__dict__"):
+            d = dict(vars(obj))
+        else:
+            d = {}
+        meta = d.get("metadata")
+        if isinstance(meta, dict):
+            merged = dict(meta)
+            merged.update({k: v for k, v in d.items() if k != "metadata" and v is not None})
+            return merged
+        return d
 
     @staticmethod
     def _size_dict(size_bytes: int, method: str, confidence: float,

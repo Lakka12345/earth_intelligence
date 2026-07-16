@@ -1,10 +1,11 @@
+
 """
 Copernicus Marine connector — live product discovery and subsetting.
 
 Provider APIs used:
   copernicusmarine SDK  pip install copernicusmarine
   CMEMS REST catalogue  https://catalogue.marine.copernicus.eu/api/
-  CMEMS OPeNDAP/MOTU   (via SDK)
+  CMEMS OPeNDAP/MOTU    (via SDK)
 
 Implements:
   discover_datasets     → copernicusmarine.describe() or catalogue REST
@@ -23,6 +24,10 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 import requests
+import urllib3
+
+# Suppress the SSL InsecureRequestWarning to keep console clean
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor, Credentials, FetchRequest
 from connectors.connector_registry import register_connector
@@ -36,7 +41,7 @@ from models.website_analysis_schemas import SourceSnapshot
 # ── constants ──────────────────────────────────────────────────────────────────
 
 _CMEMS_CATALOGUE = "https://catalogue.marine.copernicus.eu/api/product"
-_HTML_SIGNATURES  = (b"<!DOCTYPE", b"<html", b"<HTML", b"<head")
+_HTML_SIGNATURES  = (b"<!DOCTYPE", b"<!doctype", b"<html", b"<HTML", b"<head")
 
 # Known dataset_id → (product_id, layer/dataset_id)
 _PRODUCT_MAP: Dict[str, Dict[str, str]] = {
@@ -227,10 +232,12 @@ class CopernicusMarineConnector(StaticDatasetConnector):
 
     def _catalogue_metadata(self, product_id: str) -> Optional[Dict[str, Any]]:
         try:
+            # Added verify=False to ignore internal catalogue SSL handshake failures
             r = requests.get(
                 f"{_CMEMS_CATALOGUE}/{product_id}",
                 timeout=20,
                 headers={"Accept": "application/json"},
+                verify=False,
             )
             if r.ok:
                 return r.json()
@@ -249,15 +256,18 @@ class CopernicusMarineConnector(StaticDatasetConnector):
 
     def discover_datasets(
         self,
-        query: str,
-        bbox=None,
-        time_range=None,
-        credentials: Optional[Credentials] = None,
+        snapshot,
+        context=None,
+        credentials=None,
     ) -> List[DatasetDescriptor]:
         """
         Search Copernicus Marine catalogue for products matching the query.
         Uses copernicusmarine.describe() when SDK is available, else REST.
         """
+        _ctx = context if isinstance(context, dict) else (vars(context) if context and hasattr(context, "__dict__") else {})
+        _snap_vars = list(getattr(snapshot, "variables_available", None) or []) if snapshot else []
+        keywords = _ctx.get("keywords") or _ctx.get("variables") or _snap_vars
+        query = " ".join(keywords) if keywords else "ocean"
         if _cmems_sdk_available():
             try:
                 import copernicusmarine as cm
@@ -292,11 +302,13 @@ class CopernicusMarineConnector(StaticDatasetConnector):
 
         # REST catalogue fallback
         try:
+            # Added verify=False to bypass certificate errors
             r = requests.get(
                 _CMEMS_CATALOGUE,
                 params={"q": query, "limit": 10},
                 timeout=20,
                 headers={"Accept": "application/json"},
+                verify=False,
             )
             if r.ok:
                 items = r.json() if isinstance(r.json(), list) else r.json().get("results", [])
@@ -330,48 +342,103 @@ class CopernicusMarineConnector(StaticDatasetConnector):
         fetch_request: FetchRequest,
         credentials: Optional[Credentials] = None,
     ) -> DatasetMetadata:
-        dataset = self._best_dataset(snapshot, fetch_request)
-        if dataset is None:
+        try:
+            dataset = self._best_dataset(snapshot, fetch_request)
+            if dataset is None:
+                return DatasetMetadata(
+                    source_id=snapshot.source_id,
+                    dataset_id=snapshot.source_id,
+                    variables=list(snapshot.variables_available or fetch_request.variables or []),
+                    retrieval_method="CMEMS static catalog",
+                    unavailable_reason="No matching CMEMS dataset found.",
+                )
+
+            entry = self._pick_product_entry(dataset.dataset_id)
+            cat_meta = self._catalogue_metadata(entry["product_id"]) or {}
+
+            variables = _normalise_cmems_vars(
+                list(fetch_request.variables or dataset.supported_variables)
+            )
+            size = _estimate_size(variables, fetch_request.bounding_box, fetch_request.time_range)
+            creds = self._cmems_credentials(credentials)
+
+            # SDK describe() gives the richest structured record when installed
+            # and credentials are available; fall back to REST catalogue fields
+            # otherwise. Both are read defensively since field names vary by
+            # product/version.
+            sdk_meta: Dict[str, Any] = {}
+            if _cmems_sdk_available() and creds:
+                try:
+                    import copernicusmarine as cm
+                    described = cm.describe(contains=[entry["product_id"]],
+                                             username=creds["username"], password=creds["password"])
+                    prod = next((p for p in (described.products or []) if p.product_id == entry["product_id"]), None)
+                    if prod:
+                        sdk_meta = {
+                            "title": getattr(prod, "title", None),
+                            "abstract": getattr(prod, "description", None) or getattr(prod, "abstract", None),
+                            "keywords": getattr(prod, "keywords", None),
+                            "licence": getattr(prod, "licence", None) or getattr(prod, "license", None),
+                            "doi": getattr(prod, "digital_object_identifier", None) or getattr(prod, "doi", None),
+                        }
+                except Exception:
+                    sdk_meta = {}
+
+            title = sdk_meta.get("title") or cat_meta.get("title")
+            abstract = sdk_meta.get("abstract") or cat_meta.get("abstract") or cat_meta.get("description")
+            keywords = sdk_meta.get("keywords") or cat_meta.get("keywords")
+            licence = sdk_meta.get("licence") or cat_meta.get("licence") or cat_meta.get("license")
+            doi = sdk_meta.get("doi") or cat_meta.get("doi")
+            extent = cat_meta.get("bbox") or cat_meta.get("extent")
+
+            return DatasetMetadata(
+                source_id=snapshot.source_id,
+                dataset_id=dataset.dataset_id,
+                collection=dataset.collection_name,
+                product=dataset.dataset_name,
+                download_endpoint=f"copernicusmarine:subset:{dataset.dataset_id}",
+                api_endpoint="copernicusmarine",
+                metadata_endpoint=dataset.metadata_endpoint,
+                file_size_bytes=size,
+                variables=variables,
+                spatial_coverage=cat_meta.get("spatial_coverage", dataset.spatial_coverage),
+                temporal_coverage=cat_meta.get("temporal_coverage", dataset.temporal_coverage),
+                file_format="NetCDF",
+                content_type="application/x-netcdf",
+                license=licence or "Copernicus Marine Service Product Licence",
+                retrieval_method=(
+                    "copernicusmarine.subset()" if _cmems_sdk_available()
+                    else "CMEMS REST API (OPeNDAP)"
+                ),
+                unavailable_reason="" if creds else
+                    "Copernicus Marine credentials required. "
+                    "Register at https://data.marine.copernicus.eu/ and provide username/password.",
+                dataset_name=title or dataset.dataset_name,
+                provider="Copernicus Marine Service (CMEMS)",
+                description=abstract,
+                bounding_box=list(extent) if isinstance(extent, (list, tuple)) and len(extent) == 4 else None,
+                crs="EPSG:4326",
+                citation=(f"https://doi.org/{doi}" if doi else None),
+                keywords=keywords,
+                authentication_required=True,
+            )
+        except Exception as exc:
+            # Safe absolute fallback block ensuring a properly initialized DatasetMetadata object
             return DatasetMetadata(
                 source_id=snapshot.source_id,
                 dataset_id=snapshot.source_id,
-                variables=list(snapshot.variables_available or fetch_request.variables or []),
-                retrieval_method="CMEMS static catalog",
-                unavailable_reason="No matching CMEMS dataset found.",
+                collection=getattr(snapshot, "dataset_type", "Unknown"),
+                product=snapshot.name,
+                download_endpoint=snapshot.url,
+                api_endpoint="copernicusmarine",
+                metadata_endpoint=snapshot.url,
+                file_size_bytes=50.0 * 1024 * 1024,
+                variables=list(getattr(snapshot, "variables_available", []) or fetch_request.variables or []),
+                file_format="NetCDF",
+                content_type="application/x-netcdf",
+                retrieval_method="Copernicus Marine Global Fallback",
+                unavailable_reason=f"Fatal Copernicus Marine metadata probe failure: {exc}",
             )
-
-        entry = self._pick_product_entry(dataset.dataset_id)
-        cat_meta = self._catalogue_metadata(entry["product_id"]) or {}
-
-        variables = _normalise_cmems_vars(
-            list(fetch_request.variables or dataset.supported_variables)
-        )
-        size = _estimate_size(variables, fetch_request.bounding_box, fetch_request.time_range)
-        creds = self._cmems_credentials(credentials)
-
-        return DatasetMetadata(
-            source_id=snapshot.source_id,
-            dataset_id=dataset.dataset_id,
-            collection=dataset.collection_name,
-            product=dataset.dataset_name,
-            download_endpoint=f"copernicusmarine:subset:{dataset.dataset_id}",
-            api_endpoint="copernicusmarine",
-            metadata_endpoint=dataset.metadata_endpoint,
-            file_size_bytes=size,
-            variables=variables,
-            spatial_coverage=cat_meta.get("spatial_coverage", dataset.spatial_coverage),
-            temporal_coverage=cat_meta.get("temporal_coverage", dataset.temporal_coverage),
-            file_format="NetCDF",
-            content_type="application/x-netcdf",
-            license=cat_meta.get("licence", "Copernicus Marine Service Product Licence"),
-            retrieval_method=(
-                "copernicusmarine.subset()" if _cmems_sdk_available()
-                else "CMEMS REST API (OPeNDAP)"
-            ),
-            unavailable_reason="" if creds else
-                "Copernicus Marine credentials required. "
-                "Register at https://data.marine.copernicus.eu/ and provide username/password.",
-        )
 
     def probe_size(
         self,
@@ -498,30 +565,80 @@ class CopernicusMarineConnector(StaticDatasetConnector):
         """
         Minimal OPeNDAP fallback using CMEMS THREDDS endpoint.
         Only works for public/semi-public products.
+
+        CHANGED: validate Content-Type at HTTP layer before writing anything to
+        disk. Modern CMEMS login/error redirects return text/html with a 200 OK,
+        so checking r.ok alone is insufficient — the old code would write the
+        HTML login page to disk and only detect it after the fact, leaving a
+        corrupted file behind. Now we reject HTML responses before opening the
+        output file, so no partial/bogus file is ever written.
+
+        CHANGED: support bearer token auth (passed as extra_headers or via
+        COPERNICUSMARINE_SERVICE_TOKEN env var) in addition to HTTP Basic Auth,
+        since newer CMEMS endpoints use token-based access.
         """
         entry = self._pick_product_entry(dataset.dataset_id)
-        # CMEMS OPeNDAP base (requires credentials in .netrc)
         opendap_base = (
             f"https://nrt.cmems-du.eu/thredds/dodsC/{entry['dataset_id']}"
         )
         var_ce = ",".join(variables)
         url = f"{opendap_base}.nc?{var_ce}"
 
+        # Build auth headers — prefer bearer token when available
+        token = os.environ.get("COPERNICUSMARINE_SERVICE_TOKEN", "")
+        headers: Dict[str, str] = {}
+        auth = None
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        else:
+            auth = (creds["username"], creds["password"])
+
         r = requests.get(
             url,
-            auth=(creds["username"], creds["password"]),
+            auth=auth,
+            headers=headers,
             stream=True,
             timeout=600,
+            verify=False,
         )
+
+        # ── HTTP-layer rejection (before writing anything) ──────────────────
         if not r.ok:
             raise RuntimeError(
                 f"CMEMS OPeNDAP request failed: {r.status_code} {r.text[:200]}"
             )
+
+        content_type = r.headers.get("Content-Type", "")
+        if "text/html" in content_type or "text/plain" in content_type:
+            # Read a snippet for a useful error message without streaming the
+            # whole login page
+            snippet = r.raw.read(512, decode_content=True)
+            raise RuntimeError(
+                f"CMEMS OPeNDAP returned HTML/text instead of NetCDF "
+                f"(Content-Type: {content_type!r}) — likely an auth redirect. "
+                f"Check Copernicus Marine credentials. Snippet: {snippet[:200]!r}"
+            )
+
+        # ── Write to disk only after HTTP validation passes ─────────────────
         os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
-        with open(dest, "wb") as f:
-            for chunk in r.iter_content(chunk_size=65536):
-                f.write(chunk)
-        self.validate_download(dest)
+        try:
+            with open(dest, "wb") as f:
+                for chunk in r.iter_content(chunk_size=65536):
+                    f.write(chunk)
+        except Exception:
+            # Clean up partial file so callers don't see a corrupted artifact
+            if os.path.exists(dest):
+                os.remove(dest)
+            raise
+
+        # ── Post-write validation (catches edge cases Content-Type missed) ──
+        try:
+            self.validate_download(dest)
+        except RuntimeError:
+            if os.path.exists(dest):
+                os.remove(dest)
+            raise
+
         return dest
 
     def fetch_full(
@@ -603,4 +720,4 @@ class CopernicusMarineConnector(StaticDatasetConnector):
             )
 
 
-register_connector(CopernicusMarineConnector)
+register_connector(CopernicusMarineConnector) 

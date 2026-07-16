@@ -35,7 +35,7 @@ from connectors.connector_types import (
     DatasetType,
 )
 from connectors.dataset_matching import StaticDatasetConnector
-from models.agent4_schemas import DatasetDescriptor
+from models.agent4_schemas import DatasetDescriptor, SizeEstimate, format_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -227,9 +227,9 @@ class GHRSSTConnector(StaticDatasetConnector):
     # discover_datasets
     # ------------------------------------------------------------------
 
-    def discover_datasets(self, fetch_request=None, **kwargs) -> List[DatasetDescriptor]:
+    def discover_datasets(self, snapshot=None, context=None, **kwargs) -> List[DatasetDescriptor]:
         """Search CMR for GHRSST collections matching the request."""
-        r = self._as_dict(fetch_request or kwargs)
+        r = self._as_dict(context or kwargs)
         keyword = (r.get("keywords") or r.get("variables") or ["sea surface temperature"])
         if isinstance(keyword, list):
             keyword = keyword[0] if keyword else "sea surface temperature"
@@ -278,7 +278,7 @@ class GHRSSTConnector(StaticDatasetConnector):
     # probe_metadata
     # ------------------------------------------------------------------
 
-    def probe_metadata(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_metadata(self, snapshot=None, fetch_request=None, **kwargs) -> Dict[str, Any]:
         """
         Probe CMR for collection metadata and resolve one recent granule
         to report a real download URL and size estimate.
@@ -355,11 +355,14 @@ class GHRSSTConnector(StaticDatasetConnector):
     # probe_size
     # ------------------------------------------------------------------
 
-    def probe_size(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_size(self, snapshot=None, fetch_request=None, **kwargs) -> SizeEstimate:
         """
         Estimate granule size.
-        Priority: HEAD Content-Length → CMR granule_size → unknown.
+        Priority 1: HEAD Content-Length on granule URL.
+        Priority 2: CMR granule_size metadata (in MB).
+        Returns SizeEstimate for Agent 4 compatibility.
         """
+        source_id = getattr(snapshot, "source_id", None) or "ghrsst"
         r = self._as_dict(fetch_request or kwargs)
         short_name = r.get("dataset_id") or r.get("collection_name") or _MUR_SHORT_NAME
         bbox = _bbox_from_request(r)
@@ -368,13 +371,14 @@ class GHRSSTConnector(StaticDatasetConnector):
             short_name, r.get("start_date"), r.get("end_date"), bbox, page_size=1
         )
         if not granules:
-            return {"size_bytes": None, "size_human": "Unknown", "confidence": 0.0,
-                    "method": "no granules found"}
+            return SizeEstimate(source_id=source_id, method="GHRSST: no granules found",
+                                human_readable="Unknown")
 
         granule   = granules[0]
         asset_url = granule["url"]
         auth      = self._earthdata_auth(r)
 
+        # Priority 1: HEAD Content-Length (exact)
         logger.info("ghrsst probe_size: HEAD %s", asset_url)
         head_resp = _head(asset_url, auth=auth)
         if head_resp:
@@ -382,25 +386,37 @@ class GHRSSTConnector(StaticDatasetConnector):
             if cl and cl.isdigit():
                 sz = int(cl)
                 logger.info("ghrsst probe_size: HEAD Content-Length = %d bytes", sz)
-                return self._size_dict(sz, "HEAD Content-Length", 0.95, asset_url)
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=True,
+                    method="HEAD Content-Length on GHRSST granule",
+                    human_readable=format_bytes(sz),
+                )
 
+        # Priority 2: CMR granule_size field (in MB)
         if granule.get("size"):
             try:
                 sz = int(float(granule["size"]) * 1024 * 1024)
                 logger.info("ghrsst probe_size: CMR granule_size = %s MB", granule["size"])
-                return self._size_dict(sz, "provider metadata (CMR granule_size)", 0.80,
-                                       asset_url)
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=False,
+                    method="CMR granule_size metadata (MB → bytes)",
+                    human_readable=format_bytes(sz),
+                )
             except (ValueError, TypeError):
                 pass
 
-        return {"size_bytes": None, "size_human": "Unknown", "confidence": 0.0,
-                "method": "unknown", "request_url": asset_url}
+        return SizeEstimate(source_id=source_id, method="GHRSST size unavailable",
+                            human_readable="Unknown")
 
     # ------------------------------------------------------------------
     # resolve_download_asset
     # ------------------------------------------------------------------
 
-    def resolve_download_asset(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Dict[str, Any]:
         """Resolve CMR granule to a direct NetCDF download URL."""
         r = self._as_dict(fetch_request or kwargs)
         short_name = r.get("dataset_id") or r.get("collection_name") or _MUR_SHORT_NAME
@@ -425,7 +441,7 @@ class GHRSSTConnector(StaticDatasetConnector):
     # fetch_subset  (OPeNDAP subsetting when URL available)
     # ------------------------------------------------------------------
 
-    def fetch_subset(self, fetch_request=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_subset(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
         """
         Attempt OPeNDAP spatial/temporal subsetting when the granule URL
         supports it; otherwise falls back to full download.
@@ -458,7 +474,7 @@ class GHRSSTConnector(StaticDatasetConnector):
     # fetch_full
     # ------------------------------------------------------------------
 
-    def fetch_full(self, fetch_request=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
         """Download the most recent matching GHRSST granule."""
         r = self._as_dict(fetch_request or kwargs)
         short_name = r.get("dataset_id") or r.get("collection_name") or _MUR_SHORT_NAME
@@ -504,8 +520,17 @@ class GHRSSTConnector(StaticDatasetConnector):
     @staticmethod
     def _as_dict(obj) -> dict:
         if isinstance(obj, dict):
-            return obj
-        return vars(obj) if hasattr(obj, "__dict__") else {}
+            d = dict(obj)
+        elif hasattr(obj, "__dict__"):
+            d = dict(vars(obj))
+        else:
+            d = {}
+        meta = d.get("metadata")
+        if isinstance(meta, dict):
+            merged = dict(meta)
+            merged.update({k: v for k, v in d.items() if k != "metadata" and v is not None})
+            return merged
+        return d
 
     @staticmethod
     def _earthdata_auth(r: dict):

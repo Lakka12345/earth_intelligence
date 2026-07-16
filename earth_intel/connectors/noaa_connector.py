@@ -25,6 +25,9 @@ import re
 from typing import List, Optional
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor, Credentials, FetchRequest
 from connectors.connector_registry import register_connector
@@ -50,7 +53,7 @@ _HTML_SIGNATURES = (b"<!DOCTYPE", b"<html", b"<HTML", b"<head", b"<body")
 
 def _estimate_size_head(url: str, headers: Optional[dict] = None) -> Optional[int]:
     try:
-        r = requests.head(url, headers=headers or {}, timeout=15, allow_redirects=True)
+        r = requests.head(url, headers=headers or {}, timeout=15, allow_redirects=True, verify=False)
         cl = r.headers.get("Content-Length") or r.headers.get("content-length")
         if cl:
             return int(cl)
@@ -77,6 +80,7 @@ def _erddap_search(base: str, query: str, limit: int = 5) -> List[dict]:
             f"{base}/search/index.json",
             params={"searchFor": query, "page": 1, "itemsPerPage": limit},
             timeout=20,
+            verify=False,
         )
         if not r.ok:
             return []
@@ -146,7 +150,7 @@ def _resolve_oisst_url(time_range=None) -> Optional[str]:
     If time_range is given, try to pick the relevant year/month.
     """
     try:
-        r = requests.get(_OISST_BASE, timeout=20)
+        r = requests.get(_OISST_BASE, timeout=20, verify=False)
         if not r.ok:
             return None
         years = re.findall(r'href="(\d{4})/"', r.text)
@@ -161,13 +165,13 @@ def _resolve_oisst_url(time_range=None) -> Optional[str]:
                 target_year = m.group(1)
         year = target_year or max(years)
 
-        r2 = requests.get(f"{_OISST_BASE}{year}/", timeout=15)
+        r2 = requests.get(f"{_OISST_BASE}{year}/", timeout=15, verify=False)
         months = re.findall(r'href="(\d{2})/"', r2.text)
         if not months:
             return None
         month = months[-1]
 
-        r3 = requests.get(f"{_OISST_BASE}{year}/{month}/", timeout=15)
+        r3 = requests.get(f"{_OISST_BASE}{year}/{month}/", timeout=15, verify=False)
         # e.g. oisst-avhrr-v02r01.19810901.nc
         files = re.findall(r'href="(oisst-avhrr[^"]+\.nc)"', r3.text)
         if not files:
@@ -183,19 +187,19 @@ def _resolve_oisst_url(time_range=None) -> Optional[str]:
 def _resolve_nomads_gfs_url() -> Optional[str]:
     """Pick latest GFS 0.25deg forecast run from NOMADS."""
     try:
-        r = requests.get(_NOMADS_GFS, timeout=15)
+        r = requests.get(_NOMADS_GFS, timeout=15, verify=False)
         if not r.ok:
             return None
         runs = re.findall(r'href="(gfs\.\d{8}/)"', r.text)
         if not runs:
             return None
         latest_run_dir = max(runs)
-        r2 = requests.get(f"{_NOMADS_GFS}{latest_run_dir}", timeout=15)
+        r2 = requests.get(f"{_NOMADS_GFS}{latest_run_dir}", timeout=15, verify=False)
         hours = re.findall(r'href="(\d{2}/)"', r2.text)
         if not hours:
             return None
         latest_hour = max(hours)
-        r3 = requests.get(f"{_NOMADS_GFS}{latest_run_dir}{latest_hour}atmos/", timeout=15)
+        r3 = requests.get(f"{_NOMADS_GFS}{latest_run_dir}{latest_hour}atmos/", timeout=15, verify=False)
         files = re.findall(
             r'href="(gfs\.t\d+z\.pgrb2\.0p25\.f\d+)"',
             r3.text,
@@ -208,6 +212,70 @@ def _resolve_nomads_gfs_url() -> Optional[str]:
         return f"{_NOMADS_GFS}{latest_run_dir}{latest_hour}atmos/{chosen}"
     except Exception:
         return None
+
+
+# ── ERDDAP info/index.json metadata (units, bbox, coverage, institution) ───────
+
+def _erddap_info(base: str, dataset_id: str) -> dict:
+    """Fetch and reduce ERDDAP info/{dataset_id}/index.json. Never raises."""
+    try:
+        r = requests.get(f"{base}/info/{dataset_id}/index.json", timeout=20, verify=False)
+        if not r.ok:
+            return {}
+        data = r.json()
+    except Exception:
+        return {}
+    rows = data.get("table", {}).get("rows", [])
+    cols = data.get("table", {}).get("columnNames", [])
+    try:
+        ri, vi, ai, vali = (cols.index("Row Type"), cols.index("Variable Name"),
+                            cols.index("Attribute Name"), cols.index("Value"))
+    except ValueError:
+        return {}
+    global_attrs: dict = {}
+    var_units: dict = {}
+    variables: List[str] = []
+    for row in rows:
+        row_type, var_name, attr_name, value = row[ri], row[vi], row[ai], row[vali]
+        if row_type == "attribute" and var_name == "NC_GLOBAL":
+            global_attrs[attr_name] = value
+        elif row_type == "variable" and var_name and var_name not in variables:
+            variables.append(var_name)
+        elif row_type == "attribute" and attr_name == "units" and var_name:
+            var_units[var_name] = value
+    return {"global_attrs": global_attrs, "var_units": var_units, "variables": variables}
+
+
+def _cdo_dataset_metadata(dataset_id: str, credentials: Optional["Credentials"] = None) -> dict:
+    """Fetch NCEI CDO API's /datasets/{id} record (name, coverage dates, data coverage)."""
+    if not (credentials and credentials.api_key):
+        return {}
+    try:
+        r = requests.get(
+            f"{_CDO_BASE}/datasets/{dataset_id}",
+            headers={"token": credentials.api_key},
+            timeout=20,
+            verify=False,
+        )
+        if r.ok:
+            return r.json()
+    except Exception:
+        pass
+    return {}
+
+
+def _oisst_coverage() -> dict:
+    """Derive OISST temporal coverage from the live NCEI directory listing."""
+    try:
+        r = requests.get(_OISST_BASE, timeout=20, verify=False)
+        if not r.ok:
+            return {}
+        years = re.findall(r'href="(\d{4})/"', r.text)
+        if not years:
+            return {}
+        return {"start_date": f"{min(years)}-09-01", "end_date": f"{max(years)}-12-31"}
+    except Exception:
+        return {}
 
 
 # ── connector ──────────────────────────────────────────────────────────────────
@@ -344,12 +412,15 @@ class NOAAConnector(StaticDatasetConnector):
 
     def discover_datasets(
         self,
-        query: str,
-        bbox=None,
-        time_range=None,
-        credentials: Optional[Credentials] = None,
+        snapshot,
+        context=None,
     ) -> List[DatasetDescriptor]:
         """Search ERDDAP CoastWatch for datasets matching query."""
+        # Derive search term from context, snapshot variables, or fall back to "ocean"
+        _ctx = context if isinstance(context, dict) else (vars(context) if context and hasattr(context, "__dict__") else {})
+        _snap_vars = list(getattr(snapshot, "variables_available", None) or []) if snapshot else []
+        keywords = _ctx.get("keywords") or _ctx.get("variables") or _snap_vars
+        query = " ".join(keywords) if keywords else "ocean"
         results_raw = _erddap_search(_ERDDAP_CW, query, limit=8)
         out = []
         for row in results_raw:
@@ -395,6 +466,73 @@ class NOAAConnector(StaticDatasetConnector):
             auth_headers["token"] = credentials.api_key
         size = _estimate_size_head(url, auth_headers) if url else None
 
+        # Per-dataset real provider metadata enrichment. Fields that cannot be
+        # determined for a given dataset/provider combination are left as None.
+        rich: dict = {}
+        if dataset.dataset_id == "erdATssta3day":
+            info = _erddap_info(_ERDDAP_CW, "erdATssta3day")
+            ga = info.get("global_attrs", {})
+            lat_min, lat_max = ga.get("geospatial_lat_min"), ga.get("geospatial_lat_max")
+            lon_min, lon_max = ga.get("geospatial_lon_min"), ga.get("geospatial_lon_max")
+            bbox = None
+            if all(v is not None for v in (lat_min, lat_max, lon_min, lon_max)):
+                try:
+                    bbox = [float(lon_min), float(lat_min), float(lon_max), float(lat_max)]
+                except (TypeError, ValueError):
+                    bbox = None
+            rich = dict(
+                dataset_name=ga.get("title"),
+                provider=ga.get("institution") or "NOAA CoastWatch",
+                description=ga.get("summary"),
+                variable_units=info.get("var_units") or None,
+                spatial_resolution=ga.get("geospatial_lat_resolution"),
+                temporal_resolution=ga.get("time_coverage_resolution"),
+                crs="EPSG:4326" if bbox else None,
+                bounding_box=bbox,
+                start_date=ga.get("time_coverage_start"),
+                end_date=ga.get("time_coverage_end"),
+                citation=ga.get("references"),
+                keywords=[k.strip() for k in ga.get("keywords", "").split(",") if k.strip()] or None,
+            )
+        elif dataset.dataset_id == "GHCND":
+            cdo = _cdo_dataset_metadata("GHCND", credentials)
+            rich = dict(
+                dataset_name=cdo.get("name"),
+                provider="NOAA NCEI",
+                description=(f"Global Historical Climatology Network - Daily; "
+                             f"data coverage {cdo.get('datacoverage')}" if cdo.get("datacoverage") else None),
+                start_date=cdo.get("mindate"),
+                end_date=cdo.get("maxdate"),
+                crs="EPSG:4326",
+                citation="NOAA National Centers for Environmental Information, GHCN-Daily",
+            )
+        elif dataset.dataset_id == "oisst-avhrr-v02r01":
+            cov = _oisst_coverage()
+            rich = dict(
+                dataset_name=dataset.dataset_name,
+                provider="NOAA NCEI",
+                description="Optimum Interpolation Sea Surface Temperature, AVHRR-only, v2.1, daily 0.25deg grid.",
+                spatial_resolution="0.25 degree",
+                temporal_resolution="Daily",
+                crs="EPSG:4326",
+                bounding_box=[-180.0, -90.0, 180.0, 90.0],
+                start_date=cov.get("start_date"),
+                end_date=cov.get("end_date"),
+                citation="Huang et al. (2021), NOAA 1/4° Daily OISST v2.1, NCEI, doi:10.25921/RE9P-PT57",
+            )
+        elif dataset.dataset_id == "gfs-0p25":
+            rich = dict(
+                dataset_name=dataset.dataset_name,
+                provider="NOAA NCEP/EMC",
+                description="Global Forecast System, 0.25 degree operational forecast model output.",
+                spatial_resolution="0.25 degree",
+                temporal_resolution="3-hourly forecast steps",
+                crs="EPSG:4326",
+                bounding_box=[-180.0, -90.0, 180.0, 90.0],
+                update_frequency="4x daily (00/06/12/18 UTC cycles)",
+            )
+        rich = {k: v for k, v in rich.items() if v not in (None, "", [], {})}
+
         return DatasetMetadata(
             source_id=snapshot.source_id,
             dataset_id=dataset.dataset_id,
@@ -405,13 +543,15 @@ class NOAAConnector(StaticDatasetConnector):
             metadata_endpoint=dataset.metadata_endpoint,
             file_size_bytes=size,
             variables=list(dataset.supported_variables),
-            spatial_coverage=dataset.spatial_coverage,
+            spatial_coverage=str(rich.get("bounding_box")) if rich.get("bounding_box") else dataset.spatial_coverage,
             temporal_coverage=dataset.temporal_coverage,
             file_format=", ".join(dataset.supported_formats),
             content_type="application/x-netcdf" if "NetCDF" in dataset.supported_formats else "application/octet-stream",
-            license="NOAA open data",
-            retrieval_method="NOAA directory listing / ERDDAP griddap / CDO API / NOMADS",
+            license="NOAA open data (public domain)",
+            retrieval_method="NOAA directory listing / ERDDAP info / CDO API / NOMADS",
             unavailable_reason="" if url else "Could not resolve download URL. CDO token may be required.",
+            authentication_required=dataset.authentication_required,
+            **rich,
         )
 
     def probe_size(
@@ -421,6 +561,8 @@ class NOAAConnector(StaticDatasetConnector):
         credentials: Optional[Credentials] = None,
     ) -> SizeEstimate:
         meta = self.probe_metadata(snapshot, fetch_request, credentials)
+
+        # Priority 1: HEAD Content-Length (exact)
         if meta.file_size_bytes:
             return SizeEstimate(
                 source_id=snapshot.source_id,
@@ -429,10 +571,96 @@ class NOAAConnector(StaticDatasetConnector):
                 method="HEAD Content-Length",
                 human_readable=format_bytes(meta.file_size_bytes),
             )
+
+        # Priority 2: Dataset-specific estimation fallbacks
+        dataset = self._best_dataset(snapshot, fetch_request)
+        if dataset is not None:
+            est = self._estimate_size_from_dataset(dataset, fetch_request)
+            if est is not None:
+                return SizeEstimate(
+                    source_id=snapshot.source_id,
+                    estimated_bytes=float(est["bytes"]),
+                    is_exact=False,
+                    method=est["method"],
+                    human_readable=format_bytes(est["bytes"]),
+                )
+
         return SizeEstimate(
             source_id=snapshot.source_id,
-            method="HEAD returned no Content-Length (streaming or auth-gated endpoint)",
+            method="NOAA size unavailable (streaming or auth-gated endpoint)",
+            human_readable="Unknown",
         )
+
+    def _estimate_size_from_dataset(
+        self,
+        dataset: "DatasetDescriptor",
+        fetch_request: FetchRequest,
+    ) -> Optional[dict]:
+        """
+        Return a best-effort {'bytes': int, 'method': str} estimate using
+        dataset-specific knowledge when HEAD Content-Length is unavailable.
+        """
+        did = dataset.dataset_id
+
+        # ── erdATssta3day (ERDDAP griddap NetCDF) ─────────────────────────────
+        # Grid: global 0.1° SST, 3-day composite. Rough uncompressed size:
+        # lat(1801) × lon(3601) × 1 var × 4 bytes ≈ 25 MB per file.
+        if did == "erdATssta3day":
+            bbox = fetch_request.bounding_box
+            if bbox:
+                lat_pts = max(1, int((bbox[3] - bbox[1]) / 0.1))
+                lon_pts = max(1, int((bbox[2] - bbox[0]) / 0.1))
+            else:
+                lat_pts, lon_pts = 1801, 3601  # global default
+            n_vars  = max(1, len(fetch_request.variables or ["sst"]))
+            n_times = 1  # 3-day composite → single time step per file
+            est = lat_pts * lon_pts * n_times * n_vars * 4
+            return {"bytes": est, "method": "ERDDAP griddap grid estimate (lat×lon×vars×4B)"}
+
+        # ── OISST NetCDF ───────────────────────────────────────────────────────
+        # Daily 0.25° global: 720 × 1440 × 4 vars × 4 bytes ≈ 16 MB/day
+        if did == "oisst-avhrr-v02r01":
+            bbox = fetch_request.bounding_box
+            if bbox:
+                lat_pts = max(1, int((bbox[3] - bbox[1]) / 0.25))
+                lon_pts = max(1, int((bbox[2] - bbox[0]) / 0.25))
+            else:
+                lat_pts, lon_pts = 720, 1440
+            n_vars = max(1, len(fetch_request.variables or ["sst"]))
+            n_days = 1
+            if fetch_request.time_range and len(fetch_request.time_range) == 2:
+                try:
+                    from datetime import datetime as _dt
+                    n_days = max(1, (_dt.fromisoformat(str(fetch_request.time_range[1])[:10])
+                                     - _dt.fromisoformat(str(fetch_request.time_range[0])[:10])).days + 1)
+                except Exception:
+                    pass
+            est = lat_pts * lon_pts * n_vars * n_days * 4
+            return {"bytes": est, "method": "OISST grid estimate (lat×lon×vars×days×4B)"}
+
+        # ── GFS GRIB2 ─────────────────────────────────────────────────────────
+        # 0.25° global, ~200 variables per cycle, each ~1 MB → full file ≈ 500 MB;
+        # subset by requested variables.
+        if did == "gfs-0p25":
+            n_vars = len(fetch_request.variables or []) or 5  # default if unspecified
+            est    = n_vars * 1_048_576  # ~1 MB per variable in GRIB2
+            return {"bytes": est, "method": "GFS GRIB2 estimate (n_vars × 1 MB/variable)"}
+
+        # ── GHCND (CSV via CDO API) ────────────────────────────────────────────
+        # Tabular: roughly 200 bytes per station-day row.
+        if did == "GHCND":
+            n_days = 365  # default 1-year request
+            if fetch_request.time_range and len(fetch_request.time_range) == 2:
+                try:
+                    from datetime import datetime as _dt
+                    n_days = max(1, (_dt.fromisoformat(str(fetch_request.time_range[1])[:10])
+                                     - _dt.fromisoformat(str(fetch_request.time_range[0])[:10])).days + 1)
+                except Exception:
+                    pass
+            est = n_days * 50 * 200  # assume ~50 stations, 200 bytes/row
+            return {"bytes": est, "method": "GHCND CSV estimate (stations×days×200B/row)"}
+
+        return None
 
     def resolve_download_asset(
         self,

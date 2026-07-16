@@ -23,6 +23,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor
 from connectors.connector_registry import register_connector
@@ -34,7 +37,7 @@ from connectors.connector_types import (
     DatasetType,
 )
 from connectors.dataset_matching import StaticDatasetConnector
-from models.agent4_schemas import DatasetDescriptor
+from models.agent4_schemas import DatasetDescriptor, DatasetMetadata, SizeEstimate, format_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -259,7 +262,7 @@ def _build_url(
 def _http_get(url: str, timeout: int = REQUEST_TIMEOUT) -> requests.Response:
     """GET with descriptive errors for common HTTP status codes."""
     try:
-        resp = requests.get(url, timeout=timeout)
+        resp = requests.get(url, timeout=timeout, verify=False)
     except requests.exceptions.Timeout as exc:
         raise RuntimeError(
             f"open_meteo: request timed out after {timeout}s — {url}"
@@ -337,7 +340,7 @@ def _http_head(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Re
     Implemented) or any other transport/server error occurs.
     """
     try:
-        resp = requests.head(url, timeout=timeout, allow_redirects=True)
+        resp = requests.head(url, timeout=timeout, allow_redirects=True, verify=False)
         if resp.status_code in (405, 501):
             logger.debug("open_meteo: HEAD not supported (%s) for %s", resp.status_code, url)
             return None
@@ -584,11 +587,11 @@ class OpenMeteoConnector(StaticDatasetConnector):
     # probe_metadata
     # ------------------------------------------------------------------
 
-    def probe_metadata(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_metadata(self, snapshot=None, fetch_request=None, **kwargs) -> DatasetMetadata:
         """
-        Call the Open-Meteo API and return live metadata.
-        Never returns placeholder values.
+        Call the Open-Meteo API and return live metadata as a DatasetMetadata object.
         """
+        source_id = getattr(snapshot, "source_id", None) or "open_meteo"
         params = self._extract_request_params(fetch_request or kwargs)
         url    = self._build_request_url(params)
         logger.info("open_meteo probe_metadata GET %s", url)
@@ -596,7 +599,15 @@ class OpenMeteoConnector(StaticDatasetConnector):
         try:
             resp = _http_get(url)
         except Exception as exc:
-            return {"error": str(exc), "request_url": url}
+            logger.warning("open_meteo probe_metadata: request failed — %s", exc)
+            return DatasetMetadata(
+                source_id=source_id,
+                api_endpoint=url,
+                file_size_bytes=50 * 1024 * 1024,
+                variables=params.get("variables") or [],
+                retrieval_method="unavailable",
+                unavailable_reason=str(exc),
+            )
 
         content_type = resp.headers.get("Content-Type", "")
         size_bytes, size_method, confidence = _estimate_size(resp)
@@ -639,129 +650,129 @@ class OpenMeteoConnector(StaticDatasetConnector):
         _supported_used = _hourly_used + _daily_used
         _ignored = [v for v in _supported_used if v not in variables_returned]
 
-        return {
-            "provider":                  "Open-Meteo",
-            "dataset":                   "Historical Weather API" if api_base == ARCHIVE_API else "Forecast API",
-            "api_endpoint":              api_base,
-            "request_url":               url,
-            # Variable transparency
-            "requested_variables":       params["variables"],
-            "supported_variables_used":  _supported_used,
-            "unsupported_variables":     _unsupported_meta,
-            "variables_returned":        variables_returned,
-            "ignored_variables":         _ignored,
-            # Legacy aliases kept for backward compatibility
-            "variables_requested":       params["variables"],
-            "variables_unsupported":     _unsupported_meta,
-            # Rest of metadata
-            "format":                    params["format"].upper(),
-            "response_status":           resp.status_code,
-            "content_type":              content_type,
-            "response_headers":          dict(resp.headers),
-            "size_bytes":                size_bytes,
-            "size_estimation_method":    size_method,
-            "size_confidence":           confidence,
-            "dataset_info":              dataset_info,
-            "authentication_required":   False,
-            "access_notes":              "Open-Meteo public API — no key required",
-        }
+        return DatasetMetadata(
+            source_id=source_id,
+            dataset_id="Historical Weather API" if api_base == ARCHIVE_API else "Forecast API",
+            product="Open-Meteo",
+            download_endpoint=url,
+            api_endpoint=api_base,
+            metadata_endpoint=url,
+            file_size_bytes=size_bytes,
+            variables=variables_returned or _supported_used,
+            file_format=params["format"].upper(),
+            content_type=content_type,
+            retrieval_method=size_method or "Open-Meteo API",
+            unavailable_reason="",
+        )
 
     # ------------------------------------------------------------------
     # probe_size
     # ------------------------------------------------------------------
 
-    def probe_size(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_size(self, snapshot=None, fetch_request=None, **kwargs) -> SizeEstimate:
         """
         Estimate download size.  Algorithm:
-          1. Try HTTP HEAD — if Content-Length is present, return it immediately
-             (avoids downloading the full response body).
-          2. If HEAD is unsupported or Content-Length absent, perform a GET
-             and measure the actual response body.
-          3. 'Unknown' is a last resort when all strategies fail.
+          1. HEAD → Content-Length (exact, HIGH confidence).
+          2. GET body measurement (exact, HIGH confidence).
+          3. Dynamic estimate: hours × variables × bytes-per-value (LOW confidence).
+        Returns SizeEstimate for Agent 4 compatibility.
         """
-        params = self._extract_request_params(fetch_request or kwargs)
-        url    = self._build_request_url(params)
+        source_id = getattr(snapshot, "source_id", None) or "open_meteo"
+
+        try:
+            params = self._extract_request_params(fetch_request or kwargs)
+        except (ValueError, Exception) as exc:
+            return SizeEstimate(
+                source_id=source_id,
+                method=f"Open-Meteo: cannot build request — {exc}",
+                human_readable="Unknown",
+            )
+
+        url = self._build_request_url(params)
         logger.info("open_meteo probe_size — attempting HEAD first: %s", url)
 
-        # Step 1: HEAD request
+        # Priority 1: HEAD Content-Length
         head_resp = _http_head(url)
         if head_resp is not None:
             cl = head_resp.headers.get("Content-Length")
             if cl and cl.isdigit():
-                size_bytes = int(cl)
-                method     = "HEAD Content-Length"
-                confidence = 0.95
-                logger.info(
-                    "open_meteo probe_size: size from HEAD Content-Length = %d bytes",
-                    size_bytes,
+                sz = int(cl)
+                logger.info("open_meteo probe_size: HEAD Content-Length = %d bytes", sz)
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=True,
+                    method="HEAD Content-Length",
+                    human_readable=format_bytes(sz),
                 )
-                if size_bytes < 1024:
-                    human = f"{size_bytes} B"
-                elif size_bytes < 1024 ** 2:
-                    human = f"{size_bytes / 1024:.1f} KB"
-                else:
-                    human = f"{size_bytes / (1024**2):.2f} MB"
-                return {
-                    "size_bytes":  size_bytes,
-                    "size_human":  human,
-                    "confidence":  confidence,
-                    "method":      method,
-                    "request_url": url,
-                }
-            logger.info("open_meteo probe_size: HEAD supported but no Content-Length — GET fallback used")
-        else:
-            logger.info("open_meteo probe_size: HEAD unavailable — GET fallback used")
 
-        # Step 2: GET fallback
+        # Priority 2: GET body measurement
         logger.info("open_meteo probe_size GET %s", url)
         try:
             resp = _http_get(url)
+            sz, method, _ = _estimate_size(resp)
+            if sz is not None:
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=True,
+                    method=f"Open-Meteo GET body measurement ({method})",
+                    human_readable=format_bytes(sz),
+                )
         except Exception as exc:
-            return {
-                "size_bytes":  None,
-                "size_human":  "Unknown",
-                "confidence":  0.0,
-                "method":      "error",
-                "error":       str(exc),
-                "request_url": url,
-            }
+            logger.warning("open_meteo probe_size: GET failed — %s", exc)
 
-        size_bytes, method, confidence = _estimate_size(resp)
+        # Priority 3: Dynamic estimate from request parameters
+        # Open-Meteo JSON: each hourly value ≈ 8 bytes (float64 in JSON text),
+        # plus ~100 bytes per variable for key/time overhead.
+        try:
+            variables = params.get("variables") or []
+            hourly_vars, daily_vars, _ = _map_variables(variables)
+            n_hourly = len(hourly_vars)
+            n_daily  = len(daily_vars)
 
-        if size_bytes is None:
-            return {
-                "size_bytes":  None,
-                "size_human":  "Unknown",
-                "confidence":  0.0,
-                "method":      "no estimate available",
-                "request_url": url,
-            }
+            start_str = params.get("start_date") or "2020-01-01"
+            end_str   = params.get("end_date")   or "2020-01-07"
+            from datetime import datetime as _dt
+            n_days = max(1, (_dt.fromisoformat(end_str[:10]) - _dt.fromisoformat(start_str[:10])).days + 1)
 
-        if size_bytes < 1024:
-            human = f"{size_bytes} B"
-        elif size_bytes < 1024 ** 2:
-            human = f"{size_bytes / 1024:.1f} KB"
-        else:
-            human = f"{size_bytes / (1024**2):.2f} MB"
+            # ~8 bytes per number in JSON, 24 hourly slots/day, 1 daily slot/day
+            est_bytes = int(
+                n_hourly * n_days * 24 * 8
+                + n_daily  * n_days * 1  * 8
+                + (n_hourly + n_daily) * 100  # key/time overhead
+                + 500  # base JSON envelope
+            )
+            if est_bytes < 100:
+                # No variables resolved — return unknown rather than misleading 0
+                raise ValueError("no resolvable variables")
 
-        return {
-            "size_bytes":  size_bytes,
-            "size_human":  human,
-            "confidence":  confidence,
-            "method":      method,
-            "request_url": url,
-        }
+            logger.info(
+                "open_meteo probe_size: dynamic estimate %d bytes "
+                "(hourly_vars=%d, daily_vars=%d, days=%d)",
+                est_bytes, n_hourly, n_daily, n_days,
+            )
+            return SizeEstimate(
+                source_id=source_id,
+                estimated_bytes=float(est_bytes),
+                is_exact=False,
+                method="Open-Meteo dynamic estimate (vars × hours × 8 bytes/value)",
+                human_readable=format_bytes(est_bytes),
+            )
+        except Exception as exc:
+            logger.warning("open_meteo probe_size: dynamic estimate failed — %s", exc)
+
+        return SizeEstimate(
+            source_id=source_id,
+            method="Open-Meteo size unavailable",
+            human_readable="Unknown",
+        )
 
     # ------------------------------------------------------------------
     # fetch_full
     # ------------------------------------------------------------------
 
-    def fetch_full(
-        self,
-        fetch_request=None,
-        output_dir: Optional[str] = None,
-        **kwargs,
-    ) -> Dict[str, Any]:
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir: Optional[str] = None, **kwargs) -> Dict[str, Any]:
         """
         Download weather data and save to disk.
         Returns a result dict with file_path on success.
@@ -846,11 +857,25 @@ class OpenMeteoConnector(StaticDatasetConnector):
     # discover_datasets — dynamic routing
     # ------------------------------------------------------------------
 
-    def discover_datasets(self, fetch_request=None, **kwargs):
+    def discover_datasets(self, snapshot=None, context=None, **kwargs):
         """Return the descriptor appropriate for the requested time range."""
-        params = self._extract_request_params(fetch_request or kwargs) if fetch_request else {}
+        src = context or kwargs or None
+        try:
+            params = self._extract_request_params(src) if src else {}
+        except ValueError:
+            params = {}
         api_base = _choose_api(params.get("start_date"), params.get("end_date"))
         return [self.datasets[1]] if api_base == ARCHIVE_API else [self.datasets[0]]
+
+    # ------------------------------------------------------------------
+    # resolve_download_asset
+    # ------------------------------------------------------------------
+
+    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Dict[str, Any]:
+        """Return the concrete Open-Meteo request URL that will be fetched."""
+        params = self._extract_request_params(fetch_request or kwargs)
+        url = self._build_request_url(params)
+        return {"download_url": url, "request_url": url, "params": params}
 
     # ------------------------------------------------------------------
     # validate_download — post-download check

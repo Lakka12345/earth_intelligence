@@ -41,6 +41,7 @@ from models.agent4_schemas import (
     FetchMethod,
 )
 from models.website_analysis_schemas import SourceSnapshot
+from browser.browser_utils import playwright_available, provider_key_from_url
 
 DEFAULT_MANAGED_FOLDER = os.path.join(os.getcwd(), "data")
 MAX_DOWNLOAD_ATTEMPTS = 3
@@ -440,9 +441,63 @@ def download_source(
                                       checksum_status="unavailable" if not dataset_metadata or not dataset_metadata.checksum else "not_checked",
                                       validation_status="failed")
     except Exception as exc:
+        api_error = str(exc)
+        # ── Browser fallback ─────────────────────────────────────────────────
+        # Only activated when the connector declares it needs browser support
+        # AND Playwright is available.  All existing API-only connectors skip
+        # this block entirely (requires_browser_download defaults to False).
+        requires_browser = (
+            getattr(connector, "requires_browser_download", False)
+            or getattr(connector, "requires_browser_auth", False)
+        )
+        if requires_browser and playwright_available():
+            print(
+                f"  API download failed for {connector.name} "
+                f"({api_error}). Attempting browser-assisted download."
+            )
+            browser_result = _browser_download_fallback(
+                snapshot=snapshot,
+                connector=connector,
+                fetch_request=fetch_request,
+                credentials=credentials,
+                dest_dir=dest_dir,
+                dataset_metadata=dataset_metadata,
+            )
+            if browser_result.success and browser_result.local_path:
+                local_path = browser_result.local_path
+                validation_notes = _validate_download(
+                    local_path,
+                    expected_size=dataset_metadata.file_size_bytes if dataset_metadata else None,
+                    metadata=dataset_metadata,
+                )
+                success = _is_valid_download(local_path, validation_notes)
+                return DownloadManifestEntry(
+                    source_id=snapshot.source_id,
+                    source_name=snapshot.name,
+                    local_path=local_path,
+                    fetch_method=FetchMethod.full_download_untrimmed,
+                    variables_included=variables,
+                    success=success,
+                    size_bytes=os.path.getsize(local_path) if os.path.exists(local_path) else None,
+                    estimated_size_bytes=dataset_metadata.file_size_bytes if dataset_metadata else None,
+                    retries_attempted=total_retries,
+                    validation_notes=validation_notes + browser_result.notes,
+                    dataset_metadata=dataset_metadata,
+                    provider=dataset_metadata.product if dataset_metadata and dataset_metadata.product else snapshot.name,
+                    connector_used=connector.name,
+                    protocol_used=connector.descriptor.connector_type.value,
+                    checksum_status=_checksum_status(local_path, dataset_metadata, None),
+                    validation_status=_validation_status(success, validation_notes),
+                    error=None if success else "; ".join(validation_notes),
+                )
+            # Browser also failed — fall through to the structured error below
+            api_error = (
+                f"{api_error} | Browser fallback: {browser_result.error or 'failed'}"
+            )
+
         return DownloadManifestEntry(source_id=snapshot.source_id, source_name=snapshot.name,
                                       fetch_method=FetchMethod.full_download_untrimmed, success=False,
-                                      error=str(exc), retries_attempted=total_retries,
+                                      error=api_error, retries_attempted=total_retries,
                                       estimated_size_bytes=dataset_metadata.file_size_bytes if dataset_metadata else None,
                                       dataset_metadata=dataset_metadata,
                                       provider=dataset_metadata.product if dataset_metadata and dataset_metadata.product else snapshot.name,
@@ -450,3 +505,94 @@ def download_source(
                                       protocol_used=connector.descriptor.connector_type.value,
                                       checksum_status="unavailable" if not dataset_metadata or not dataset_metadata.checksum else "not_checked",
                                       validation_status="failed")
+
+
+def _browser_download_fallback(
+    snapshot,
+    connector,
+    fetch_request: FetchRequest,
+    credentials: Optional[Credentials],
+    dest_dir: str,
+    dataset_metadata: Optional[DatasetMetadata],
+):
+    """
+    Attempt a browser-assisted download when the API path has failed.
+
+    This function is only called when:
+      a) The connector declares ``requires_browser_download = True`` or
+         ``requires_browser_auth = True``, AND
+      b) Playwright is importable.
+
+    The function asks the connector for a browser-specific download URL
+    (via the optional ``browser_download_url`` attribute or method) and
+    then drives a BrowserDownload session through the login + download
+    flow.
+
+    Returns a ``BrowserDownloadResult`` — the caller checks ``.success``.
+    """
+    from browser.browser_manager import BrowserManager
+    from browser.browser_login import BrowserLogin
+    from browser.browser_download import BrowserDownload, BrowserDownloadResult
+    from browser.browser_utils import provider_key_from_url
+
+    provider_key = provider_key_from_url(snapshot.url)
+    login_url = getattr(connector, "login_url", None)
+    download_page_url = (
+        getattr(connector, "browser_download_url", None)
+        or (dataset_metadata.download_endpoint if dataset_metadata else None)
+        or snapshot.url
+    )
+    download_selector = getattr(connector, "browser_download_selector", None)
+    requires_async_wait = getattr(connector, "requires_async_job_wait", False)
+    headless = not bool(os.environ.get("BROWSER_HEADFUL"))
+
+    print(f"  [Browser] Launching Chromium for '{provider_key}' (headless={headless}).")
+
+    with BrowserManager(headless=headless, downloads_dir=dest_dir) as mgr:
+        # Restore any previously saved session for this provider
+        ctx = mgr.get_authenticated_context(provider_key)
+        page = ctx.new_page()
+
+        # Login if the connector provides a login URL and credentials exist
+        session = None
+        if login_url and credentials and (credentials.username or credentials.email):
+            login_handler = BrowserLogin(page, ctx, provider_key)
+            session = login_handler.login(
+                login_url=login_url,
+                credentials=credentials,
+            )
+            if session.is_authenticated:
+                mgr.save_cookies(provider_key, ctx)
+                print(f"  [Browser] Login succeeded for '{provider_key}'.")
+            else:
+                error = session.extra.get("login_error", "Login failed.")
+                print(f"  [Browser] Login failed for '{provider_key}': {error}")
+                return BrowserDownloadResult(success=False, error=f"Browser login failed: {error}")
+        else:
+            # No login required or no credentials — create a plain session wrapper
+            from browser.browser_session import BrowserSession
+            session = BrowserSession(provider_key=provider_key, context=ctx, page=page, is_authenticated=True)
+
+        downloader = BrowserDownload(session=session, dest_dir=dest_dir)
+
+        if requires_async_wait:
+            result = downloader.wait_for_async_job(
+                status_page_url=download_page_url,
+                download_selector=download_selector,
+            )
+        else:
+            result = downloader.download_from_url(
+                download_page_url=download_page_url,
+                selector=download_selector,
+            )
+
+    if result.success:
+        print(
+            f"  [Browser] Download complete: {result.local_path} "
+            f"({result.file_size_bytes or '?'} bytes, "
+            f"{result.elapsed_seconds:.1f}s)."
+        )
+    else:
+        print(f"  [Browser] Download failed: {result.error}")
+
+    return result
