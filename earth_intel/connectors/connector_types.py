@@ -66,6 +66,9 @@ class CapabilityFlags(Flag):
     supports_checksum = auto()
     supports_parallel_download = auto()
     supports_dataset_search = auto()
+    # Appended (not inserted) so pre-existing flag bit-values are preserved.
+    requires_browser_auth = auto()
+    requires_browser_download = auto()
 
 
 class RetryStrategy(str, Enum):

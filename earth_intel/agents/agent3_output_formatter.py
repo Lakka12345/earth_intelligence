@@ -47,6 +47,39 @@ def format_ranked_output(
     print(f"(Ranking basis: {', '.join(preference_labels)})")
     print("=" * 78)
 
+    # ---- Transparency note on ranking trade-offs ----------------------
+    from models.website_analysis_schemas import RankingCriterion as RC
+    _active = {c.value for c in selected_criteria}
+    _note_lines = [
+        "NOTE ON RANKING: Results are ordered by the criteria you selected.",
+    ]
+    if "accessibility" in _active and "accuracy" not in _active:
+        _note_lines.append(
+            "  ⚠  You ranked by Accessibility only. Sources that are easier to access "
+            "may appear above sources with stronger scientific rigour or higher metadata "
+            "quality. Consider adding Accuracy to the ranking if scientific provenance matters."
+        )
+    if "availability" in _active and "accuracy" not in _active:
+        _note_lines.append(
+            "  ⚠  You ranked by Availability only. Sources covering more of your requested "
+            "variables may outrank those with better-validated or peer-reviewed data. "
+            "Consider adding Accuracy if data quality is a priority."
+        )
+    if "accuracy" in _active and "accessibility" not in _active:
+        _note_lines.append(
+            "  ℹ  You ranked by Accuracy. Top results may require registration, "
+            "credentials, or manual approval to access. Check the Accessibility section "
+            "of each result for access requirements before attempting retrieval."
+        )
+    if len(_active) == 3:
+        _note_lines.append(
+            "  ℹ  All three criteria are weighted equally. Adaptive scores reflect a "
+            "balanced trade-off between scientific quality, access ease, and variable coverage."
+        )
+    for line in _note_lines:
+        print(line)
+    print("-" * 78)
+
     if not entries:
         print("\nNo analyzed sources to display.")
         return

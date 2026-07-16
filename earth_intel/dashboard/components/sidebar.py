@@ -2,8 +2,8 @@
 
 import streamlit as st
 
-from components.auth import logout_user
-from utils.session_manager import reset_session
+from dashboard.components.auth import logout_user
+from dashboard.utils.session_manager import reset_session
 
 
 EXAMPLE_QUERIES = [
@@ -17,6 +17,7 @@ EXAMPLE_QUERIES = [
 NAV_ITEMS = [
     ("Dashboard", "◇"),
     ("New Analysis", "+"),
+    ("Voice Interface", "🎙"),
     ("Previous Analyses", "◷"),
     ("Pipeline", "▣"),
     ("Agent Outputs", "▤"),

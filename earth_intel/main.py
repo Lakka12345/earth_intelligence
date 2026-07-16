@@ -865,4 +865,16 @@ def main():
         )
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--web" in sys.argv:
+        import uvicorn
+        from fastapi import FastAPI
+        from fastapi.staticfiles import StaticFiles
+        from api.routes import router
+        app = FastAPI(title="Earth Intelligence Platform")
+        app.include_router(router)
+        app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+        print("\nStarting web server at http://localhost:8000\n")
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    else:
+        main()

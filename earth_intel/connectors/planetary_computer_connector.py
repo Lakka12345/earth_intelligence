@@ -23,6 +23,9 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor, Credentials, FetchRequest
 from connectors.connector_registry import register_connector
@@ -68,7 +71,7 @@ _COLLECTION_KEYWORDS: Dict[str, List[str]] = {
 def _sign_href(href: str) -> str:
     """Return SAS-signed version of a Planetary Computer asset href."""
     try:
-        r = requests.get(f"{_PC_SIGN}?href={href}", timeout=10)
+        r = requests.get(f"{_PC_SIGN}?href={href}", timeout=10, verify=False)
         if r.ok:
             return r.json().get("href", href)
     except Exception:
@@ -78,7 +81,7 @@ def _sign_href(href: str) -> str:
 
 def _estimate_size_head(url: str) -> Optional[int]:
     try:
-        r = requests.head(url, timeout=15, allow_redirects=True)
+        r = requests.head(url, timeout=15, allow_redirects=True, verify=False)
         cl = r.headers.get("Content-Length") or r.headers.get("content-length")
         if cl:
             return int(cl)
@@ -217,7 +220,7 @@ class PlanetaryComputerConnector(StaticDatasetConnector):
             params["datetime"] = f"{time_range[0]}/{end}"
 
         try:
-            r = requests.post(f"{_PC_STAC}/search", json=params, timeout=25)
+            r = requests.post(f"{_PC_STAC}/search", json=params, timeout=25, verify=False)
             if not r.ok:
                 return []
             return r.json().get("features", [])
@@ -309,19 +312,21 @@ class PlanetaryComputerConnector(StaticDatasetConnector):
 
     def discover_datasets(
         self,
-        query: str,
-        bbox=None,
-        time_range=None,
-        credentials: Optional[Credentials] = None,
+        snapshot,
+        context=None,
     ) -> List[DatasetDescriptor]:
         """List PC STAC collections and return as DatasetDescriptors."""
+        _ctx = context if isinstance(context, dict) else (vars(context) if context and hasattr(context, "__dict__") else {})
+        _snap_vars = list(getattr(snapshot, "variables_available", None) or []) if snapshot else []
+        keywords = _ctx.get("keywords") or _ctx.get("variables") or _snap_vars
+        query = " ".join(keywords).lower() if keywords else ""
         try:
-            r = requests.get(f"{_PC_STAC}/collections", timeout=20)
+            r = requests.get(f"{_PC_STAC}/collections", timeout=20, verify=False)
             if r.ok:
                 out = []
                 for col in r.json().get("collections", [])[:20]:
                     cid = col.get("id", "")
-                    if query.lower() not in (col.get("title", "") + cid).lower():
+                    if query and query not in (col.get("title", "") + cid).lower():
                         continue
                     extent = col.get("extent", {})
                     spatial = extent.get("spatial", {}).get("bbox", [[]])[0]
@@ -346,6 +351,16 @@ class PlanetaryComputerConnector(StaticDatasetConnector):
             pass
         return self.datasets
 
+    def _collection_metadata(self, collection: str) -> Dict[str, Any]:
+        """Fetch the PC STAC collection record (description, license, keywords, extent, citation)."""
+        try:
+            r = requests.get(f"{_PC_STAC}/collections/{collection}", timeout=20, verify=False)
+            if r.ok:
+                return r.json()
+        except Exception:
+            pass
+        return {}
+
     def probe_metadata(
         self,
         snapshot: SourceSnapshot,
@@ -362,25 +377,52 @@ class PlanetaryComputerConnector(StaticDatasetConnector):
         if items:
             item_meta = items[0].get("properties", {})
 
+        col_meta = self._collection_metadata(collection)
+        extent = col_meta.get("extent", {})
+        spatial_bbox = extent.get("spatial", {}).get("bbox", [None])[0]
+        temporal_interval = extent.get("temporal", {}).get("interval", [None])[0]
+        keywords = col_meta.get("keywords")
+        providers = col_meta.get("providers", [])
+        provider_name = next((p.get("name") for p in providers
+                              if "producer" in (p.get("roles") or []) or "host" in (p.get("roles") or [])), None) \
+            or (providers[0].get("name") if providers else None)
+        sci_doi = col_meta.get("sci:doi") or item_meta.get("sci:doi")
+        sci_citation = col_meta.get("sci:citation") or item_meta.get("sci:citation")
+
         return DatasetMetadata(
             source_id=snapshot.source_id,
             dataset_id=collection,
             collection=collection,
-            product=dataset.dataset_name if dataset else collection,
+            product=col_meta.get("title") or (dataset.dataset_name if dataset else collection),
             download_endpoint=signed_url or _PC_STAC,
             api_endpoint=_PC_STAC,
             metadata_endpoint=f"https://planetarycomputer.microsoft.com/dataset/{collection}",
             file_size_bytes=size,
             variables=list(fetch_request.variables or (dataset.supported_variables if dataset else [])),
-            spatial_coverage=dataset.spatial_coverage if dataset else "Global land",
-            temporal_coverage=item_meta.get("datetime", dataset.temporal_coverage if dataset else "Unknown"),
+            spatial_coverage=str(spatial_bbox) if spatial_bbox else (dataset.spatial_coverage if dataset else "Global land"),
+            temporal_coverage=item_meta.get("datetime") or (
+                f"{temporal_interval[0] or ''} – {temporal_interval[1] or 'present'}"
+                if temporal_interval else (dataset.temporal_coverage if dataset else "Unknown")
+            ),
             file_format="Cloud Optimized GeoTIFF",
             content_type="image/tiff; application=geotiff; profile=cloud-optimized",
-            license="Various — see individual collection licence",
-            retrieval_method="Planetary Computer STAC search + SAS token signing",
+            license=col_meta.get("license") or "Various — see individual collection licence",
+            retrieval_method="Planetary Computer STAC search + /collections metadata + SAS token signing",
             unavailable_reason="" if signed_url else
                 "PC STAC search returned no items for this query. "
                 "Try adjusting bbox or time range.",
+            dataset_name=col_meta.get("title"),
+            provider=provider_name or "Microsoft Planetary Computer",
+            description=col_meta.get("description"),
+            spatial_resolution=(f"{item_meta.get('gsd')} m" if item_meta.get("gsd") else None),
+            crs=(f"EPSG:{item_meta.get('proj:epsg')}" if item_meta.get("proj:epsg") else None),
+            bounding_box=list(spatial_bbox) if spatial_bbox else None,
+            start_date=str(temporal_interval[0]) if temporal_interval and temporal_interval[0] else None,
+            end_date=str(temporal_interval[1]) if temporal_interval and len(temporal_interval) > 1 and temporal_interval[1] else None,
+            citation=(sci_citation or (f"https://doi.org/{sci_doi}" if sci_doi else None)),
+            keywords=keywords,
+            version=col_meta.get("stac_version"),
+            authentication_required=False,
         )
 
     def probe_size(

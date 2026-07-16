@@ -156,6 +156,328 @@ def _deduplicate_candidates(candidates: List[CandidateSource]) -> List[Candidate
     return unique
 
 
+# URL path segments that indicate a machine-readable data API endpoint.
+# Any candidate whose URL does NOT contain at least one of these is likely
+# a human-facing landing page and will waste Agent 4's time.
+_DATA_API_PATH_MARKERS = ("/api/", "/thredds/", "/erddap/", "/stac/", "/wcs", "/wms",
+                          "/wfs", "/ows", "/opendap/", "/dods/", "/catalog/", "/ckan/",
+                          "/griddap/", "/tabledap/", "/ftp/")
+
+# TLDs whose bare-domain form (scheme + host only, no meaningful path) are
+# routinely returned by the LLM as homepage stand-ins. Extend this list if
+# new TLD patterns appear in practice.
+_BARE_DOMAIN_TLDS = (
+    ".org", ".com", ".net", ".int", ".in", ".gov", ".edu",
+    ".io", ".co", ".info", ".eu", ".de", ".uk", ".fr", ".au",
+)
+
+# Known source_ids → canonical API base URLs.
+# When a bare-domain URL is detected for a source whose real endpoint is
+# known here, the URL is corrected rather than the candidate being dropped.
+# Add entries whenever a new provider starts appearing as a bare domain.
+_CATALOG_ENDPOINT_OVERRIDES: Dict[str, str] = {
+    "gdacs":         "https://www.gdacs.org/gdacsapi/api/",
+    "reliefweb":     "https://api.reliefweb.int/v1/",
+    "openaq":        "https://api.openaq.org/v2/",
+    "noaa_ncei":     "https://www.ncei.noaa.gov/access/services/data/v1/",
+    "nasa_earthdata":"https://cmr.earthdata.nasa.gov/search/",
+    "copernicus":    "https://cds.climate.copernicus.eu/api/v2/",
+    "usgs":          "https://waterservices.usgs.gov/nwis/",
+    "ecmwf":         "https://api.ecmwf.int/v1/",
+    "imd":           "https://internal.imd.gov.in/section/nhac/dynamic/",
+    "incois":        "https://incois.gov.in/erddap/",
+    "discomap":      "https://discomap.eea.europa.eu/arcgis/rest/services/",
+    "eosdis":        "https://cmr.earthdata.nasa.gov/search/",
+    "worldbank":     "https://api.worldbank.org/v2/",
+    "ocha":          "https://api.hpc.tools/v2/",
+}
+
+
+def _is_bare_domain_url(url: str) -> bool:
+    """
+    Returns True when a URL is nothing more than a bare homepage —
+    i.e. the path component is empty, '/', or a single short slug with
+    no data-API meaning.
+
+    Logic (applied after stripping scheme and query/fragment):
+      1. Parse out the path.  A URL with no path or path == '/' is always bare.
+      2. If the path has two or more non-empty segments (e.g. /v1/datasets),
+         it is NOT bare — something meaningful is there.
+      3. For single-segment paths (e.g. /gdacs, /home, /en):
+         - If the host ends with a known landing-page TLD AND the segment
+           is five characters or fewer (a typical homepage slug like /en,
+           /us, /in), treat it as bare.
+         - Otherwise, give benefit of the doubt and call it non-bare.
+
+    This is intentionally conservative: it only rejects the clearest cases
+    (pure homepages) so valid single-path API roots like /erddap are kept.
+    """
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+
+    path = parsed.path.rstrip("/")
+
+    # No path at all — definitely bare
+    if not path:
+        return True
+
+    segments = [s for s in path.split("/") if s]
+
+    # Two or more non-empty segments → assume it has real structure
+    if len(segments) >= 2:
+        return False
+
+    # Single segment: bare only if TLD is in our landing-page list AND the
+    # segment is very short (homepage slug, language code, country code, etc.)
+    host = parsed.netloc.lower()
+    if any(host.endswith(tld) for tld in _BARE_DOMAIN_TLDS):
+        return len(segments[0]) <= 5
+
+    return False
+
+
+# URL path/query patterns that look like an API path marker but actually
+# serve HTML map portals or tile viewers rather than raw data.
+# Checked AFTER _DATA_API_PATH_MARKERS so we can specifically veto
+# WMS/WFS endpoints that are viewer-only (no SERVICE=WMS&REQUEST=GetMap
+# or GetFeature parameters attached) and generic map portal paths.
+#
+# Rule: if a URL contains a marker from _DATA_API_PATH_MARKERS BUT also
+# matches a pattern here, it is rejected as a portal.  Extend this list
+# as new interactive-portal URL shapes appear in practice.
+_HTML_PORTAL_PATH_PATTERNS: tuple = (
+    # Bare /wms or /wms/ with no query string → map viewer, not GetMap
+    "/wms",
+    "/wfs",
+    "/wcs",
+    # Common interactive map portal path segments
+    "/bhuvan/",          # NRSC Bhuvan portal
+    "/viewer/",
+    "/mapviewer",
+    "/portal/",
+    "/geoportal/",
+    "/webmap/",
+    "/explore/",
+    "/dashboard/",
+    "/visualization/",
+    "/interactive/",
+)
+
+# Query-string parameters that confirm a WMS/WFS URL is a *real* data
+# request rather than a viewer load.  If any of these are present the
+# URL is kept even if a portal path pattern matched.
+_WMS_DATA_PARAMS: tuple = (
+    "request=getmap",
+    "request=getfeature",
+    "request=getcoverage",
+    "request=getdata",
+    "request=getcapabilities",   # capabilities XML is machine-readable
+    "service=wfs",
+    "service=wcs",
+    "outputformat=",
+    "typenames=",
+    "typename=",
+)
+
+
+def _is_portal_url(url: str) -> bool:
+    """
+    Returns True when a URL contains an API-looking path segment (WMS,
+    WFS, /portal/, /viewer/, etc.) but carries no query parameters that
+    would make it a real machine-readable data request.
+
+    Examples that return True (portal / viewer):
+      https://bhuvan-app1.nrsc.gov.in/bhuvan/wms
+      https://example.org/viewer/map
+      https://portal.example.com/geoportal/home
+
+    Examples that return False (real data request):
+      https://example.org/wms?SERVICE=WMS&REQUEST=GetMap&LAYERS=flood&...
+      https://host/ows?service=WFS&request=GetFeature&typeName=...
+    """
+    lower = url.lower()
+
+    # Only relevant when a portal path pattern is present
+    if not any(pat in lower for pat in _HTML_PORTAL_PATH_PATTERNS):
+        return False
+
+    # If the URL already has proper WMS/OGC data parameters, it is fine
+    if any(param in lower for param in _WMS_DATA_PARAMS):
+        return False
+
+    # Portal path present + no data query params → it's a viewer
+    return True
+
+
+def _is_api_url(url: str) -> bool:
+    """
+    Returns True if the URL looks like a machine-readable data endpoint.
+
+    A URL passes if ALL of:
+      1. It contains a known API path marker (_DATA_API_PATH_MARKERS), OR
+         ends with a recognised data-file extension.
+      2. It does NOT match _is_portal_url() — i.e. it is not a bare WMS
+         viewer, map portal, or interactive dashboard.
+
+    NOTE: origin-based trust ("catalog", "provider_registry") has been
+    removed from this function.  Those origins are still kept by
+    _filter_landing_pages, but ONLY after _is_bare_domain_url() clears
+    them — this prevents the LLM from smuggling bare homepages through
+    the filter simply by labelling them as catalog sources.
+    """
+    lower = url.lower()
+
+    has_api_marker = any(marker in lower for marker in _DATA_API_PATH_MARKERS)
+    has_data_ext   = any(lower.rstrip("/").endswith(ext) for ext in
+                         (".nc", ".nc4", ".hdf", ".h5", ".csv", ".json", ".tif", ".tiff",
+                          ".grib", ".grb", ".grb2", ".zip", ".gz", ".tar"))
+
+    if not (has_api_marker or has_data_ext):
+        return False
+
+    # Veto portal/viewer URLs even if they have an API-looking path
+    if _is_portal_url(url):
+        return False
+
+    return True
+
+
+def _resolve_catalog_endpoint(candidate: CandidateSource) -> Optional[str]:
+    """
+    Looks up a known API endpoint for a candidate whose URL was detected as
+    a bare domain, using _CATALOG_ENDPOINT_OVERRIDES.
+
+    Matching is done against the candidate's source_id and name (both
+    lowercased, with hyphens/underscores normalised to spaces) so that
+    "gdacs", "gdacs_api", "GDACS", "GDACS Disaster Alerting" all match.
+
+    Returns the replacement URL string, or None if no override is known.
+    """
+    def _normalise(s: str) -> str:
+        return s.lower().replace("-", " ").replace("_", " ")
+
+    sid   = _normalise(candidate.source_id)
+    name  = _normalise(candidate.name)
+
+    for key, endpoint in _CATALOG_ENDPOINT_OVERRIDES.items():
+        norm_key = _normalise(key)
+        if norm_key in sid or norm_key in name:
+            return endpoint
+    return None
+
+
+def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSource]:
+    """
+    Strict two-stage URL filter applied to ALL candidates regardless of origin.
+
+    Stage 1 — Bare-domain check (_is_bare_domain_url):
+        Detects URLs that are nothing more than a homepage
+        (e.g. https://www.gdacs.org, https://reliefweb.int).
+        Applied universally — even "catalog" / "provider_registry" / "qdrant_cache"
+        sources are subject to this check, because the LLM sometimes returns a
+        bare homepage labelled as a trusted-origin source, which previously
+        bypassed all filtering.
+
+        When a bare URL is found:
+          a) If _resolve_catalog_endpoint() knows the real API base, the URL
+             is CORRECTED in-place and the candidate is kept (rescued).
+          b) Otherwise the candidate is DROPPED with a log entry.
+
+    Stage 2 — API path + portal check (_is_api_url / _is_portal_url):
+        For non-bare URLs, confirms the URL contains a recognisable API path
+        segment or data-file extension AND is not a bare WMS viewer or
+        interactive map portal.  Curated-origin URLs that passed Stage 1 are
+        also subject to the portal veto — a Bhuvan /wms landing page is an
+        HTML portal regardless of whether the LLM labelled it "catalog".
+
+    Stage 3 — Live content-type sniff (dynamic + curated portal suspects):
+        For any URL that passed Stages 1–2 but whose path contains a WMS/OGC
+        marker, a lightweight HEAD request checks the Content-Type header.
+        If the server responds with text/html (map viewer) rather than
+        application/xml, application/json, or a binary data type, the
+        candidate is dropped.  Non-fatal: if the HEAD request times out or
+        errors, the candidate is kept (benefit of the doubt).
+
+    Logs a summary so the operator can see what was filtered or rescued.
+    """
+    import urllib.request
+
+    def _head_returns_html(url: str, timeout: int = 4) -> bool:
+        """HEAD the URL; return True only when Content-Type is unambiguously HTML."""
+        try:
+            req = urllib.request.Request(url, method="HEAD",
+                                         headers={"User-Agent": "EarthIntelligenceAgent/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                ct = resp.headers.get("Content-Type", "").lower()
+            return "text/html" in ct and "xml" not in ct and "json" not in ct
+        except Exception:
+            return False  # timeout / connection error → keep the candidate
+
+    # WMS/OGC markers whose bare form often serves a map viewer HTML page
+    _WMS_MARKERS = ("/wms", "/wfs", "/wcs", "/ows")
+
+    kept:    List[CandidateSource] = []
+    rescued: List[str] = []   # (name, old_url → new_url)
+    dropped: List[CandidateSource] = []
+
+    for c in candidates:
+        origin = getattr(c, "discovery_origin", "") or ""
+
+        # ── Stage 1: bare-domain check (ALL origins) ─────────────────
+        if _is_bare_domain_url(c.url):
+            replacement = _resolve_catalog_endpoint(c)
+            if replacement:
+                rescued.append(f"{c.name}  ({c.url} → {replacement})")
+                c.url = replacement
+                # fall through to Stage 2 with the corrected URL
+            else:
+                dropped.append(c)
+                continue   # skip Stage 2 — nothing to salvage
+
+        # ── Stage 2: API path + portal veto (ALL origins) ────────────
+        # Portal check applies even to curated sources — a Bhuvan /wms
+        # viewer is an HTML portal regardless of discovery_origin label.
+        if _is_portal_url(c.url):
+            dropped.append(c)
+            continue
+
+        curated = origin in ("catalog", "provider_registry", "qdrant_cache")
+        if not curated and not _is_api_url(c.url):
+            dropped.append(c)
+            continue
+
+        # ── Stage 3: live HEAD sniff for WMS/OGC borderline cases ────
+        url_lower = c.url.lower()
+        if any(m in url_lower for m in _WMS_MARKERS):
+            if _head_returns_html(c.url):
+                dropped.append(c)
+                print(f"  [Phase 1 filter] HEAD probe: {c.name} returned text/html — dropped.")
+                continue
+
+        kept.append(c)
+
+    if rescued:
+        print(
+            f"[Phase 1 filter] Rescued {len(rescued)} bare-domain URL(s) "
+            f"using catalog endpoint overrides:"
+        )
+        for note in rescued:
+            print(f"  ↳ {note}")
+
+    if dropped:
+        print(
+            f"[Phase 1 filter] Dropped {len(dropped)} bare-domain / landing-page URL(s) "
+            f"(no API path, no catalog override): "
+            + ", ".join(c.name for c in dropped[:5])
+            + (" …" if len(dropped) > 5 else "")
+        )
+
+    return kept
+
+
 # ------------------------------------------------------------------ #
 # Phase 1a — Catalog query (unchanged)                                #
 # ------------------------------------------------------------------ #
@@ -1287,9 +1609,65 @@ def _compute_metadata_quality_score(candidate: CandidateSource) -> float:
 
 
 def _compute_historical_reliability_score(candidate: CandidateSource) -> float:
-    if candidate.qdrant_historical_reliability is not None:
-        return candidate.qdrant_historical_reliability
-    return candidate.catalog_historical_reliability
+    """
+    Returns the best available historical reliability score.
+
+    If Qdrant has real usage history (times_used ≥ 2), the observed
+    success rate takes precedence over the catalog default — it reflects
+    what actually happened during previous retrievals, not what the
+    catalog assumed. For sources seen only once, we blend catalog default
+    and observed rate equally to avoid over-penalising a single failure.
+    """
+    if candidate.qdrant_historical_reliability is None:
+        return candidate.catalog_historical_reliability
+
+    observed = candidate.qdrant_historical_reliability
+    times_used = getattr(candidate, "qdrant_times_used", 0) or 0
+
+    if times_used >= 2:
+        # Enough evidence — trust the observed rate fully
+        return observed
+    elif times_used == 1:
+        # Blend: one data point is noisy, soften the impact
+        return round(0.5 * observed + 0.5 * candidate.catalog_historical_reliability, 4)
+    else:
+        return candidate.catalog_historical_reliability
+
+
+def _compute_qdrant_adjusted_scientific_acceptance(candidate: CandidateSource) -> float:
+    """
+    Adjusts the catalog's scientific_acceptance score downward when Qdrant
+    reliability history shows a high failure rate, and upward slightly when
+    the source has a consistently good track record.
+
+    Rationale: a source that regularly returns 404s, HTML landing pages,
+    or connection errors is less scientifically usable regardless of how
+    well-regarded it is in the literature. Conversely, a source that has
+    worked reliably many times deserves a modest credibility boost.
+
+    Adjustment rules (applied only when times_used ≥ 2):
+      • success_rate < 0.40  →  reduce scientific_acceptance by up to 0.20
+      • success_rate > 0.85  →  boost  scientific_acceptance by up to 0.05
+      • 0.40 – 0.85          →  no change (neutral zone)
+    """
+    base = candidate.catalog_scientific_acceptance
+    if candidate.qdrant_historical_reliability is None:
+        return base
+
+    times_used = getattr(candidate, "qdrant_times_used", 0) or 0
+    if times_used < 2:
+        return base  # too little evidence to adjust
+
+    success_rate = candidate.qdrant_historical_reliability
+    if success_rate < 0.40:
+        # Scale penalty: 0% success → -0.20, 40% success → 0
+        penalty = 0.20 * (1.0 - success_rate / 0.40)
+        return round(max(0.0, base - penalty), 4)
+    elif success_rate > 0.85:
+        # Modest boost: 85% → +0, 100% → +0.05
+        boost = 0.05 * ((success_rate - 0.85) / 0.15)
+        return round(min(1.0, base + boost), 4)
+    return base
 
 
 # ------------------------------------------------------------------ #
@@ -1514,7 +1892,25 @@ def phase5_rank_sources(
                     if candidate.from_qdrant_cache else "No prior usage history. Using catalog default."
                 ),
             ),
-            scientific_acceptance=ParameterScore(score=candidate.catalog_scientific_acceptance, explanation=f"Pre-assigned scientific acceptance for {candidate.name}."),
+            scientific_acceptance=ParameterScore(
+                score=_compute_qdrant_adjusted_scientific_acceptance(candidate),
+                explanation=(
+                    f"Catalog base {candidate.catalog_scientific_acceptance:.2f}; "
+                    f"adjusted down due to Qdrant failure history "
+                    f"({getattr(candidate, 'qdrant_times_used', 0)} uses, "
+                    f"{getattr(candidate, 'qdrant_times_succeeded', 0)} successes)."
+                    if (candidate.qdrant_historical_reliability is not None
+                        and (getattr(candidate, "qdrant_times_used", 0) or 0) >= 2
+                        and candidate.qdrant_historical_reliability < 0.40)
+                    else f"Pre-assigned scientific acceptance for {candidate.name}."
+                    + (f" Boosted slightly — {getattr(candidate, 'qdrant_times_used', 0)} "
+                       f"reliable uses in Qdrant history."
+                       if (candidate.qdrant_historical_reliability is not None
+                           and (getattr(candidate, "qdrant_times_used", 0) or 0) >= 2
+                           and candidate.qdrant_historical_reliability > 0.85)
+                       else "")
+                ),
+            ),
             real_time_availability=ParameterScore(
                 score=_compute_real_time_availability_score(candidate),
                 explanation=(f"Response latency: {candidate.response_latency_ms}ms." if candidate.response_latency_ms is not None else "Source unreachable during probe."),
@@ -1878,11 +2274,12 @@ def run_agent3(request: RetrievalRequest) -> DiscoveryOutput:
     # Merge: catalog first (highest authority), then dynamic, then Qdrant cache
     all_candidates = catalog_candidates + dynamic_candidates + qdrant_candidates
     candidates = _deduplicate_candidates(all_candidates)
+    candidates = _filter_landing_pages(candidates)
 
     print(f"[Phase 1] Combined: {len(catalog_candidates)} catalog + "
           f"{len(dynamic_candidates)} dynamic + "
           f"{len(qdrant_candidates)} Qdrant = "
-          f"{len(candidates)} unique candidate(s) after dedup.")
+          f"{len(candidates)} unique candidate(s) after dedup + bare-domain/landing-page filter.")
 
     if not candidates:
         print("[Agent 3] No candidates found. Discovery complete with no results.")

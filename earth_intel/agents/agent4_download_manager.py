@@ -25,6 +25,7 @@ claiming it was subsetted.
 """
 
 import os
+import shutil
 import time
 import hashlib
 from dataclasses import dataclass
@@ -41,6 +42,25 @@ from models.agent4_schemas import (
     FetchMethod,
 )
 from models.website_analysis_schemas import SourceSnapshot
+
+def playwright_available() -> bool:
+    """
+    Browser-assisted download support (agents/browser_utils.py,
+    browser_manager.py, browser_login.py, browser_download.py,
+    browser_session.py) has not been built yet in this project.
+
+    Returning False here keeps the whole Agent 4 pipeline importable
+    and runnable today -- every connector that only needs the API path
+    works exactly as before. The only thing disabled is the fallback
+    for connectors that declare requires_browser_download /
+    requires_browser_auth, which will now report a clear "browser
+    download not available" error instead of crashing on import.
+
+    Once those browser_*.py files exist, delete this stub and restore:
+        from agents.browser_utils import playwright_available, provider_key_from_url
+    """
+    return False
+
 
 DEFAULT_MANAGED_FOLDER = os.path.join(os.getcwd(), "data")
 MAX_DOWNLOAD_ATTEMPTS = 3
@@ -337,6 +357,74 @@ def _run_with_retries(label: str, fetch_callable):
     raise DownloadRetryError(str(last_error), retries_attempted) from last_error
 
 
+def _move_to_dest(local_path: str, dest_dir: str, filename_hint: str) -> str:
+    """
+    Ensures a successfully-downloaded file ends up in dest_dir.
+
+    Many connectors (open_meteo, CKAN, generic HTTP) write to the
+    system temp folder and return that temp path rather than the
+    dest_path we supplied in FetchRequest.  Without this step the
+    file lives in C:\\Users\\<user>\\AppData\\Local\\Temp\\... (or /tmp/...)
+    forever and the manifest points at a path the user never sees.
+
+    Strategy:
+      1. If local_path is already inside dest_dir — nothing to do.
+      2. Try shutil.move() first (rename on the same drive, copy+delete
+         across drives / filesystems).
+      3. If move raises (e.g. cross-device with a locked source file),
+         fall back to shutil.copy2() and leave the original in place —
+         the user still gets their data and we log a warning.
+
+    Returns the final path where the file now lives.
+    """
+    if not local_path or not os.path.exists(local_path):
+        return local_path  # nothing to move; caller will report the error
+
+    real_dest_dir = os.path.realpath(dest_dir)
+    real_src      = os.path.realpath(local_path)
+
+    # Already in the right place — skip the move entirely
+    if real_src.startswith(real_dest_dir + os.sep) or real_src == real_dest_dir:
+        return local_path
+
+    os.makedirs(dest_dir, exist_ok=True)
+
+    # Determine the final filename: prefer the connector's own filename
+    # over the generic .dat placeholder we generated in dest_path.
+    src_basename = os.path.basename(local_path)
+    final_name   = src_basename if src_basename else filename_hint
+    final_path   = os.path.join(dest_dir, final_name)
+
+    # Avoid silently overwriting a pre-existing file with the same name
+    if os.path.exists(final_path) and os.path.realpath(final_path) != real_src:
+        base, ext   = os.path.splitext(final_name)
+        final_name  = f"{base}_{int(time.time())}{ext}"
+        final_path  = os.path.join(dest_dir, final_name)
+
+    try:
+        shutil.move(local_path, final_path)
+        print(f"  [Download Manager] Moved to destination: {final_path}")
+    except Exception as move_exc:
+        # Cross-device or locked-file edge case — copy and keep the original
+        try:
+            shutil.copy2(local_path, final_path)
+            print(
+                f"  [Download Manager] move() failed ({move_exc}); "
+                f"copy2() succeeded — original remains at {local_path}"
+            )
+        except Exception as copy_exc:
+            # Both failed — return the original temp path so the manifest
+            # is honest about where the file actually is
+            print(
+                f"  [Download Manager] WARNING: could not move or copy file to "
+                f"{dest_dir}: move={move_exc}, copy={copy_exc}. "
+                f"File remains at {local_path}"
+            )
+            return local_path
+
+    return final_path
+
+
 def download_source(
     snapshot: SourceSnapshot,
     variables: List[str],
@@ -368,6 +456,7 @@ def download_source(
         )
         total_retries += retries
         result = _engine_report(fetch_request)
+        local_path = _move_to_dest(local_path, dest_dir, os.path.basename(dest_path))
         expected_size = dataset_metadata.file_size_bytes if dataset_metadata else None
         validation_notes = list(getattr(result, "validation_notes", None) or _validate_download(local_path, expected_size=expected_size, metadata=dataset_metadata))
         success = _is_valid_download(local_path, validation_notes)
@@ -404,6 +493,7 @@ def download_source(
         )
         total_retries += retries
         result = _engine_report(fetch_request)
+        local_path = _move_to_dest(local_path, dest_dir, os.path.basename(dest_path))
         trimmed = _trim_local_file(local_path, variables)
         expected_size = dataset_metadata.file_size_bytes if dataset_metadata else None
         if result is not None and trimmed:
@@ -440,9 +530,63 @@ def download_source(
                                       checksum_status="unavailable" if not dataset_metadata or not dataset_metadata.checksum else "not_checked",
                                       validation_status="failed")
     except Exception as exc:
+        api_error = str(exc)
+        # ── Browser fallback ─────────────────────────────────────────────────
+        # Only activated when the connector declares it needs browser support
+        # AND Playwright is available.  All existing API-only connectors skip
+        # this block entirely (requires_browser_download defaults to False).
+        requires_browser = (
+            getattr(connector, "requires_browser_download", False)
+            or getattr(connector, "requires_browser_auth", False)
+        )
+        if requires_browser and playwright_available():
+            print(
+                f"  API download failed for {connector.name} "
+                f"({api_error}). Attempting browser-assisted download."
+            )
+            browser_result = _browser_download_fallback(
+                snapshot=snapshot,
+                connector=connector,
+                fetch_request=fetch_request,
+                credentials=credentials,
+                dest_dir=dest_dir,
+                dataset_metadata=dataset_metadata,
+            )
+            if browser_result.success and browser_result.local_path:
+                local_path = _move_to_dest(browser_result.local_path, dest_dir, os.path.basename(dest_path))
+                validation_notes = _validate_download(
+                    local_path,
+                    expected_size=dataset_metadata.file_size_bytes if dataset_metadata else None,
+                    metadata=dataset_metadata,
+                )
+                success = _is_valid_download(local_path, validation_notes)
+                return DownloadManifestEntry(
+                    source_id=snapshot.source_id,
+                    source_name=snapshot.name,
+                    local_path=local_path,
+                    fetch_method=FetchMethod.full_download_untrimmed,
+                    variables_included=variables,
+                    success=success,
+                    size_bytes=os.path.getsize(local_path) if os.path.exists(local_path) else None,
+                    estimated_size_bytes=dataset_metadata.file_size_bytes if dataset_metadata else None,
+                    retries_attempted=total_retries,
+                    validation_notes=validation_notes + browser_result.notes,
+                    dataset_metadata=dataset_metadata,
+                    provider=dataset_metadata.product if dataset_metadata and dataset_metadata.product else snapshot.name,
+                    connector_used=connector.name,
+                    protocol_used=connector.descriptor.connector_type.value,
+                    checksum_status=_checksum_status(local_path, dataset_metadata, None),
+                    validation_status=_validation_status(success, validation_notes),
+                    error=None if success else "; ".join(validation_notes),
+                )
+            # Browser also failed — fall through to the structured error below
+            api_error = (
+                f"{api_error} | Browser fallback: {browser_result.error or 'failed'}"
+            )
+
         return DownloadManifestEntry(source_id=snapshot.source_id, source_name=snapshot.name,
                                       fetch_method=FetchMethod.full_download_untrimmed, success=False,
-                                      error=str(exc), retries_attempted=total_retries,
+                                      error=api_error, retries_attempted=total_retries,
                                       estimated_size_bytes=dataset_metadata.file_size_bytes if dataset_metadata else None,
                                       dataset_metadata=dataset_metadata,
                                       provider=dataset_metadata.product if dataset_metadata and dataset_metadata.product else snapshot.name,
@@ -450,3 +594,94 @@ def download_source(
                                       protocol_used=connector.descriptor.connector_type.value,
                                       checksum_status="unavailable" if not dataset_metadata or not dataset_metadata.checksum else "not_checked",
                                       validation_status="failed")
+
+
+def _browser_download_fallback(
+    snapshot,
+    connector,
+    fetch_request: FetchRequest,
+    credentials: Optional[Credentials],
+    dest_dir: str,
+    dataset_metadata: Optional[DatasetMetadata],
+):
+    """
+    Attempt a browser-assisted download when the API path has failed.
+
+    This function is only called when:
+      a) The connector declares ``requires_browser_download = True`` or
+         ``requires_browser_auth = True``, AND
+      b) Playwright is importable.
+
+    The function asks the connector for a browser-specific download URL
+    (via the optional ``browser_download_url`` attribute or method) and
+    then drives a BrowserDownload session through the login + download
+    flow.
+
+    Returns a ``BrowserDownloadResult`` — the caller checks ``.success``.
+    """
+    from agents.browser_manager import BrowserManager
+    from agents.browser_login import BrowserLogin
+    from agents.browser_download import BrowserDownload, BrowserDownloadResult
+    from agents.browser_utils import provider_key_from_url
+
+    provider_key = provider_key_from_url(snapshot.url)
+    login_url = getattr(connector, "login_url", None)
+    download_page_url = (
+        getattr(connector, "browser_download_url", None)
+        or (dataset_metadata.download_endpoint if dataset_metadata else None)
+        or snapshot.url
+    )
+    download_selector = getattr(connector, "browser_download_selector", None)
+    requires_async_wait = getattr(connector, "requires_async_job_wait", False)
+    headless = not bool(os.environ.get("BROWSER_HEADFUL"))
+
+    print(f"  [Browser] Launching Chromium for '{provider_key}' (headless={headless}).")
+
+    with BrowserManager(headless=headless, downloads_dir=dest_dir) as mgr:
+        # Restore any previously saved session for this provider
+        ctx = mgr.get_authenticated_context(provider_key)
+        page = ctx.new_page()
+
+        # Login if the connector provides a login URL and credentials exist
+        session = None
+        if login_url and credentials and (credentials.username or credentials.email):
+            login_handler = BrowserLogin(page, ctx, provider_key)
+            session = login_handler.login(
+                login_url=login_url,
+                credentials=credentials,
+            )
+            if session.is_authenticated:
+                mgr.save_cookies(provider_key, ctx)
+                print(f"  [Browser] Login succeeded for '{provider_key}'.")
+            else:
+                error = session.extra.get("login_error", "Login failed.")
+                print(f"  [Browser] Login failed for '{provider_key}': {error}")
+                return BrowserDownloadResult(success=False, error=f"Browser login failed: {error}")
+        else:
+            # No login required or no credentials — create a plain session wrapper
+            from agents.browser_session import BrowserSession
+            session = BrowserSession(provider_key=provider_key, context=ctx, page=page, is_authenticated=True)
+
+        downloader = BrowserDownload(session=session, dest_dir=dest_dir)
+
+        if requires_async_wait:
+            result = downloader.wait_for_async_job(
+                status_page_url=download_page_url,
+                download_selector=download_selector,
+            )
+        else:
+            result = downloader.download_from_url(
+                download_page_url=download_page_url,
+                selector=download_selector,
+            )
+
+    if result.success:
+        print(
+            f"  [Browser] Download complete: {result.local_path} "
+            f"({result.file_size_bytes or '?'} bytes, "
+            f"{result.elapsed_seconds:.1f}s)."
+        )
+    else:
+        print(f"  [Browser] Download failed: {result.error}")
+
+    return result

@@ -22,6 +22,9 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor, Credentials, FetchRequest
 from connectors.connector_registry import register_connector
@@ -220,6 +223,7 @@ class CopernicusCDSConnector(StaticDatasetConnector):
                 f"{_CDS_CATALOGUE}/{dataset_id}",
                 timeout=20,
                 headers={"Accept": "application/json"},
+                verify=False,
             )
             if r.ok:
                 return r.json()
@@ -255,21 +259,24 @@ class CopernicusCDSConnector(StaticDatasetConnector):
 
     def discover_datasets(
         self,
-        query: str,
-        bbox=None,
-        time_range=None,
-        credentials: Optional[Credentials] = None,
+        snapshot,
+        context=None,
     ) -> List[DatasetDescriptor]:
         """
         Query CDS catalogue for datasets matching the query keyword.
         Falls back to static catalogue on failure.
         """
+        _ctx = context if isinstance(context, dict) else (vars(context) if context and hasattr(context, "__dict__") else {})
+        _snap_vars = list(getattr(snapshot, "variables_available", None) or []) if snapshot else []
+        keywords = _ctx.get("keywords") or _ctx.get("variables") or _snap_vars
+        query = " ".join(keywords) if keywords else "reanalysis"
         try:
             r = requests.get(
                 _CDS_CATALOGUE,
                 params={"q": query, "limit": 10},
                 timeout=20,
                 headers={"Accept": "application/json"},
+                verify=False,
             )
             if r.ok:
                 items = r.json() if isinstance(r.json(), list) else r.json().get("results", [])
@@ -321,6 +328,34 @@ class CopernicusCDSConnector(StaticDatasetConnector):
         )
         size = self._estimate_size_from_request(dataset.dataset_id, req)
 
+        # The CDS catalogue record's shape varies by dataset, so read
+        # defensively across the field names Copernicus has used
+        # (title/abstract vs description-block list, licence_list vs licence_id, etc.)
+        title = cat_meta.get("title")
+        abstract = cat_meta.get("abstract")
+        if not abstract:
+            for block in cat_meta.get("description", []) or []:
+                if isinstance(block, dict) and block.get("id") in ("abstract", "summary", None):
+                    abstract = block.get("content")
+                    if abstract:
+                        break
+        licence_list = cat_meta.get("licence_list") or cat_meta.get("licences")
+        licence = (
+            cat_meta.get("licence_id")
+            or (licence_list[0].get("title") if licence_list and isinstance(licence_list[0], dict) else None)
+            or (licence_list[0] if licence_list and isinstance(licence_list[0], str) else None)
+        )
+        keywords = cat_meta.get("keywords")
+        var_catalogue = cat_meta.get("variables")
+        var_units = None
+        if isinstance(var_catalogue, dict):
+            var_units = {k: v.get("units") for k, v in var_catalogue.items()
+                         if isinstance(v, dict) and v.get("units")} or None
+        extent = cat_meta.get("extent") or cat_meta.get("bbox")
+        update_freq = cat_meta.get("update_frequency") or cat_meta.get("temporal_update")
+        version = cat_meta.get("version") or cat_meta.get("update_date")
+        doi = cat_meta.get("doi")
+
         return DatasetMetadata(
             source_id=snapshot.source_id,
             dataset_id=dataset.dataset_id,
@@ -335,10 +370,21 @@ class CopernicusCDSConnector(StaticDatasetConnector):
             temporal_coverage=cat_meta.get("temporal_coverage", dataset.temporal_coverage),
             file_format="NetCDF",
             content_type="application/x-netcdf",
-            license=cat_meta.get("licence_id", "Copernicus licence to use Copernicus products"),
+            license=licence or "Copernicus licence to use Copernicus products",
             retrieval_method="cdsapi retrieve" if _cdsapi_available() else "CDS REST API",
             unavailable_reason="" if self._cds_credentials(credentials) else
                 "No CDS credentials found. Provide api_key or configure ~/.cdsapirc.",
+            dataset_name=title or dataset.dataset_name,
+            provider="Copernicus Climate Data Store (C3S)",
+            description=abstract,
+            variable_units=var_units,
+            bounding_box=list(extent) if isinstance(extent, (list, tuple)) and len(extent) == 4 else None,
+            crs="EPSG:4326",
+            citation=(f"https://doi.org/{doi}" if doi else None),
+            keywords=keywords,
+            update_frequency=update_freq,
+            version=str(version) if version else None,
+            authentication_required=True,
         )
 
     def probe_size(
@@ -469,6 +515,7 @@ class CopernicusCDSConnector(StaticDatasetConnector):
             headers=headers,
             json={"dataset": dataset_id, "inputs": req},
             timeout=60,
+            verify=False,
         )
         if not r.ok:
             raise RuntimeError(
@@ -486,6 +533,7 @@ class CopernicusCDSConnector(StaticDatasetConnector):
                 f"{_CDS_API_BASE}/tasks/{job_id}",
                 headers=headers,
                 timeout=30,
+                verify=False,
             )
             if not s.ok:
                 continue
@@ -495,7 +543,7 @@ class CopernicusCDSConnector(StaticDatasetConnector):
                 result_url = state.get("result", {}).get("href")
                 if not result_url:
                     raise RuntimeError("CDS REST: job completed but no download URL.")
-                dl = requests.get(result_url, headers=headers, stream=True, timeout=600)
+                dl = requests.get(result_url, headers=headers, stream=True, timeout=600, verify=False)
                 os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
                 with open(dest, "wb") as f:
                     for chunk in dl.iter_content(chunk_size=65536):

@@ -374,6 +374,29 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
         else:
             print("Could not resolve a specific date range for subsetting -- sources will use their full time extent.")
 
+        # Populate the existing RetrievalRequest itself with the resolved
+        # values (in addition to the local bounding_box/time_range
+        # variables already used below) so any downstream consumer that
+        # holds a reference to `request` -- rather than the values threaded
+        # through this function -- also sees the resolved region/dates.
+        # Best-effort only: if the model can't take these keys (e.g. a
+        # frozen/validated Pydantic instance from an older schema version),
+        # this must never block retrieval -- the local variables above are
+        # already the source of truth for everything below.
+        if bounding_box:
+            try:
+                spatial["resolved_bounding_box"] = bounding_box
+                request.spatial_requirements = spatial
+            except Exception:
+                pass
+        if time_range:
+            try:
+                temporal["resolved_start_date"] = time_range[0]
+                temporal["resolved_end_date"] = time_range[1]
+                request.temporal_requirements = temporal
+            except Exception:
+                pass
+
     if payload.mode == Agent3ToAgent4Mode.user_override:
         snapshot, analysis = _override_snapshot_and_analysis(payload.override_website, requested_variables)
         website_analyses[snapshot.source_id] = analysis

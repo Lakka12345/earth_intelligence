@@ -34,7 +34,7 @@ from connectors.connector_types import (
     DatasetType,
 )
 from connectors.dataset_matching import StaticDatasetConnector
-from models.agent4_schemas import DatasetDescriptor
+from models.agent4_schemas import DatasetDescriptor, DatasetMetadata, SizeEstimate, format_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -220,12 +220,12 @@ class EarthEngineConnector(StaticDatasetConnector):
     # discover_datasets
     # ------------------------------------------------------------------
 
-    def discover_datasets(self, fetch_request=None, **kwargs) -> List[DatasetDescriptor]:
+    def discover_datasets(self, snapshot=None, context=None, **kwargs) -> List[DatasetDescriptor]:
         """
         Match requested keywords to known EE collections and return
         descriptors.  When EE is initialised, enriches with live metadata.
         """
-        r = self._as_dict(fetch_request or kwargs)
+        r = self._as_dict(context or kwargs)
         keywords = r.get("keywords") or r.get("variables") or []
         if isinstance(keywords, str):
             keywords = [keywords]
@@ -263,83 +263,105 @@ class EarthEngineConnector(StaticDatasetConnector):
     # probe_metadata
     # ------------------------------------------------------------------
 
-    def probe_metadata(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_metadata(self, snapshot=None, fetch_request=None, **kwargs) -> DatasetMetadata:
         """
         Return live EE collection metadata when authenticated,
-        or static catalog metadata otherwise.
+        or static catalog metadata otherwise, as a DatasetMetadata object.
         """
+        source_id = getattr(snapshot, "source_id", None) or "earth_engine"
         r = self._as_dict(fetch_request or kwargs)
         collection_id = (r.get("dataset_id") or r.get("collection_name")
                          or "MODIS/061/MOD11A1")
-        ee_ready = _ee_init(r.get("credentials"))
 
-        static = _KNOWN_COLLECTIONS.get(collection_id, {})
-        meta: Dict[str, Any] = {
-            "provider":         "Google Earth Engine",
-            "collection_id":    collection_id,
-            "title":            static.get("title", collection_id),
-            "bands":            static.get("bands", []),
-            "native_scale_m":   static.get("scale_m"),
-            "temporal_coverage": static.get("temporal"),
-            "spatial_coverage": static.get("spatial"),
-            "catalog_url": (
+        try:
+            ee_ready = _ee_init(r.get("credentials"))
+
+            static = _KNOWN_COLLECTIONS.get(collection_id, {})
+            catalog_url = (
                 "https://developers.google.com/earth-engine/datasets/catalog/"
                 + collection_id.replace("/", "_")
-            ),
-            "authentication_required": True,
-            "ee_sdk_available": _EE_AVAILABLE,
-            "ee_initialised":   ee_ready,
-        }
+            )
 
-        if not ee_ready:
-            meta["note"] = ("EE not initialised. Run `earthengine authenticate` or supply "
-                            "credentials in the request.")
-            logger.warning("earth_engine probe_metadata: EE not initialised for %s", collection_id)
-            return meta
+            if not ee_ready:
+                logger.warning("earth_engine probe_metadata: EE not initialised for %s", collection_id)
+                return DatasetMetadata(
+                    source_id=source_id,
+                    dataset_id=collection_id,
+                    product=static.get("title", collection_id),
+                    metadata_endpoint=catalog_url,
+                    variables=static.get("bands", []),
+                    spatial_coverage=static.get("spatial") or "Unknown",
+                    temporal_coverage=static.get("temporal") or "Unknown",
+                    retrieval_method="EE static catalog (not authenticated)",
+                    unavailable_reason=(
+                        "EE not initialised. Run `earthengine authenticate` or supply "
+                        "credentials in the request."
+                    ),
+                )
 
-        # Live EE metadata
-        try:
-            col  = ee.ImageCollection(collection_id)
+            # Live EE metadata
+            image_count = None
+            band_names_live = None
+            unavailable_reason = ""
+            try:
+                col  = ee.ImageCollection(collection_id)
 
-            # Apply date filter if supplied
-            start = r.get("start_date")
-            end   = r.get("end_date")
-            if start:
-                col = col.filterDate(start, end or datetime.utcnow().strftime("%Y-%m-%d"))
+                # Apply date filter if supplied
+                start = r.get("start_date")
+                end   = r.get("end_date")
+                if start:
+                    col = col.filterDate(start, end or datetime.utcnow().strftime("%Y-%m-%d"))
 
-            # Apply ROI if supplied
-            roi = self._build_roi(r)
-            if roi:
-                col = col.filterBounds(roi)
+                # Apply ROI if supplied
+                roi = self._build_roi(r)
+                if roi:
+                    col = col.filterBounds(roi)
 
-            size = col.size().getInfo()
-            meta["image_count"] = size
-            logger.info("earth_engine probe_metadata: %s — %d images in filtered collection",
-                        collection_id, size)
+                image_count = col.size().getInfo()
+                logger.info("earth_engine probe_metadata: %s — %d images in filtered collection",
+                            collection_id, image_count)
 
-            # Get first image for band/projection details
-            if size > 0:
-                first = col.first()
-                band_names = first.bandNames().getInfo()
-                proj  = first.select(0).projection().getInfo()
-                meta["band_names_live"] = band_names
-                meta["projection"]      = proj
+                # Get first image for band/projection details
+                if image_count > 0:
+                    first = col.first()
+                    band_names_live = first.bandNames().getInfo()
+            except Exception as exc:
+                logger.warning("earth_engine probe_metadata: EE getInfo failed — %s", exc)
+                unavailable_reason = str(exc)
+
+            return DatasetMetadata(
+                source_id=source_id,
+                dataset_id=collection_id,
+                product=static.get("title", collection_id),
+                metadata_endpoint=catalog_url,
+                variables=band_names_live or static.get("bands", []),
+                spatial_coverage=static.get("spatial") or "Unknown",
+                temporal_coverage=static.get("temporal") or "Unknown",
+                retrieval_method="Google Earth Engine live collection query",
+                unavailable_reason=unavailable_reason,
+            )
         except Exception as exc:
-            logger.warning("earth_engine probe_metadata: EE getInfo failed — %s", exc)
-            meta["ee_error"] = str(exc)
-
-        return meta
+            logger.warning("earth_engine probe_metadata: failed — %s", exc)
+            return DatasetMetadata(
+                source_id=source_id,
+                dataset_id=collection_id,
+                file_size_bytes=50 * 1024 * 1024,
+                retrieval_method="unavailable",
+                unavailable_reason=str(exc),
+            )
 
     # ------------------------------------------------------------------
     # probe_size
     # ------------------------------------------------------------------
 
-    def probe_size(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_size(self, snapshot=None, fetch_request=None, **kwargs) -> SizeEstimate:
         """
         Estimate export size from EE collection properties.
         EE does not support Content-Length on export tasks, so size is
-        estimated from image count × typical image size.
+        estimated from image count × pixel_count × bands × 4 bytes.
+        Returns SizeEstimate for Agent 4 compatibility.
         """
+        source_id = getattr(snapshot, "source_id", None) or "earth_engine"
         r = self._as_dict(fetch_request or kwargs)
         collection_id = r.get("dataset_id") or r.get("collection_name") or "MODIS/061/MOD11A1"
         ee_ready = _ee_init(r.get("credentials"))
@@ -347,14 +369,32 @@ class EarthEngineConnector(StaticDatasetConnector):
         static = _KNOWN_COLLECTIONS.get(collection_id, {})
         scale_m = static.get("scale_m", 1000)
 
+        # Fallback static estimate when EE is not initialised but collection is known
         if not ee_ready:
-            return {
-                "size_bytes":  None,
-                "size_human":  "Unknown (EE not initialised)",
-                "confidence":  0.0,
-                "method":      "ee_unavailable",
-                "note":        "Authenticate with earthengine-api to estimate export size.",
-            }
+            if static:
+                # Use known collection info for a rough estimate without EE API
+                n_bands = len(static.get("bands", ["b1"]))
+                # Default bbox: global at 1000m resolution
+                roi_area_m2 = 5.1e14  # ~Earth surface
+                pixel_count = max(1, roi_area_m2 / (scale_m ** 2))
+                # Assume 30 days of data as a representative default
+                est_bytes = int(30 * pixel_count * n_bands * 4)
+                logger.info(
+                    "earth_engine probe_size: static fallback %d bytes (collection=%s)",
+                    est_bytes, collection_id,
+                )
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(est_bytes),
+                    is_exact=False,
+                    method="EE static collection estimate (EE not initialised)",
+                    human_readable=format_bytes(est_bytes),
+                )
+            return SizeEstimate(
+                source_id=source_id,
+                method="Earth Engine not initialised; authenticate to get accurate estimate",
+                human_readable="Unknown",
+            )
 
         try:
             col   = ee.ImageCollection(collection_id)
@@ -375,20 +415,31 @@ class EarthEngineConnector(StaticDatasetConnector):
             n_bands     = len(static.get("bands", ["b1"]))
             est_bytes   = int(image_count * pixel_count * n_bands * 4)
 
-            logger.info("earth_engine probe_size: estimated %d bytes (images=%d, pixels=%.0f, bands=%d)",
-                        est_bytes, image_count, pixel_count, n_bands)
-            return self._size_dict(est_bytes, "estimated (image_count × pixel_count × bands × 4 bytes)",
-                                   0.50, "ee.batch.Export")
+            logger.info(
+                "earth_engine probe_size: estimated %d bytes "
+                "(images=%d, pixels=%.0f, bands=%d)",
+                est_bytes, image_count, pixel_count, n_bands,
+            )
+            return SizeEstimate(
+                source_id=source_id,
+                estimated_bytes=float(est_bytes),
+                is_exact=False,
+                method="EE estimate (image_count × pixel_count × bands × 4 bytes)",
+                human_readable=format_bytes(est_bytes),
+            )
         except Exception as exc:
             logger.warning("earth_engine probe_size: EE error — %s", exc)
-            return {"size_bytes": None, "size_human": "Unknown", "confidence": 0.0,
-                    "method": "ee_error", "error": str(exc)}
+            return SizeEstimate(
+                source_id=source_id,
+                method=f"Earth Engine estimation error: {exc}",
+                human_readable="Unknown",
+            )
 
     # ------------------------------------------------------------------
     # resolve_download_asset
     # ------------------------------------------------------------------
 
-    def resolve_download_asset(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Dict[str, Any]:
         """
         EE exports go to Google Drive / GCS — there is no direct download URL.
         Returns the export task description.
@@ -408,14 +459,14 @@ class EarthEngineConnector(StaticDatasetConnector):
     # fetch_subset
     # ------------------------------------------------------------------
 
-    def fetch_subset(self, fetch_request=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_subset(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
         """
         EE natively supports spatial and temporal subsetting via ROI and
         date filters applied before export.  Delegates to fetch_full with
         the same parameters.
         """
         logger.info("earth_engine fetch_subset: delegating to fetch_full (EE handles subsetting)")
-        result = self.fetch_full(fetch_request, output_dir=output_dir, **kwargs)
+        result = self.fetch_full(snapshot, fetch_request, credentials, output_dir=output_dir, **kwargs)
         result["subset_note"] = "EE spatial/temporal subsetting applied before export."
         return result
 
@@ -423,7 +474,7 @@ class EarthEngineConnector(StaticDatasetConnector):
     # fetch_full
     # ------------------------------------------------------------------
 
-    def fetch_full(self, fetch_request=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
         """
         Build an EE export task.
 
@@ -542,8 +593,17 @@ class EarthEngineConnector(StaticDatasetConnector):
     @staticmethod
     def _as_dict(obj) -> dict:
         if isinstance(obj, dict):
-            return obj
-        return vars(obj) if hasattr(obj, "__dict__") else {}
+            d = dict(obj)
+        elif hasattr(obj, "__dict__"):
+            d = dict(vars(obj))
+        else:
+            d = {}
+        meta = d.get("metadata")
+        if isinstance(meta, dict):
+            merged = dict(meta)
+            merged.update({k: v for k, v in d.items() if k != "metadata" and v is not None})
+            return merged
+        return d
 
     @staticmethod
     def _build_roi(r: dict):

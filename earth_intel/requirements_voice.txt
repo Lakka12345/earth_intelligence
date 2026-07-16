@@ -1,0 +1,23 @@
+# requirements_voice.txt
+# Add these to your existing requirements.txt (or install separately).
+# All free, no API keys needed.
+
+# ── Core FastAPI (you likely have these already) ──────────────────
+fastapi
+uvicorn[standard]
+python-multipart          # required for UploadFile (audio)
+
+# ── Speech-to-text ────────────────────────────────────────────────
+faster-whisper            # local STT, ~150 MB model download on first run
+
+# ── Language detection + translation ─────────────────────────────
+transformers              # HuggingFace (opus-mt models)
+sentencepiece             # tokenizer required by opus-mt
+torch                     # PyTorch CPU backend (transformers dependency)
+
+# ── TTS (primary: edge-tts, needs internet) ───────────────────────
+edge-tts
+
+# ── TTS (offline fallback — optional, ~1 GB) ─────────────────────
+# Uncomment if you want fully offline TTS:
+# TTS                     # Coqui TTS

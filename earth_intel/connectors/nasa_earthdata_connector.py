@@ -22,6 +22,9 @@ import re
 from typing import List, Optional, Tuple
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor, Credentials, FetchRequest
 from connectors.connector_registry import register_connector
@@ -60,7 +63,16 @@ def _cmr_headers(credentials: Optional[Credentials] = None) -> dict:
     h = {"Accept": "application/json"}
     if credentials and credentials.token:
         h["Authorization"] = f"Bearer {credentials.token}"
+    if credentials and credentials.headers:
+        h.update(credentials.headers)
     return h
+
+
+def _cmr_cookies(credentials: Optional[Credentials] = None) -> Optional[dict]:
+    """Cookies obtained from a completed browser EarthData Login, if any."""
+    if credentials and credentials.cookies:
+        return credentials.cookies
+    return None
 
 
 def _bbox_param(bb) -> Optional[str]:
@@ -79,10 +91,9 @@ def _temporal_param(tr) -> Optional[str]:
 
 def _estimate_size_head(url: str, credentials: Optional[Credentials] = None) -> Optional[int]:
     try:
-        h = {}
-        if credentials and credentials.token:
-            h["Authorization"] = f"Bearer {credentials.token}"
-        r = requests.head(url, headers=h, timeout=15, allow_redirects=True)
+        h = _cmr_headers(credentials)
+        h.pop("Accept", None)
+        r = requests.head(url, headers=h, cookies=_cmr_cookies(credentials), timeout=15, allow_redirects=True, verify=False)
         cl = r.headers.get("Content-Length") or r.headers.get("content-length")
         if cl:
             return int(cl)
@@ -116,6 +127,7 @@ class NASAEarthDataConnector(StaticDatasetConnector):
             | CapabilityFlags.supports_dataset_search
             | CapabilityFlags.supports_download
             | CapabilityFlags.supports_subsetting
+            | CapabilityFlags.requires_browser_auth
         ),
         priority=20,
     )
@@ -186,6 +198,37 @@ class NASAEarthDataConnector(StaticDatasetConnector):
 
     # ── internal helpers ───────────────────────────────────────────────────────
 
+    def _cmr_collection_metadata(self, dataset_id: str) -> dict:
+        """Fetch the CMR collection record for a dataset (description, keywords, DOI, license)."""
+        provider, short_name = self._cmr_short_name(dataset_id)
+        params = {"short_name": short_name, "page_size": 1}
+        if provider:
+            params["provider"] = provider
+        try:
+            r = requests.get(f"{_CMR}/collections.json", params=params, timeout=20, verify=False)
+            if not r.ok:
+                return {}
+            entries = r.json().get("feed", {}).get("entry", [])
+            return entries[0] if entries else {}
+        except Exception:
+            return {}
+
+    @staticmethod
+    def _granule_spatiotemporal(granule: dict) -> dict:
+        """Extract bbox / start / end date from a CMR granule entry, where present."""
+        out: dict = {}
+        boxes = granule.get("boxes")
+        if boxes:
+            try:
+                # CMR "boxes" are "south west north east" strings
+                s, w, n, e = (float(x) for x in boxes[0].split())
+                out["bbox"] = [w, s, e, n]
+            except Exception:
+                pass
+        out["start_date"] = granule.get("time_start")
+        out["end_date"] = granule.get("time_end")
+        return out
+
     def _cmr_short_name(self, dataset_id: str) -> Tuple[str, str]:
         return _CMR_DATASETS.get(dataset_id, ("", dataset_id))
 
@@ -197,6 +240,7 @@ class NASAEarthDataConnector(StaticDatasetConnector):
                 params={"keyword": keyword, "page_size": limit,
                         "sort_key": "-score", "has_granules": True},
                 timeout=20,
+                verify=False,
             )
             if not r.ok:
                 return []
@@ -236,6 +280,7 @@ class NASAEarthDataConnector(StaticDatasetConnector):
                 params=params,
                 headers=_cmr_headers(credentials),
                 timeout=25,
+                verify=False,
             )
             if not r.ok:
                 return []
@@ -312,12 +357,14 @@ class NASAEarthDataConnector(StaticDatasetConnector):
 
     def discover_datasets(
         self,
-        query: str,
-        bbox=None,
-        time_range=None,
-        credentials: Optional[Credentials] = None,
+        snapshot,
+        context=None,
     ) -> List[DatasetDescriptor]:
         """Search CMR collections and return DatasetDescriptors."""
+        _ctx = context if isinstance(context, dict) else (vars(context) if context and hasattr(context, "__dict__") else {})
+        _snap_vars = list(getattr(snapshot, "variables_available", None) or []) if snapshot else []
+        keywords = _ctx.get("keywords") or _ctx.get("variables") or _snap_vars
+        query = " ".join(keywords) if keywords else "earth observation"
         entries = self._cmr_collection_search(query, limit=10)
         results = []
         for e in entries:
@@ -366,6 +413,18 @@ class NASAEarthDataConnector(StaticDatasetConnector):
                 content_type="text/csv",
                 license="Public domain (NASA)",
                 retrieval_method="Direct GISS endpoint",
+                dataset_name="NASA GISTEMP v4 Surface Temperature Analysis",
+                provider="NASA GISS",
+                description="Combined land-surface air and sea-surface water temperature anomalies (GISTEMP v4).",
+                spatial_resolution="2x2 degree grid (gridded product); station-based for tabular CSV",
+                temporal_resolution="Monthly",
+                crs="EPSG:4326",
+                bounding_box=[-180.0, -90.0, 180.0, 90.0],
+                start_date="1880-01-01",
+                citation="GISTEMP Team, 2024: GISS Surface Temperature Analysis (GISTEMP), version 4. NASA GISS.",
+                keywords=["temperature anomaly", "climate", "GISTEMP", "NASA GISS"],
+                update_frequency="Monthly",
+                authentication_required=False,
             )
 
         # ── CMR granule resolution ─────────────────────────────────────────────
@@ -380,6 +439,19 @@ class NASAEarthDataConnector(StaticDatasetConnector):
 
         url, size = self._resolve_live_granule(dataset.dataset_id, fetch_request, credentials)
 
+        # Pull the actual granule entry again (cheap, cached by CMR) purely to
+        # extract bounding box / start / end date rather than re-deriving them.
+        provider, short_name = self._cmr_short_name(dataset.dataset_id)
+        granules = self._cmr_granule_search(
+            short_name, provider, bbox=fetch_request.bounding_box,
+            time_range=fetch_request.time_range, limit=1, credentials=credentials,
+        )
+        st = self._granule_spatiotemporal(granules[0]) if granules else {}
+
+        col = self._cmr_collection_metadata(dataset.dataset_id)
+        col_summary = col.get("summary") or None
+        col_doi = ((col.get("associated_dois") or [{}])[0].get("doi") if col.get("associated_dois") else None) or col.get("doi")
+
         return DatasetMetadata(
             source_id=snapshot.source_id,
             dataset_id=dataset.dataset_id,
@@ -390,16 +462,27 @@ class NASAEarthDataConnector(StaticDatasetConnector):
             metadata_endpoint=dataset.metadata_endpoint,
             file_size_bytes=size,
             variables=list(dataset.supported_variables),
-            spatial_coverage=dataset.spatial_coverage,
+            spatial_coverage=str(st["bbox"]) if st.get("bbox") else dataset.spatial_coverage,
             temporal_coverage=dataset.temporal_coverage,
             file_format=", ".join(dataset.supported_formats),
             content_type="application/x-netcdf",
             license="NASA open data",
-            retrieval_method="NASA CMR granule search",
+            retrieval_method="NASA CMR granule search + CMR collection metadata",
             unavailable_reason="" if url else (
                 "CMR granule search returned no results. "
                 "EarthData Login credentials may be required for this dataset."
             ),
+            dataset_name=dataset.dataset_name,
+            provider="NASA " + (col.get("archive_center") or provider or "EarthData"),
+            description=col_summary,
+            bounding_box=st.get("bbox"),
+            crs="EPSG:4326",
+            start_date=st.get("start_date"),
+            end_date=st.get("end_date"),
+            citation=(f"https://doi.org/{col_doi}" if col_doi else None),
+            keywords=(col.get("science_keywords_flat", "").split(" > ") if col.get("science_keywords_flat") else None) or None,
+            version=col.get("version_id"),
+            authentication_required=dataset.authentication_required,
         )
 
     def probe_size(
@@ -476,7 +559,7 @@ class NASAEarthDataConnector(StaticDatasetConnector):
             ce = ",".join(v.replace(" ", "_") for v in fetch_request.variables)
             opendap_url = f"{url}.nc?{ce}"
             try:
-                r = requests.head(opendap_url, timeout=10)
+                r = requests.head(opendap_url, timeout=10, verify=False)
                 if r.ok and "html" not in r.headers.get("content-type", ""):
                     url = opendap_url
             except Exception:

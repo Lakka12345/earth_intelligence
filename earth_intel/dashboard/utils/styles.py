@@ -457,6 +457,21 @@ def inject_styles() -> None:
             from { background-position: 0 0, 0 0; }
             to { background-position: 46px 46px, 46px 46px; }
         }
+        /* ── Voice Interface nav badge ── */
+        .voice-nav-badge {
+            display:inline-block;
+            background:linear-gradient(135deg,#14b8a6,#2563eb);
+            color:#fff;
+            font-size:9px;
+            font-weight:800;
+            letter-spacing:0.06em;
+            text-transform:uppercase;
+            padding:1px 5px;
+            border-radius:4px;
+            margin-left:6px;
+            vertical-align:middle;
+        }
+
         @media (max-width: 900px) {
             .login-brand {
                 position:relative;
