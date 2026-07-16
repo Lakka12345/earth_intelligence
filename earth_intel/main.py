@@ -4,6 +4,14 @@ from agents.agent3_discovery import run_agent3
 from agents.agent3_interactive_runner import run_agent3_interactive
 from agents.agent4_orchestrator import run_agent4
 
+# Agent 5 is optional — imported lazily so the pipeline still runs if the
+# Agent 5 files are not yet present in the project.
+try:
+    from agents.agent5 import run_agent5
+    _AGENT5_AVAILABLE = True
+except ImportError:
+    _AGENT5_AVAILABLE = False
+
 from security.input_validator import validate_input
 from security.injection_guard import detect_prompt_injection
 
@@ -806,58 +814,152 @@ def main():
 
     print("Retrieval Request built.\n")
 
-    print("Running Agent 3...\n")
-
-    agent3_result = run_agent3(
-        retrieval_request
-    )
-
-    print("Agent 3 completed.\n")
-
     # ---------------------------------------------------------------- #
-    # Agent 3 → Agent 4 handoff                                        #
-    # CHANGED: run_agent3() itself is still discovery-only and         #
-    # unchanged -- it still returns ranked/auth-required/needs-eval/   #
-    # rejected buckets with no user interaction inside it. What        #
-    # changed is what main.py does with that result: the new           #
-    # run_agent3_interactive() layer (agents/agent3_interactive_runner)#
-    # takes the untouched DiscoveryOutput and adds the website-policy  #
-    # analysis, ranking-preference question, adaptive re-ranking, and  #
-    # override question described in the Discovery Agent spec. This is #
-    # the one place real user interaction now occurs between Agent 3   #
-    # and Agent 4 -- intentionally, since the new requirements call    #
-    # for it; the "no user interaction" note that used to be here no   #
-    # longer holds.                                                     #
+    # Agent 3 → Agent 4 state machine                                  #
+    #                                                                   #
+    # This loop replaces the old single-shot call.  When Agent 4       #
+    # returns return_to_discovery=True (user chose "Stop and return to  #
+    # source discovery/ranking"), we loop back and re-run Agent 3 with  #
+    # extra_context accumulated from previous failures, rather than     #
+    # falling off the end of main() to the shell prompt.               #
+    #                                                                   #
+    # Loop exit conditions (only one fires per iteration):             #
+    #   A. agent4_result.return_to_discovery is False → done normally. #
+    #   B. User chooses not to retry at the confirmation prompt.       #
+    #   C. MAX_DISCOVERY_ROUNDS exhausted.                             #
     # ---------------------------------------------------------------- #
-    print("\n" + "=" * 70)
-    print("AGENT 3 DISCOVERY SUMMARY")
-    print("=" * 70)
+    MAX_DISCOVERY_ROUNDS = 5
+    discovery_round = 0
+    # Accumulated failure context fed back into every subsequent Agent 3
+    # call so it knows which sources have already been tried and why
+    # they failed, and can find different / better ones.
+    extra_discovery_context: dict = {}
 
-    print("\nRanked sources (raw Phase 5 output, before adaptive ranking):")
-    for scored in agent3_result.ranked_sources:
-        c = scored.candidate
-        tag = ""
-        if c.requires_payment:
-            tag = " [PAID]"
-        elif c.requires_login:
-            tag = " [LOGIN REQUIRED]"
-        print(f"  [{scored.rank}] {c.name}{tag}  (score={scored.final_score:.3f})")
+    while discovery_round < MAX_DISCOVERY_ROUNDS:
+        discovery_round += 1
 
-    if agent3_result.rejected_sources:
-        print(f"\nRejected sources: {len(agent3_result.rejected_sources)}")
+        if discovery_round == 1:
+            print("Running Agent 3...\n")
+        else:
+            print(
+                f"\nRe-running Agent 3 (discovery round {discovery_round}/{MAX_DISCOVERY_ROUNDS}) "
+                "with updated context from Agent 4 feedback...\n"
+            )
 
-    # New interactive layer: analysis -> ranking preference -> adaptive
-    # ranking -> formatted output -> override question -> final payload.
-    agent3_final_payload = run_agent3_interactive(retrieval_request, agent3_result)
+        agent3_result = run_agent3(
+            retrieval_request,
+            extra_context=extra_discovery_context if extra_discovery_context else None,
+        )
 
-    print("\nPassing discovery results to Agent 4...")
-    print("=" * 70)
+        print("Agent 3 completed.\n")
 
-    agent4_result = run_agent4(agent3_final_payload, retrieval_request)
+        # ---------------------------------------------------------------- #
+        # Agent 3 → Agent 4 handoff                                        #
+        # CHANGED: run_agent3() itself is still discovery-only and         #
+        # unchanged -- it still returns ranked/auth-required/needs-eval/   #
+        # rejected buckets with no user interaction inside it. What        #
+        # changed is what main.py does with that result: the new           #
+        # run_agent3_interactive() layer (agents/agent3_interactive_runner)#
+        # takes the untouched DiscoveryOutput and adds the website-policy  #
+        # analysis, ranking-preference question, adaptive re-ranking, and  #
+        # override question described in the Discovery Agent spec. This is #
+        # the one place real user interaction now occurs between Agent 3   #
+        # and Agent 4 -- intentionally, since the new requirements call    #
+        # for it; the "no user interaction" note that used to be here no   #
+        # longer holds.                                                     #
+        # ---------------------------------------------------------------- #
+        print("\n" + "=" * 70)
+        print("AGENT 3 DISCOVERY SUMMARY")
+        print("=" * 70)
 
+        print("\nRanked sources (raw Phase 5 output, before adaptive ranking):")
+        for scored in agent3_result.ranked_sources:
+            c = scored.candidate
+            tag = ""
+            if c.requires_payment:
+                tag = " [PAID]"
+            elif c.requires_login:
+                tag = " [LOGIN REQUIRED]"
+            print(f"  [{scored.rank}] {c.name}{tag}  (score={scored.final_score:.3f})")
+
+        if agent3_result.rejected_sources:
+            print(f"\nRejected sources: {len(agent3_result.rejected_sources)}")
+
+        # New interactive layer: analysis -> ranking preference -> adaptive
+        # ranking -> formatted output -> override question -> final payload.
+        agent3_final_payload = run_agent3_interactive(retrieval_request, agent3_result)
+
+        print("\nPassing discovery results to Agent 4...")
+        print("=" * 70)
+
+        agent4_result = run_agent4(agent3_final_payload, retrieval_request)
+
+        # ── Check whether Agent 4 wants to loop back to discovery ────
+        if not getattr(agent4_result, "return_to_discovery", False):
+            # Normal exit: Agent 4 finished (successfully or with partial
+            # results) and does NOT want to re-run discovery.
+            break
+
+        # Agent 4 flagged return_to_discovery=True.
+        # Merge whatever failure context it surfaced so the next Agent 3
+        # run knows which sources failed and why.
+        agent4_feedback = getattr(agent4_result, "discovery_feedback", None) or {}
+        if agent4_feedback:
+            extra_discovery_context.update(agent4_feedback)
+
+        # Also record which source_ids already failed so Agent 3 can
+        # de-prioritise or exclude them on the next pass.
+        failed_ids = getattr(agent4_result, "failed_source_ids", None) or []
+        if failed_ids:
+            existing_failed = extra_discovery_context.get("previously_failed_source_ids", [])
+            extra_discovery_context["previously_failed_source_ids"] = list(
+                set(existing_failed) | set(failed_ids)
+            )
+
+        if discovery_round >= MAX_DISCOVERY_ROUNDS:
+            print(
+                f"\nMaximum of {MAX_DISCOVERY_ROUNDS} discovery rounds reached. "
+                "No further retry is possible — proceeding with the results so far."
+            )
+            break
+
+        # Ask the user whether they actually want to retry, so they are
+        # never silently dumped back into a potentially slow Agent 3 run
+        # without their knowledge.
+        print("\n" + "─" * 70)
+        print("Agent 4 flagged incomplete coverage and requested a new source search.")
+        if extra_discovery_context.get("previously_failed_source_ids"):
+            print(
+                "  Failed sources so far: "
+                + ", ".join(extra_discovery_context["previously_failed_source_ids"])
+            )
+        print("\nWould you like to:")
+        print("  1. Re-run source discovery to find alternative data sources")
+        print("  2. Stop here and use the results already downloaded")
+        print("─" * 70)
+
+        retry_choice = input("\n> ").strip()
+        if retry_choice != "1":
+            print("\nStopping at user request. Using results from the current round.")
+            break
+        # else: loop continues — re-runs Agent 3 with updated context
+
+    # ── Final result reporting ───────────────────────────────────────
     if agent4_result.send_to_agent5:
-        print("\nHanding downloaded data to Agent 5 for preprocessing...")
-        # TODO: run_agent5(agent4_result) once Agent 5 exists.
+        if _AGENT5_AVAILABLE:
+            print("\nHanding downloaded data to Agent 5 for preprocessing...")
+            try:
+                agent5_result = run_agent5(agent4_result)
+                print(f"\nAgent 5 complete. Output: {getattr(agent5_result, 'output_path', 'see Agent 5 logs')}")
+            except Exception as exc:
+                print(f"\n[Agent 5] Error during preprocessing: {exc}")
+                print(f"Raw downloaded files are still available at: {agent4_result.download_location}")
+        else:
+            print(
+                "\n[Agent 5] Agent 5 files not found (agents/agent5.py missing). "
+                f"Downloaded files are at: {agent4_result.download_location}"
+            )
+            print("Upload your Agent 5 files and they will be called automatically on the next run.")
     else:
         print(
             f"\nDone. {agent4_result.successful_download_count} validated file(s) written to: "

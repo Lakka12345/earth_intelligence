@@ -10,6 +10,32 @@ def inject_styles() -> None:
     st.markdown(
         """
         <style>
+        /* ── Defensive text-color override ─────────────────────────
+           This stylesheet assumes a LIGHT page background (see
+           [data-testid="stAppViewContainer"] below). If .streamlit/
+           config.toml sets a dark theme (textColor near-white), plain
+           Streamlit markdown/headings/captions would render white text
+           on this light background and become invisible. Force a sane
+           default here so that never happens, regardless of what the
+           Streamlit theme config says. Specific components below that
+           want a different color (e.g. text on the dark login hero)
+           already set their own color and are unaffected. */
+        [data-testid="stAppViewContainer"],
+        [data-testid="stAppViewContainer"] p,
+        [data-testid="stAppViewContainer"] span,
+        [data-testid="stAppViewContainer"] label,
+        [data-testid="stAppViewContainer"] h1,
+        [data-testid="stAppViewContainer"] h2,
+        [data-testid="stAppViewContainer"] h3,
+        [data-testid="stAppViewContainer"] h4,
+        [data-testid="stMarkdownContainer"],
+        [data-testid="stCaptionContainer"] {
+            color: #0f172a;
+        }
+        [data-testid="stCaptionContainer"] {
+            color: #64748b;
+        }
+
         /* ── Page base ─────────────────────────────────────────── */
         html, body, [data-testid="stAppViewContainer"] {
             font-family: 'Inter', 'Segoe UI', sans-serif;

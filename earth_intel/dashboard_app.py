@@ -141,7 +141,7 @@ if AGENTS_AVAILABLE:
             t0 = time.time()
             try:
                 a1 = st.session_state.agent1_result
-                a2 = run_agent2(st.session_state.current_query, a1)
+                a2 = run_agent2(agent1_output=a1)
                 st.session_state.agent2_result = a2
                 st.session_state.timings["agent2"] = round(time.time() - t0, 2)
                 append_log("Agent 2 complete — awaiting user answers.")

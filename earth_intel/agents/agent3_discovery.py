@@ -2256,10 +2256,41 @@ def _print_score_breakdown(source: ScoredSource) -> None:
 # Agent 4 is responsible for source selection and retrieval planning. #
 # ------------------------------------------------------------------ #
 
-def run_agent3(request: RetrievalRequest) -> DiscoveryOutput:
+def run_agent3(
+    request: RetrievalRequest,
+    extra_context: dict | None = None,
+) -> DiscoveryOutput:
     print("\n" + "=" * 70)
     print("AGENT 3 — DATA DISCOVERY")
     print("=" * 70)
+
+    # ---------------------------------------------------------------- #
+    # Extra context from a previous Agent 4 failure round              #
+    # ---------------------------------------------------------------- #
+    # When main.py re-runs Agent 3 after Agent 4 flagged incomplete
+    # coverage, it passes extra_context containing:
+    #   previously_failed_source_ids  – source_ids Agent 4 could not use
+    #   discovery_feedback            – free-form notes from Agent 4
+    # We surface both in the console so the operator can see what Agent 3
+    # is working around, then filter the failed IDs out of Phase 1
+    # results so those sources are not re-ranked and re-passed to Agent 4.
+    previously_failed_ids: set[str] = set()
+    if extra_context:
+        failed_ids = extra_context.get("previously_failed_source_ids") or []
+        if failed_ids:
+            previously_failed_ids = {str(sid).strip() for sid in failed_ids}
+            print(
+                f"[Agent 3] Re-discovery round: excluding {len(previously_failed_ids)} "
+                f"previously-failed source(s): {sorted(previously_failed_ids)}"
+            )
+
+        feedback = extra_context.get("discovery_feedback") or {}
+        if feedback:
+            print("[Agent 3] Agent 4 feedback for this round:")
+            for key, value in feedback.items():
+                if key == "previously_failed_source_ids":
+                    continue  # already printed above
+                print(f"  {key}: {value}")
 
     if qdrant_store.is_qdrant_available():
         qdrant_store.ensure_collections_exist()
@@ -2275,6 +2306,22 @@ def run_agent3(request: RetrievalRequest) -> DiscoveryOutput:
     all_candidates = catalog_candidates + dynamic_candidates + qdrant_candidates
     candidates = _deduplicate_candidates(all_candidates)
     candidates = _filter_landing_pages(candidates)
+
+    # Drop any source that Agent 4 already tried and failed on so this
+    # round finds genuinely new alternatives rather than re-proposing the
+    # same broken sources.
+    if previously_failed_ids:
+        before = len(candidates)
+        candidates = [
+            c for c in candidates
+            if str(c.source_id).strip() not in previously_failed_ids
+        ]
+        dropped = before - len(candidates)
+        if dropped:
+            print(
+                f"[Phase 1] Excluded {dropped} previously-failed source(s) "
+                f"from this discovery round."
+            )
 
     print(f"[Phase 1] Combined: {len(catalog_candidates)} catalog + "
           f"{len(dynamic_candidates)} dynamic + "

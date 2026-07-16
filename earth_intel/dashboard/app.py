@@ -13,6 +13,7 @@ Agent 4 is not yet implemented; a placeholder section is shown.
 import time
 import sys
 import os
+import hashlib
 import streamlit as st
 
 # ── Make sure the project root (parent of this file) is on sys.path ──────── #
@@ -26,6 +27,7 @@ if _ROOT not in sys.path:
 # ── Dashboard utilities ───────────────────────────────────────────────────── #
 from utils.session_manager import init_session_state, append_log
 from utils.styles import inject_styles
+from utils.stt import transcribe_audio
 
 # ── Dashboard components ──────────────────────────────────────────────────── #
 from components.auth import render_login_page, render_profile_header, render_welcome_modal
@@ -115,6 +117,50 @@ if active_page == "Help":
 
 
 # ─────────────────────────────────────────────────────────────────────────── #
+# Voice input (native — no iframe, no separate backend)
+# ─────────────────────────────────────────────────────────────────────────── #
+# Runs BEFORE the "Research Goal" text_area below, because a widget's `key`
+# must be set in st.session_state prior to that widget being instantiated
+# for the pre-fill to take effect on this rerun.
+voice_auto_trigger = False
+
+if active_page == "Voice Interface":
+    st.markdown("<div class='section-header'>🎙 Voice Query</div>", unsafe_allow_html=True)
+    st.caption(
+        "Record your query, then it's transcribed and run through the exact same "
+        "Agent 1 → Agent 2 → Agent 3 pipeline as typing it below."
+    )
+
+    audio_value = st.audio_input("Record your research query", key="voice_audio_input")
+
+    if audio_value is not None:
+        audio_bytes = audio_value.getvalue()
+        audio_hash = hashlib.md5(audio_bytes).hexdigest()
+
+        # Guard against re-processing the same recording on every rerun
+        # (Streamlit reruns the whole script on any interaction).
+        if st.session_state.get("_last_voice_audio_hash") != audio_hash:
+            st.session_state["_last_voice_audio_hash"] = audio_hash
+
+            with st.spinner("🎧 Transcribing…"):
+                transcribed = transcribe_audio(audio_bytes)
+
+            if transcribed:
+                st.session_state["main_query_input"] = transcribed
+                st.session_state["sidebar_query"] = transcribed
+                st.success(f"Transcribed: “{transcribed}”")
+                voice_auto_trigger = True
+            else:
+                st.warning(
+                    "Couldn't transcribe that recording. Check that "
+                    "utils/stt.py is configured for your STT provider, "
+                    "or try again."
+                )
+
+    st.divider()
+
+
+# ─────────────────────────────────────────────────────────────────────────── #
 # Research Goal input (main area)
 # ─────────────────────────────────────────────────────────────────────────── #
 main_query = st.text_area(
@@ -138,9 +184,9 @@ with analyze_col:
         disabled=(st.session_state.pipeline_stage not in ("idle", "done", "error")),
     )
 
-# Merge query sources (sidebar Run or main Analyze button)
+# Merge query sources (sidebar Run, main Analyze button, or voice transcription)
 query_to_use = main_query or sidebar_query
-trigger = run_clicked or analyze_clicked
+trigger = run_clicked or analyze_clicked or voice_auto_trigger
 
 st.divider()
 

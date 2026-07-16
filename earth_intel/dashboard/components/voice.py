@@ -244,6 +244,15 @@ VOICE_HTML = r"""
   <div class="session-info" id="session-info"></div>
 
 <script>
+  // ── Backend base URL ─────────────────────────────────────────────────────
+  // components.html() renders this widget in an iframe served from
+  // Streamlit's own origin (e.g. http://localhost:8501), NOT the FastAPI
+  // backend's origin. Relative fetch("/api/...") calls therefore hit
+  // Streamlit, not FastAPI, which is what produced the 405 on /api/stt and
+  // the silent failure on /api/chat. __API_BASE__ is substituted by
+  // render_voice_interface() in Python with the real backend URL.
+  const API_BASE = "__API_BASE__";
+
   // ── State ──────────────────────────────────────────────────────────────────
   let sessionId     = null;
   let mediaRecorder = null;
@@ -378,7 +387,7 @@ VOICE_HTML = r"""
   async function speak(text) {
     setStatus("Loading audio…");
     try {
-      const res = await fetch("/api/tts", {
+      const res = await fetch(`${API_BASE}/api/tts`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ text, session_id: sessionId }),
@@ -404,7 +413,7 @@ VOICE_HTML = r"""
     setStatus("⏳ Agent 1 is analysing your query…");
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ message: text, session_id: sessionId }),
@@ -495,7 +504,7 @@ VOICE_HTML = r"""
     if (sessionId) form.append("session_id", sessionId);
 
     try {
-      const res = await fetch("/api/stt", { method: "POST", body: form });
+      const res = await fetch(`${API_BASE}/api/stt`, { method: "POST", body: form });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
@@ -551,26 +560,37 @@ VOICE_HTML = r"""
 """
 
 
-def render_voice_interface() -> None:
+def render_voice_interface(backend_url: str = "http://localhost:8000") -> None:
     """
     Render the voice/chat panel as an embedded HTML iframe inside Streamlit.
 
-    The panel makes real API calls to /api/stt, /api/tts, and /api/chat on the
-    FastAPI backend (same origin as the frontend served at /).  When the
-    dashboard is run via the FastAPI+Streamlit setup described in app.py the
-    backend is available at the same host.
+    IMPORTANT: components.html() serves this widget from Streamlit's own
+    origin (e.g. http://localhost:8501), not the FastAPI backend's origin.
+    Earlier versions of this module used relative fetch("/api/...") calls,
+    which silently resolved against Streamlit itself instead of FastAPI --
+    producing a 405 on /api/stt and a silent no-op on /api/chat. This
+    version substitutes the real backend URL into the embedded JS before
+    rendering, so the widget's API calls actually reach FastAPI regardless
+    of which origin/port Streamlit itself is served from.
+
+    Args:
+        backend_url: Base URL of the FastAPI backend (no trailing slash),
+            e.g. "http://localhost:8000". Override this if the backend
+            runs on a different host/port, or is reached through a reverse
+            proxy at a different path.
 
     Height is set to 720px to show the full thread + input without a page
     scroll; adjust as needed.
     """
     st.markdown("### 🎙 Voice & Chat — Agent 1 Live Interface")
     st.caption(
-        "Speak or type your query below. The panel calls the FastAPI backend directly "
-        "(`/api/stt`, `/api/chat`, `/api/tts`). Make sure the FastAPI server is running "
-        "(`uvicorn app:app --reload`) alongside this Streamlit dashboard."
+        f"Speak or type your query below. The panel calls the FastAPI backend directly "
+        f"at `{backend_url}` (`/api/stt`, `/api/chat`, `/api/tts`). Make sure the FastAPI "
+        f"server is running there (`uvicorn app:app --reload`) alongside this Streamlit dashboard."
     )
 
-    components.html(VOICE_HTML, height=720, scrolling=False)
+    html = VOICE_HTML.replace("__API_BASE__", backend_url.rstrip("/"))
+    components.html(html, height=720, scrolling=False)
 
     st.divider()
     st.markdown(
@@ -585,3 +605,11 @@ def render_voice_interface() -> None:
            it automatically and translates to English before passing to Agent 1.
         """
     )
+
+
+# ── Backward/forward-compat alias ──────────────────────────────────────────
+# dashboard_app.py imports `render_voice_page`, but this module's public
+# entry point is `render_voice_interface`. Keep both names working so
+# dashboard_app.py doesn't need to change.
+def render_voice_page() -> None:
+    render_voice_interface()

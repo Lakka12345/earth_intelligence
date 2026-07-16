@@ -322,8 +322,28 @@ User query:
                 .model_validate(parsed)
             )
 
-        except ValidationError:
-            raise
+        except ValidationError as exc:
+            # A ValidationError means the LLM returned syntactically valid
+            # JSON that failed Pydantic's schema checks (wrong types, missing
+            # required fields, constraint violations, etc.).  This is a
+            # recoverable LLM output quality issue — retry with the same
+            # prompt; the non-determinism of the model means a later attempt
+            # often produces a conforming response.
+            #
+            # The old `raise` here bypassed all retry logic, so a single bad
+            # LLM response crashed the entire pipeline immediately even when
+            # MAX_RETRIES > 1.  The fix: treat ValidationError like any other
+            # retryable exception, log the failure detail, and let the retry
+            # loop continue.  Only re-raise after all attempts are exhausted.
+            last_error = exc
+            wait_time = 2 ** (attempt + 1)
+            print(
+                f"[Agent 1] Schema validation failed "
+                f"(attempt {attempt + 1}/{MAX_RETRIES}): {exc}. "
+                f"Retrying in {wait_time}s..."
+            )
+            time.sleep(wait_time)
+            continue
 
         except Exception as exc:
 
