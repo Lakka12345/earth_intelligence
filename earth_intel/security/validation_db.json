@@ -136,6 +136,146 @@
         "[scientific_validation] No units declared — cannot verify measurement standard.",
         "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection."
       ]
+    },
+    {
+      "validation_id": "5e1d13c5-0aab-49b4-8948-f3f272d6c7fc",
+      "dataset_id": "ghrsst_mur_sst_2023_bay_of_bengal",
+      "dataset_name": "GHRSST MUR SST v4.1",
+      "provider": "NASA / GHRSST",
+      "validation_timestamp": "2026-07-14T21:12:53.807339+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: tmp6whbi1ox.nc, size: 35 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "8/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 0.95,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset declares global geographic coverage."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset is ongoing (extends to 2026); covers (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "4/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: a1b2c3d4e5f60718..."
+      },
+      "overall_validation": true,
+      "validation_score": 0.9925,
+      "confidence_score": 1.0,
+      "validation_summary": "PASSED — all 7 required stages succeeded. Score: 0.99, Confidence: 1.00.",
+      "validation_errors": [],
+      "validation_warnings": []
+    },
+    {
+      "validation_id": "02aa4379-c6ab-4270-a872-24fb8f2334cf",
+      "dataset_id": "bloomberg_stock_2024",
+      "dataset_name": "Global Stock Market Prices",
+      "provider": "Bloomberg Finance",
+      "validation_timestamp": "2026-07-14T21:12:53.820191+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: tmp7_futpi_.nc, size: 30 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "8/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Required variable 'sea_surface_temperature' not found in dataset. Dataset declares: ['stock_price', 'volume', 'market_cap']"
+        ],
+        "warnings": [],
+        "details": "0/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Dataset does not appear to be a geospatial or Earth-observation dataset. Non-geospatial signals detected: bloomberg, stock. Spatial validation cannot be applied to this dataset."
+        ],
+        "warnings": [],
+        "details": "Domain gate failed — non-geospatial dataset."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.5,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection."
+        ],
+        "details": "2/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": false,
+        "score": 0.0,
+        "errors": [
+          "Integrity verification failed: Checksum mismatch — file may be corrupted."
+        ],
+        "warnings": [],
+        "details": ""
+      },
+      "overall_validation": false,
+      "validation_score": 0.45,
+      "confidence_score": 0.49,
+      "validation_summary": "FAILED — 3 stage(s) failed: variable validation, spatial validation, integrity validation. Score: 0.45, Confidence: 0.49.",
+      "validation_errors": [
+        "[variable_validation] Required variable 'sea_surface_temperature' not found in dataset. Dataset declares: ['stock_price', 'volume', 'market_cap']",
+        "[spatial_validation] Dataset does not appear to be a geospatial or Earth-observation dataset. Non-geospatial signals detected: bloomberg, stock. Spatial validation cannot be applied to this dataset.",
+        "[integrity_validation] Integrity verification failed: Checksum mismatch — file may be corrupted."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection."
+      ]
     }
   ]
 }
