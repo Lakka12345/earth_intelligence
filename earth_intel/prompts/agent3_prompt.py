@@ -119,10 +119,36 @@ Time period: {date_range}
 - recommendation: "use" (clearly fits) or "consider" (partial fit). Never emit "reject"; deterministic Python decides rejection status.
 - Be strict: missing a required variable → completeness < 0.5
 - Geographic mismatch should significantly reduce relevance and completeness but should not automatically reject a source. Global or overlapping datasets may still be useful. Only clearly irrelevant geographic coverage should receive very low scores.
+  WORKED EXAMPLE: A candidate covering only Irish coastal waters (ERDDAP station data)
+  is scored LOW on both relevance (~0.1-0.2) and completeness (~0.1-0.2) for a query about
+  Bay of Bengal / Indian Ocean conditions -- REGARDLESS of how well its variables match
+  (e.g. even if it has the exact sea_surface_temperature/salinity variables requested).
+  Variable match quality never overrides a clear regional mismatch. Apply this same strictness
+  whenever a candidate's spatial_coverage names a region that does not overlap the requested
+  location -- do not give credit for "the right kind of data in the wrong place."
 - Platform preference: if the request implies satellite data, in-situ sources score lower, and vice versa. Only apply when the request states a preference.
 - AUTHENTICATION IS NOT A REJECTION CRITERION. A source that requires login, API keys, registration, or restricted download is NOT less relevant. Score it purely on scientific fit. Do NOT recommend "reject" simply because access requires authentication. Score it as "use" or "consider" if scientifically appropriate.
 - Missing metadata fields (Unknown spatial coverage, Unknown temporal coverage, etc.) alone do not justify rejection. Score based on available evidence. Lower completeness where metadata is genuinely missing, but do not reject solely for missing fields.
 - Score ALL {len(candidates)} candidates. Do not skip any.
+
+=== URL TYPE REQUIREMENT — HARD RULE ===
+Every candidate URL passed to Agent 4 MUST point to a machine-readable data endpoint.
+NEVER score as "use" or "consider" a candidate whose URL is:
+  * A website homepage (e.g. https://gdacs.org/, https://mausam.imd.gov.in/)
+  * An interactive web map, dashboard, or data explorer (a page that opens a browser map)
+  * An HTML portal or catalog browsing page requiring human interaction to find data
+  * A documentation, "about", or dataset landing/description page
+  * A download page requiring a human to click a button
+ONLY score as usable if the URL is one of:
+  * A REST API endpoint returning JSON/CSV/XML/binary directly (e.g. https://api.open-meteo.com/v1/forecast?...)
+  * An OPeNDAP / THREDDS / ERDDAP data URL (e.g. ending in .nc, griddap, tabledap)
+  * A STAC API endpoint (/search, /collections, /items)
+  * A direct file download URL ending in .nc, .csv, .json, .tif, .grib, .h5, .zarr
+  * An S3 or cloud-storage direct object URL
+If a candidate is a homepage or HTML portal with no direct API endpoint in its metadata,
+set completeness_score=0.0, add "Broken Resource" to failed_criteria, and set
+rejection_confidence=0.95. Do NOT pass HTML portals to Agent 4 as data sources.
+
 
 === DO NOT RECOMMEND "reject" ===
 1. Completely unrelated scientific domain (e.g. financial market data, agricultural yield statistics, or any dataset with no scientific connection to {', '.join(variables_needed) or 'the requested variables'}).

@@ -213,6 +213,7 @@ class SourceSnapshot(BaseModel):
     dataset_type: str = "unknown"
     variables_available: List[str] = Field(default_factory=list)
     login_url: Optional[str] = None
+    registration_url: Optional[str] = None
     price_estimate: Optional[str] = None
 
 

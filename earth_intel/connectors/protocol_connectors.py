@@ -16,10 +16,13 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from agents.agent4_asset_resolver import (
     ConnectorDiagnostics,
@@ -73,6 +76,39 @@ def _extension_format(url: str) -> str:
         if path.endswith(ext):
             return ext.lstrip(".").upper()
     return "Unknown"
+
+
+def _safe_get_json(session, url: str, params: Optional[dict] = None, timeout: int = 15):
+    """GET a URL and return parsed JSON, or None on any failure. Never raises."""
+    try:
+        r = session.get(url, params=params, timeout=timeout,
+                         headers={"Accept": "application/json"})
+        if r.ok:
+            try:
+                return r.json()
+            except Exception:
+                return None
+    except Exception:
+        return None
+    return None
+
+
+def _safe_get_text(session, url: str, params: Optional[dict] = None, timeout: int = 15) -> Optional[str]:
+    """GET a URL and return raw text, or None on any failure. Never raises."""
+    try:
+        r = session.get(url, params=params, timeout=timeout)
+        if r.ok:
+            return r.text
+    except Exception:
+        return None
+    return None
+
+
+def _first_non_empty(*values):
+    for v in values:
+        if v not in (None, "", [], {}):
+            return v
+    return None
 
 
 @dataclass(frozen=True)
@@ -188,10 +224,13 @@ class ProtocolConnector(BaseConnector):
         probe_url = resolved or snapshot.url
         size_result = estimate_size_full(probe_url)
 
+        content_encoding = None
         try:
             s = _session()
+            s.verify = False  # SSL verification disabled
             resp = s.head(probe_url, allow_redirects=True, timeout=15)
             content_type = resp.headers.get("Content-Type")
+            content_encoding = resp.headers.get("Content-Encoding")
             checksum = (
                 resp.headers.get("ETag")
                 or resp.headers.get("Content-MD5")
@@ -207,6 +246,11 @@ class ProtocolConnector(BaseConnector):
         if not resolved:
             unavail = "; ".join(str(e) for e in diag.errors) or f"Asset resolution returned no URL from {snapshot.url}"
 
+        # Base protocol connector only has generic HTTP signals available.
+        # Fields it genuinely cannot determine (description, license, bbox,
+        # dates, etc.) are left as None rather than a placeholder string;
+        # protocol-aware subclasses (STAC/ERDDAP/CKAN/THREDDS/OGC) override
+        # this method to pull those from the provider's real metadata API.
         return DatasetMetadata(
             source_id=snapshot.source_id,
             dataset_id=snapshot.source_id,
@@ -224,6 +268,10 @@ class ProtocolConnector(BaseConnector):
             content_type=content_type,
             retrieval_method=f"{self.spec.provider_name} asset resolution (confidence {size_result.confidence:.0%})",
             unavailable_reason=unavail,
+            dataset_name=snapshot.name or None,
+            provider=self.spec.provider_name,
+            compression=content_encoding,
+            authentication_required=(AuthenticationType.none not in self.spec.auth),
         )
 
     def probe_size(self, snapshot: SourceSnapshot, fetch_request: FetchRequest) -> SizeEstimate:
@@ -333,11 +381,108 @@ class STACConnector(ProtocolConnector):
             diag.log_error(exc)
             return None
 
+    def probe_metadata(self, snapshot, fetch_request, credentials=None):
+        diag = self._make_diagnostics()
+        resolved = None
+        try:
+            resolved = self._resolve_asset_url(snapshot, fetch_request, credentials, diag)
+        except ConnectorError as exc:
+            diag.log_error(exc)
+
+        base = snapshot.url.rstrip("/")
+        s = _session(credentials)
+        s.verify = False  # SSL verification disabled
+
+        item = None
+        try:
+            r = s.post(f"{base}/search", json={
+                "limit": 1,
+                "bbox": list(fetch_request.bounding_box) if fetch_request.bounding_box else None,
+                "datetime": (
+                    f"{fetch_request.time_range[0]}/{fetch_request.time_range[1] if len(fetch_request.time_range) > 1 else '..'}"
+                    if fetch_request.time_range else None
+                ),
+            }, timeout=20)
+            if r.ok:
+                feats = r.json().get("features", [])
+                if feats:
+                    item = feats[0]
+        except Exception:
+            pass
+
+        props = (item or {}).get("properties", {}) if item else {}
+        collection_id = (item or {}).get("collection") if item else None
+        col_meta = _safe_get_json(s, f"{base}/collections/{collection_id}") if collection_id else None
+
+        extent = (col_meta or {}).get("extent", {})
+        spatial_bbox = extent.get("spatial", {}).get("bbox", [None])[0]
+        temporal_interval = extent.get("temporal", {}).get("interval", [None])[0]
+
+        bands = props.get("eo:bands") or (col_meta or {}).get("summaries", {}).get("eo:bands") or []
+        band_names = [b.get("common_name") or b.get("name") for b in bands if isinstance(b, dict)]
+        units = {b.get("name"): b.get("unit") for b in bands if isinstance(b, dict) and b.get("unit")}
+
+        keywords = (col_meta or {}).get("keywords")
+        providers = (col_meta or {}).get("providers", [])
+        provider_name = next((p.get("name") for p in providers if "producer" in (p.get("roles") or []) or "host" in (p.get("roles") or [])), None) \
+            or (providers[0].get("name") if providers else None) or self.spec.provider_name
+
+        license_val = (col_meta or {}).get("license")
+        citation = props.get("sci:citation") or (col_meta or {}).get("sci:citation")
+        doi = props.get("sci:doi") or (col_meta or {}).get("sci:doi")
+        if doi and not citation:
+            citation = f"https://doi.org/{doi}"
+
+        size_result = estimate_size_full(resolved) if resolved else None
+
+        return DatasetMetadata(
+            source_id=snapshot.source_id,
+            dataset_id=collection_id or snapshot.source_id,
+            collection=collection_id or snapshot.dataset_type,
+            product=(col_meta or {}).get("title") or snapshot.name,
+            download_endpoint=resolved,
+            api_endpoint=base,
+            metadata_endpoint=f"{base}/collections/{collection_id}" if collection_id else base,
+            file_size_bytes=size_result.bytes if size_result else None,
+            variables=band_names or list(fetch_request.variables or []),
+            spatial_coverage=str(spatial_bbox) if spatial_bbox else "Unknown",
+            temporal_coverage=(
+                f"{temporal_interval[0] or ''} – {temporal_interval[1] or 'present'}"
+                if temporal_interval else "Unknown"
+            ),
+            file_format=_extension_format(resolved) if resolved else "STAC asset",
+            retrieval_method="STAC /search item + /collections metadata",
+            unavailable_reason="" if resolved else f"STAC search returned no matching item for {snapshot.url}",
+            dataset_name=(col_meta or {}).get("title") or None,
+            provider=provider_name,
+            description=(col_meta or {}).get("description"),
+            variable_units=units or None,
+            spatial_resolution=(
+                f"{props.get('gsd')} m" if props.get("gsd") else
+                (f"{(col_meta or {}).get('summaries', {}).get('gsd', [None])[0]} m"
+                 if (col_meta or {}).get("summaries", {}).get("gsd") else None)
+            ),
+            crs=(
+                f"EPSG:{props.get('proj:epsg')}" if props.get("proj:epsg")
+                else (f"EPSG:{(col_meta or {}).get('summaries', {}).get('proj:epsg', [None])[0]}"
+                      if (col_meta or {}).get("summaries", {}).get("proj:epsg") else None)
+            ),
+            bounding_box=list(spatial_bbox) if spatial_bbox else None,
+            start_date=str(temporal_interval[0]) if temporal_interval and temporal_interval[0] else None,
+            end_date=str(temporal_interval[1]) if temporal_interval and len(temporal_interval) > 1 and temporal_interval[1] else None,
+            license=license_val,
+            citation=citation,
+            keywords=keywords,
+            version=(col_meta or {}).get("stac_version"),
+            authentication_required=None,
+        )
+
     def probe_size(self, snapshot, fetch_request):
         diag = self._make_diagnostics()
         # Try STAC item file:size first via parallel search
         from agents.agent4_asset_resolver import _session as _get_session, estimate_size_from_stac_item
         s = _get_session()
+        s.verify = False  # SSL verification disabled
         try:
             base = snapshot.url.rstrip("/")
             r = s.post(f"{base}/search", json={"limit": 1}, timeout=15)
@@ -369,6 +514,7 @@ class OGCAPIConnector(ProtocolConnector):
         diag = diagnostics or self._make_diagnostics()
         url = snapshot.url.rstrip("/")
         s = _session(credentials)
+        s.verify = False  # SSL verification disabled
         try:
             r = s.get(f"{url}/collections", timeout=15)
             if r.ok and "json" in (r.headers.get("Content-Type") or ""):
@@ -396,6 +542,56 @@ class OGCAPIConnector(ProtocolConnector):
             diag.log_error(NetworkError(f"OGC API collection browse failed: {exc}", url=url))
         return resolve_generic_asset(snapshot.url, credentials, diagnostics=diag)
 
+    def probe_metadata(self, snapshot, fetch_request, credentials=None):
+        diag = self._make_diagnostics()
+        resolved = None
+        try:
+            resolved = self._resolve_asset_url(snapshot, fetch_request, credentials, diag)
+        except ConnectorError as exc:
+            diag.log_error(exc)
+
+        base = snapshot.url.rstrip("/")
+        s = _session(credentials)
+        s.verify = False  # SSL verification disabled
+        col_id = diag.dataset_selected
+        col_meta = _safe_get_json(s, f"{base}/collections/{col_id}") if col_id else None
+
+        extent = (col_meta or {}).get("extent", {})
+        spatial_bbox = extent.get("spatial", {}).get("bbox", [None])[0]
+        temporal_interval = extent.get("temporal", {}).get("interval", [None])[0]
+        crs_list = (col_meta or {}).get("crs") or extent.get("spatial", {}).get("crs")
+
+        size_result = estimate_size_full(resolved) if resolved else None
+
+        return DatasetMetadata(
+            source_id=snapshot.source_id,
+            dataset_id=col_id or snapshot.source_id,
+            collection=col_id,
+            product=(col_meta or {}).get("title") or snapshot.name,
+            download_endpoint=resolved,
+            api_endpoint=base,
+            metadata_endpoint=f"{base}/collections/{col_id}" if col_id else base,
+            file_size_bytes=size_result.bytes if size_result else None,
+            variables=list(fetch_request.variables or []),
+            spatial_coverage=str(spatial_bbox) if spatial_bbox else "Unknown",
+            temporal_coverage=(
+                f"{temporal_interval[0] or ''} – {temporal_interval[1] or 'present'}"
+                if temporal_interval else "Unknown"
+            ),
+            file_format=_extension_format(resolved) if resolved else "GeoJSON/Coverage (OGC API)",
+            retrieval_method="OGC API Features/Coverages /collections metadata",
+            unavailable_reason="" if resolved else f"OGC API browse failed for {snapshot.url}",
+            dataset_name=(col_meta or {}).get("title"),
+            provider=self.spec.provider_name,
+            description=(col_meta or {}).get("description"),
+            bounding_box=list(spatial_bbox) if spatial_bbox else None,
+            crs=(crs_list[0] if isinstance(crs_list, list) and crs_list else (crs_list if isinstance(crs_list, str) else None)),
+            start_date=str(temporal_interval[0]) if temporal_interval and temporal_interval[0] else None,
+            end_date=str(temporal_interval[1]) if temporal_interval and len(temporal_interval) > 1 and temporal_interval[1] else None,
+            license=(col_meta or {}).get("license"),
+            keywords=(col_meta or {}).get("keywords"),
+        )
+
 
 class THREDDSConnector(ProtocolConnector):
     spec = ProtocolSpec(
@@ -412,6 +608,97 @@ class THREDDSConnector(ProtocolConnector):
         if "fileServer" in snapshot.url or any(snapshot.url.endswith(e) for e in DATA_EXTENSIONS):
             return snapshot.url
         return None
+
+    @staticmethod
+    def _catalog_xml_url(url: str) -> str:
+        if url.endswith("catalog.xml"):
+            return url
+        if "/catalog.html" in url:
+            return url.replace("/catalog.html", "/catalog.xml")
+        base = re.sub(r"/(fileServer|dodsC)/", "/catalog/", url)
+        return base.rsplit("/", 1)[0] + "/catalog.xml"
+
+    def _parse_thredds_catalog(self, url: str, credentials=None) -> dict:
+        """Parse a THREDDS catalog.xml for dataset name/documentation/coverage. Never raises."""
+        s = _session(credentials)
+        s.verify = False  # SSL verification disabled
+        xml_text = _safe_get_text(s, self._catalog_xml_url(url))
+        if not xml_text:
+            return {}
+        try:
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(xml_text)
+            ns = {"t": "http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"}
+
+            def _find(tag, node=root):
+                return node.find(f".//t:{tag}", ns)
+
+            ds = _find("dataset")
+            name = ds.get("name") if ds is not None else None
+            doc = _find("documentation")
+            description = doc.text.strip() if doc is not None and doc.text else None
+
+            geo = _find("geospatialCoverage")
+            bbox = None
+            if geo is not None:
+                n_el = geo.find("t:northsouth", ns)
+                e_el = geo.find("t:eastwest", ns)
+                if n_el is not None and e_el is not None:
+                    try:
+                        n_start = float(n_el.find("t:start", ns).text)
+                        n_size = float(n_el.find("t:size", ns).text)
+                        e_start = float(e_el.find("t:start", ns).text)
+                        e_size = float(e_el.find("t:size", ns).text)
+                        bbox = [e_start, n_start, e_start + e_size, n_start + n_size]
+                    except Exception:
+                        bbox = None
+
+            time_cov = _find("timeCoverage")
+            start_date = end_date = None
+            if time_cov is not None:
+                start_el = time_cov.find("t:start", ns)
+                end_el = time_cov.find("t:end", ns)
+                start_date = start_el.text.strip() if start_el is not None and start_el.text else None
+                end_date = end_el.text.strip() if end_el is not None and end_el.text else None
+
+            return {
+                "name": name, "description": description, "bbox": bbox,
+                "start_date": start_date, "end_date": end_date,
+            }
+        except Exception:
+            return {}
+
+    def probe_metadata(self, snapshot, fetch_request, credentials=None):
+        diag = self._make_diagnostics()
+        resolved = self._resolve_asset_url(snapshot, fetch_request, credentials, diag)
+        cat = self._parse_thredds_catalog(snapshot.url, credentials)
+        size_result = estimate_size_full(resolved) if resolved else None
+
+        return DatasetMetadata(
+            source_id=snapshot.source_id,
+            dataset_id=snapshot.source_id,
+            product=cat.get("name") or snapshot.name,
+            download_endpoint=resolved,
+            api_endpoint=snapshot.url,
+            metadata_endpoint=self._catalog_xml_url(snapshot.url),
+            file_size_bytes=size_result.bytes if size_result else None,
+            variables=list(fetch_request.variables or []),
+            spatial_coverage=str(cat["bbox"]) if cat.get("bbox") else "Unknown",
+            temporal_coverage=(
+                f"{cat.get('start_date', '')} – {cat.get('end_date', 'present')}"
+                if cat.get("start_date") else "Unknown"
+            ),
+            file_format=_extension_format(resolved) if resolved else "NetCDF (THREDDS)",
+            retrieval_method="THREDDS catalog.xml parsing",
+            unavailable_reason="" if resolved else f"THREDDS asset resolution failed for {snapshot.url}",
+            dataset_name=cat.get("name"),
+            provider=self.spec.provider_name,
+            description=cat.get("description"),
+            bounding_box=cat.get("bbox"),
+            crs="EPSG:4326" if cat.get("bbox") else None,
+            start_date=cat.get("start_date"),
+            end_date=cat.get("end_date"),
+        )
 
     def fetch_subset(self, snapshot, fetch_request, credentials=None):
         diag = self._make_diagnostics()
@@ -467,6 +754,7 @@ class ERDDAPConnector(ProtocolConnector):
             raise NotImplementedError("ERDDAP subset query could not be constructed.")
         os.makedirs(os.path.dirname(fetch_request.dest_path) or ".", exist_ok=True)
         s = _session(credentials)
+        s.verify = False  # SSL verification disabled
         try:
             with s.get(url, stream=True, timeout=60) as resp:
                 ct = (resp.headers.get("Content-Type") or "").lower()
@@ -490,6 +778,120 @@ class ERDDAPConnector(ProtocolConnector):
         if not valid:
             raise RuntimeError(f"ERDDAP download validation failed: {reason}")
         return fetch_request.dest_path
+
+    @staticmethod
+    def _erddap_base_and_id(url: str) -> Tuple[str, Optional[str]]:
+        """Split an ERDDAP griddap/tabledap/info URL into (server_base, dataset_id)."""
+        m = re.search(r"(https?://[^/]+/erddap)/(?:griddap|tabledap|info)/([^/.?]+)", url)
+        if m:
+            return m.group(1), m.group(2)
+        m2 = re.match(r"(https?://[^/]+/erddap)", url)
+        return (m2.group(1) if m2 else url.rstrip("/")), None
+
+    def _erddap_info(self, url: str, credentials=None) -> dict:
+        """
+        Fetch ERDDAP's info/{id}/index.json for a dataset and reduce it to a
+        dict of global attributes + a {variable: unit} map. Never raises.
+        """
+        base, dataset_id = self._erddap_base_and_id(url)
+        if not dataset_id:
+            return {}
+        s = _session(credentials)
+        s.verify = False  # SSL verification disabled
+        data = _safe_get_json(s, f"{base}/info/{dataset_id}/index.json")
+        if not data:
+            return {}
+        rows = data.get("table", {}).get("rows", [])
+        cols = data.get("table", {}).get("columnNames", [])
+        try:
+            ri, vi, ai, vali = (cols.index("Row Type"), cols.index("Variable Name"),
+                                cols.index("Attribute Name"), cols.index("Value"))
+        except ValueError:
+            return {}
+
+        global_attrs: Dict[str, str] = {}
+        var_units: Dict[str, str] = {}
+        variables: List[str] = []
+        for row in rows:
+            row_type, var_name, attr_name, value = row[ri], row[vi], row[ai], row[vali]
+            if row_type == "attribute" and var_name == "NC_GLOBAL":
+                global_attrs[attr_name] = value
+            elif row_type == "variable":
+                if var_name and var_name not in variables:
+                    variables.append(var_name)
+            elif row_type == "attribute" and attr_name == "units" and var_name:
+                var_units[var_name] = value
+        return {
+            "global_attrs": global_attrs,
+            "var_units": var_units,
+            "variables": variables,
+            "dataset_id": dataset_id,
+            "base": base,
+        }
+
+    def probe_metadata(self, snapshot, fetch_request, credentials=None):
+        diag = self._make_diagnostics()
+        try:
+            resolved = resolve_erddap_asset(
+                snapshot.url, fetch_request.variables,
+                fetch_request.bounding_box, fetch_request.time_range, credentials, diag,
+            )
+        except ConnectorError as exc:
+            diag.log_error(exc)
+            resolved = None
+
+        info = self._erddap_info(snapshot.url, credentials)
+        ga = info.get("global_attrs", {})
+        var_units = info.get("var_units", {})
+        variables = info.get("variables") or list(fetch_request.variables or [])
+
+        lat_min = ga.get("geospatial_lat_min")
+        lat_max = ga.get("geospatial_lat_max")
+        lon_min = ga.get("geospatial_lon_min")
+        lon_max = ga.get("geospatial_lon_max")
+        bbox = None
+        if all(v is not None for v in (lat_min, lat_max, lon_min, lon_max)):
+            try:
+                bbox = [float(lon_min), float(lat_min), float(lon_max), float(lat_max)]
+            except (TypeError, ValueError):
+                bbox = None
+
+        size_result = estimate_size_full(resolved) if resolved else None
+
+        return DatasetMetadata(
+            source_id=snapshot.source_id,
+            dataset_id=info.get("dataset_id") or snapshot.source_id,
+            collection=info.get("dataset_id"),
+            product=ga.get("title") or snapshot.name,
+            download_endpoint=resolved,
+            api_endpoint=info.get("base") or snapshot.url,
+            metadata_endpoint=(f"{info['base']}/info/{info['dataset_id']}/index.json" if info.get("dataset_id") else snapshot.url),
+            file_size_bytes=size_result.bytes if size_result else None,
+            variables=variables,
+            spatial_coverage=str(bbox) if bbox else "Unknown",
+            temporal_coverage=(
+                f"{ga.get('time_coverage_start', '')} – {ga.get('time_coverage_end', 'present')}"
+                if ga.get("time_coverage_start") else "Unknown"
+            ),
+            file_format=_extension_format(resolved) if resolved else "NetCDF/CSV (ERDDAP)",
+            retrieval_method="ERDDAP info/{dataset_id}/index.json",
+            unavailable_reason="" if resolved else f"ERDDAP asset resolution failed for {snapshot.url}",
+            dataset_name=ga.get("title"),
+            provider=ga.get("institution") or self.spec.provider_name,
+            description=ga.get("summary"),
+            variable_units=var_units or None,
+            spatial_resolution=ga.get("geospatial_lat_resolution"),
+            temporal_resolution=ga.get("time_coverage_resolution"),
+            crs="EPSG:4326" if bbox else None,
+            bounding_box=bbox,
+            start_date=ga.get("time_coverage_start"),
+            end_date=ga.get("time_coverage_end"),
+            license=ga.get("license"),
+            citation=ga.get("references") or ga.get("citation"),
+            keywords=[k.strip() for k in ga.get("keywords", "").split(",") if k.strip()] or None,
+            update_frequency=ga.get("update_frequency") if ga.get("update_frequency") not in (None, "") else None,
+            version=ga.get("version") if ga.get("version") not in (None, "") else None,
+        )
 
     def probe_size(self, snapshot, fetch_request):
         diag = self._make_diagnostics()
@@ -561,6 +963,78 @@ class CKANConnector(ProtocolConnector):
         except ConnectorError as exc:
             diag.log_error(exc)
             return None
+
+    @staticmethod
+    def _ckan_base_and_id(url: str) -> Tuple[str, Optional[str]]:
+        m = re.search(r"(https?://[^/]+)/(?:dataset|api/3/action/package_show)/([^/?&]+)", url)
+        if m:
+            return m.group(1), m.group(2)
+        m2 = re.match(r"(https?://[^/]+)", url)
+        return (m2.group(1) if m2 else url.rstrip("/")), None
+
+    def probe_metadata(self, snapshot, fetch_request, credentials=None):
+        diag = self._make_diagnostics()
+        resolved = None
+        try:
+            resolved = self._resolve_asset_url(snapshot, fetch_request, credentials, diag)
+        except ConnectorError as exc:
+            diag.log_error(exc)
+
+        base, dataset_id = self._ckan_base_and_id(snapshot.url)
+        pkg = None
+        if dataset_id:
+            s = _session(credentials)
+            s.verify = False  # SSL verification disabled
+            result = _safe_get_json(s, f"{base}/api/3/action/package_show", params={"id": dataset_id})
+            if result and result.get("success"):
+                pkg = result.get("result")
+
+        size_result = estimate_size_full(resolved) if resolved else None
+
+        if not pkg:
+            return DatasetMetadata(
+                source_id=snapshot.source_id,
+                dataset_id=dataset_id or snapshot.source_id,
+                download_endpoint=resolved,
+                api_endpoint=f"{base}/api/3/action/package_show",
+                metadata_endpoint=snapshot.url,
+                file_size_bytes=size_result.bytes if size_result else None,
+                variables=list(fetch_request.variables or []),
+                retrieval_method="CKAN package_show (no result)",
+                unavailable_reason="CKAN package_show returned no result for this dataset.",
+                provider=self.spec.provider_name,
+            )
+
+        resources = pkg.get("resources", [])
+        formats = sorted({r.get("format") for r in resources if r.get("format")})
+        org = pkg.get("organization") or {}
+
+        return DatasetMetadata(
+            source_id=snapshot.source_id,
+            dataset_id=pkg.get("id") or dataset_id or snapshot.source_id,
+            collection=pkg.get("name"),
+            product=pkg.get("title"),
+            download_endpoint=resolved,
+            api_endpoint=f"{base}/api/3/action/package_show",
+            metadata_endpoint=f"{base}/dataset/{pkg.get('name', dataset_id)}",
+            file_size_bytes=size_result.bytes if size_result else None,
+            variables=list(fetch_request.variables or []),
+            spatial_coverage="Unknown",
+            temporal_coverage="Unknown",
+            file_format=", ".join(formats) if formats else (_extension_format(resolved) if resolved else None),
+            retrieval_method="CKAN package_show",
+            unavailable_reason="" if resolved else "CKAN package found but no downloadable resource resolved.",
+            dataset_name=pkg.get("title"),
+            provider=org.get("title") or org.get("name") or self.spec.provider_name,
+            description=pkg.get("notes"),
+            number_of_files=len(resources) or None,
+            license=pkg.get("license_title") or pkg.get("license_id"),
+            keywords=[t.get("name") for t in pkg.get("tags", []) if t.get("name")] or None,
+            update_frequency=pkg.get("frequency") if pkg.get("frequency") else None,
+            version=pkg.get("version") or None,
+            start_date=pkg.get("metadata_created"),
+            end_date=pkg.get("metadata_modified"),
+        )
 
 
 class FTPConnector(ProtocolConnector):

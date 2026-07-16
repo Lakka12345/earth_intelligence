@@ -73,6 +73,9 @@ DOMAIN_SYNONYMS: dict[str, DomainName] = {
     "urban studies": DomainName.urban_planning,
     "city planning": DomainName.urban_planning,
     "infrastructure engineering": DomainName.civil_engineering,
+    "agriculture": DomainName.agricultural_science,
+    "agronomy": DomainName.agricultural_science,
+    "agricultural sciences": DomainName.agricultural_science,
 }
 
 

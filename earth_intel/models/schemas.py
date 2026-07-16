@@ -58,6 +58,7 @@ class DomainName(str, Enum):
     environmental_monitoring = "Environmental Monitoring"
     urban_planning = "Urban Planning"
     civil_engineering = "Civil Engineering"
+    agricultural_science = "Agricultural Science"
 
 
 class EventType(str, Enum):

@@ -1,5 +1,9 @@
 """
 Website Override — Discovery Agent extension.
+
+Credential classifications: Free/Anonymous | Requires User Credentials | Paid.
+Self-registration buckets have been removed — if a site requires login, users
+must supply their own credentials.
 """
 
 from typing import Dict, List
@@ -16,19 +20,28 @@ from models.website_analysis_schemas import (
 
 
 def _credential_buckets(entries: List[AdaptiveRankingEntry]):
-    self_registerable, real_credentials, paid, unconfirmed = [], [], [], []
+    """
+    Classify sources into three buckets only:
+      real_credentials — requires the user's own login/API key
+      paid             — requires payment
+      unconfirmed      — requires login but registration ease is unknown
+    Self-registerable sources are treated identically to real_credentials
+    because automated bot-registration has been removed from the pipeline.
+    """
+    real_credentials, paid, unconfirmed = [], [], []
     for e in entries:
         sid = e.scored_source.candidate.source_id
         acc = e.analysis.accessibility
         if acc.payment_required:
             paid.append(sid)
-        elif acc.credential_ease == CredentialEase.agent_can_self_register:
-            self_registerable.append(sid)
-        elif acc.credential_ease == CredentialEase.user_must_provide_real_credentials:
+        elif acc.credential_ease in (
+            CredentialEase.agent_can_self_register,
+            CredentialEase.user_must_provide_real_credentials,
+        ):
             real_credentials.append(sid)
         elif acc.credential_ease == CredentialEase.unknown and acc.authentication_required:
             unconfirmed.append(sid)
-    return self_registerable, real_credentials, paid, unconfirmed
+    return real_credentials, paid, unconfirmed
 
 
 def _build_context(entries: List[AdaptiveRankingEntry], requested_variables: List[str]):
@@ -59,7 +72,7 @@ def ask_override_and_build_payload(
 ) -> Agent3ToAgent4Payload:
     requested_variables = requested_variables or []
     pre_collected_credentials = pre_collected_credentials or {}
-    self_reg, real_cred, paid, unconfirmed = _credential_buckets(entries)
+    real_cred, paid, unconfirmed = _credential_buckets(entries)
     website_analyses, source_snapshots = _build_context(entries, requested_variables)
 
     print("\nWould you like to obtain data from a specific website instead of "
@@ -77,7 +90,7 @@ def ask_override_and_build_payload(
             return Agent3ToAgent4Payload(
                 mode=Agent3ToAgent4Mode.user_override,
                 final_ranked_source_ids=[e.scored_source.candidate.source_id for e in entries],
-                self_registerable_source_ids=self_reg,
+                self_registerable_source_ids=[],   # removed — field kept for schema compat
                 real_credentials_required_source_ids=real_cred,
                 paid_source_ids=paid,
                 unconfirmed_credential_source_ids=unconfirmed,
@@ -96,7 +109,7 @@ def ask_override_and_build_payload(
             return Agent3ToAgent4Payload(
                 mode=Agent3ToAgent4Mode.ranked_selection,
                 final_ranked_source_ids=[e.scored_source.candidate.source_id for e in entries],
-                self_registerable_source_ids=self_reg,
+                self_registerable_source_ids=[],   # removed — field kept for schema compat
                 real_credentials_required_source_ids=real_cred,
                 paid_source_ids=paid,
                 unconfirmed_credential_source_ids=unconfirmed,
@@ -109,11 +122,10 @@ def ask_override_and_build_payload(
                 notes=[
                     f"User accepted the ranked recommendations "
                     f"({', '.join(c.value for c in preference.selected_criteria)} basis).",
-                    f"{len(self_reg)} source(s) Agent 4 can self-register for; "
-                    f"{len(real_cred)} require the user's own real credentials; "
+                    f"{len(real_cred)} source(s) require the user's own real credentials; "
                     f"{len(paid)} require payment; "
                     f"{len(unconfirmed)} require login but registration ease is unconfirmed -- "
-                    f"Agent 4 should probe these directly rather than assume either way.",
+                    f"Agent 4 should prompt the user for credentials directly.",
                 ],
             )
         else:

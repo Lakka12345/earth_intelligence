@@ -30,6 +30,12 @@ class Credentials:
     api_key: Optional[str] = None
     token: Optional[str] = None
     session_token: Optional[str] = None
+    # Populated when credentials originate from Agent 4's browser automation
+    # (login / OAuth / cookie-consent flows). Optional and default-None so
+    # existing callers that only set username/password/api_key/token are
+    # unaffected.
+    cookies: Optional[Dict[str, str]] = None
+    headers: Optional[Dict[str, str]] = None
 
 
 @dataclass
@@ -100,6 +106,30 @@ class BaseConnector(ABC):
 
     def discover_datasets(self, snapshot: SourceSnapshot, context: Optional[Dict[str, Any]] = None):
         raise NotImplementedError(f"{self.name} connector does not implement dataset discovery yet.")
+
+    def resolve_download_asset(
+        self,
+        snapshot: SourceSnapshot,
+        fetch_request: FetchRequest,
+        credentials: Optional[Credentials] = None,
+    ):
+        """Return the concrete downloadable asset URL for this request.
+
+        Default implementation defers to probe_metadata()'s download_endpoint
+        so connectors that don't need bespoke asset-resolution logic (e.g.
+        simple REST/protocol connectors) comply with the interface without
+        any extra code. Connectors with live/negotiated asset URLs (signed
+        URLs, granule search, STAC asset selection, etc.) should override
+        this.
+        """
+        metadata = self.probe_metadata(snapshot, fetch_request)
+        return getattr(metadata, "download_endpoint", None)
+
+    def requires_browser_auth(self) -> bool:
+        return CapabilityFlags.requires_browser_auth in self.capabilities
+
+    def requires_browser_download(self) -> bool:
+        return CapabilityFlags.requires_browser_download in self.capabilities
 
     def plan_download(self, snapshot: SourceSnapshot, fetch_request: FetchRequest):
         raise NotImplementedError(f"{self.name} connector does not implement download planning yet.")

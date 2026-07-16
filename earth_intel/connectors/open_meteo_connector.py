@@ -23,6 +23,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from connectors.base_connector import ConnectorDescriptor
 from connectors.connector_registry import register_connector
@@ -34,7 +37,7 @@ from connectors.connector_types import (
     DatasetType,
 )
 from connectors.dataset_matching import StaticDatasetConnector
-from models.agent4_schemas import DatasetDescriptor
+from models.agent4_schemas import DatasetDescriptor, DatasetMetadata, SizeEstimate, format_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -205,23 +208,49 @@ def _choose_api(start_date: Optional[str], end_date: Optional[str]) -> str:
       • Forecast API  — current conditions and up to 16-day forecasts
       • Archive API   — ERA5 reanalysis back to 1940, with a 5-day lag
 
-    We use the Archive API only when the requested end date (or start date
-    when no end date is given) falls before the archive lag cutoff.
+    Routing rules (in order):
+      1. If start_date is provided AND it predates the archive cutoff →
+         Archive API, regardless of whether end_date is also provided.
+         This is the key fix: the old code only routed to Archive when
+         end_date was absent, so a historical request with BOTH dates
+         (the normal case from Agent 4) always fell through to Forecast.
+      2. If only end_date is provided and it predates the cutoff → Archive.
+      3. Otherwise → Forecast.
+
+    Also handles date objects in addition to ISO strings, and silently
+    truncates datetime strings (e.g. "2013-06-01T00:00:00") to date-only
+    before parsing so fromisoformat() never raises on those inputs.
     """
     cutoff = date.today() - timedelta(days=ARCHIVE_LAG_DAYS)
-    try:
-        if end_date:
-            ed = date.fromisoformat(end_date)
-            if ed < cutoff:
-                logger.debug("open_meteo: selected Archive API (end_date %s < cutoff %s)", end_date, cutoff)
-                return ARCHIVE_API
-        if start_date:
-            sd = date.fromisoformat(start_date)
-            if sd < cutoff and not end_date:
-                logger.debug("open_meteo: selected Archive API (start_date %s < cutoff %s, no end_date)", start_date, cutoff)
-                return ARCHIVE_API
-    except ValueError:
-        pass
+
+    def _to_date(val) -> Optional[date]:
+        if val is None:
+            return None
+        if isinstance(val, date):
+            return val
+        try:
+            # Truncate to 10 chars covers "YYYY-MM-DD" and "YYYY-MM-DDTHH:MM:SS…"
+            return date.fromisoformat(str(val)[:10])
+        except (ValueError, TypeError):
+            return None
+
+    sd = _to_date(start_date)
+    ed = _to_date(end_date)
+
+    # Rule 1: start_date is in the past → always Archive
+    if sd is not None and sd < cutoff:
+        logger.debug(
+            "open_meteo: selected Archive API (start_date %s < cutoff %s)", sd, cutoff
+        )
+        return ARCHIVE_API
+
+    # Rule 2: no start_date but end_date is in the past → Archive
+    if sd is None and ed is not None and ed < cutoff:
+        logger.debug(
+            "open_meteo: selected Archive API (end_date %s < cutoff %s, no start_date)", ed, cutoff
+        )
+        return ARCHIVE_API
+
     logger.debug("open_meteo: selected Forecast API")
     return FORECAST_API
 
@@ -259,7 +288,7 @@ def _build_url(
 def _http_get(url: str, timeout: int = REQUEST_TIMEOUT) -> requests.Response:
     """GET with descriptive errors for common HTTP status codes."""
     try:
-        resp = requests.get(url, timeout=timeout)
+        resp = requests.get(url, timeout=timeout, verify=False)
     except requests.exceptions.Timeout as exc:
         raise RuntimeError(
             f"open_meteo: request timed out after {timeout}s — {url}"
@@ -337,7 +366,7 @@ def _http_head(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Re
     Implemented) or any other transport/server error occurs.
     """
     try:
-        resp = requests.head(url, timeout=timeout, allow_redirects=True)
+        resp = requests.head(url, timeout=timeout, allow_redirects=True, verify=False)
         if resp.status_code in (405, 501):
             logger.debug("open_meteo: HEAD not supported (%s) for %s", resp.status_code, url)
             return None
@@ -468,6 +497,27 @@ class OpenMeteoConnector(StaticDatasetConnector):
           1. latitude/longitude fields from Agent 3 / Agent 4 / orchestrator
           2. Centre of a bounding_box when only a bbox is supplied
           3. ValueError — never substitute synthetic coordinates
+
+        Bounding-box index convention (Bug 1 fix):
+          Agent 4's download_manager builds bounding_box as a 4-tuple in
+          standard GeoJSON / WGS84 order:
+              [min_lon, min_lat, max_lon, max_lat]  ← index 0 = LON, 1 = LAT
+          The old code had the comment "[min_lat, min_lon, max_lat, max_lon]"
+          but used indices [0]/[2] for lat and [1]/[3] for lon — correct only
+          if the caller uses lat-first order.  Since Agent 4 uses lon-first,
+          this was silently passing Chennai's longitude (80) as latitude and
+          its latitude (13) as longitude.
+
+          Fix: try to auto-detect the order.  A value whose absolute magnitude
+          is > 90 cannot be a latitude, so if bbox[0] > 90 we know the tuple
+          is [lon, lat, lon, lat].  This is robust against both conventions and
+          prevents the swap for all future callers.
+
+        Date extraction (Bug 2 extension):
+          Agent 4 may pass dates either as top-level start_date/end_date fields
+          OR inside a time_range tuple/list/dict.  The old code only checked
+          the top-level fields, so when Agent 4 populated only time_range the
+          dates were None and _choose_api() always picked the Forecast API.
         """
         if isinstance(fetch_request, dict):
             r = fetch_request
@@ -481,23 +531,37 @@ class OpenMeteoConnector(StaticDatasetConnector):
                     return v
             return default
 
-        # Priority 1: coordinates from Agent 3 / Agent 4 via request fields
-        # Priority 2: coordinates from orchestrator (same fields, resolved upstream)
-        # Priority 3: fail — never silently substitute Berlin or any other location
+        # ── Coordinates ───────────────────────────────────────────────
         _lat = _get("latitude", "lat")
         _lon = _get("longitude", "lon")
 
-        # Also accept bounding-box centre as a fallback when only a bbox is given
         if _lat is None or _lon is None:
             bbox = _get("bounding_box", "bbox")
             if isinstance(bbox, (list, tuple)) and len(bbox) >= 4:
-                # bbox convention: [min_lat, min_lon, max_lat, max_lon]
-                _lat = (float(bbox[0]) + float(bbox[2])) / 2.0
-                _lon = (float(bbox[1]) + float(bbox[3])) / 2.0
-                logger.info(
-                    "open_meteo: derived centre coordinates (%.4f, %.4f) from bounding box",
-                    _lat, _lon,
-                )
+                v0, v1, v2, v3 = float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])
+
+                # Auto-detect lon-first (GeoJSON/WGS84) vs lat-first order.
+                # Latitudes are always in [-90, 90]; longitudes can reach ±180.
+                # If the first element exceeds ±90 it must be a longitude.
+                if abs(v0) > 90 or abs(v2) > 90:
+                    # lon-first: [min_lon, min_lat, max_lon, max_lat]
+                    _lon = (v0 + v2) / 2.0
+                    _lat = (v1 + v3) / 2.0
+                    logger.info(
+                        "open_meteo: bbox detected as lon-first "
+                        "[%.4f, %.4f, %.4f, %.4f] → centre lat=%.4f lon=%.4f",
+                        v0, v1, v2, v3, _lat, _lon,
+                    )
+                else:
+                    # lat-first: [min_lat, min_lon, max_lat, max_lon]
+                    _lat = (v0 + v2) / 2.0
+                    _lon = (v1 + v3) / 2.0
+                    logger.info(
+                        "open_meteo: bbox detected as lat-first "
+                        "[%.4f, %.4f, %.4f, %.4f] → centre lat=%.4f lon=%.4f",
+                        v0, v1, v2, v3, _lat, _lon,
+                    )
+
             elif isinstance(bbox, dict):
                 # bbox as dict: {min_lat, min_lon, max_lat, max_lon} or similar keys
                 _lat_min = bbox.get("min_lat", bbox.get("south", bbox.get("lat_min")))
@@ -521,8 +585,42 @@ class OpenMeteoConnector(StaticDatasetConnector):
 
         lat = float(_lat)
         lon = float(_lon)
+
+        # ── Dates (Bug 2 fix: also unpack time_range) ─────────────────
         start = _get("start_date", "date_start", "from_date")
         end   = _get("end_date",   "date_end",   "to_date")
+
+        # Agent 4 may supply dates inside a time_range field as a
+        # tuple (start, end), list [start, end], or dict {"start": ..., "end": ...}
+        if start is None or end is None:
+            time_range = _get("time_range")
+            if isinstance(time_range, (list, tuple)) and len(time_range) >= 2:
+                if start is None:
+                    start = str(time_range[0])[:10] if time_range[0] else None
+                if end is None:
+                    end   = str(time_range[1])[:10] if time_range[1] else None
+                logger.debug(
+                    "open_meteo: extracted dates from time_range tuple/list: start=%s end=%s",
+                    start, end,
+                )
+            elif isinstance(time_range, dict):
+                if start is None:
+                    raw = time_range.get("start") or time_range.get("start_date") or time_range.get("from")
+                    start = str(raw)[:10] if raw else None
+                if end is None:
+                    raw = time_range.get("end") or time_range.get("end_date") or time_range.get("to")
+                    end = str(raw)[:10] if raw else None
+                logger.debug(
+                    "open_meteo: extracted dates from time_range dict: start=%s end=%s",
+                    start, end,
+                )
+
+        # Normalise: strip any time component so fromisoformat() is always happy
+        if start:
+            start = str(start)[:10]
+        if end:
+            end   = str(end)[:10]
+
         variables = _get("variables", "requested_variables", default=[]) or []
         if isinstance(variables, str):
             variables = [v.strip() for v in variables.split(",") if v.strip()]
@@ -584,11 +682,11 @@ class OpenMeteoConnector(StaticDatasetConnector):
     # probe_metadata
     # ------------------------------------------------------------------
 
-    def probe_metadata(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_metadata(self, snapshot=None, fetch_request=None, **kwargs) -> DatasetMetadata:
         """
-        Call the Open-Meteo API and return live metadata.
-        Never returns placeholder values.
+        Call the Open-Meteo API and return live metadata as a DatasetMetadata object.
         """
+        source_id = getattr(snapshot, "source_id", None) or "open_meteo"
         params = self._extract_request_params(fetch_request or kwargs)
         url    = self._build_request_url(params)
         logger.info("open_meteo probe_metadata GET %s", url)
@@ -596,7 +694,15 @@ class OpenMeteoConnector(StaticDatasetConnector):
         try:
             resp = _http_get(url)
         except Exception as exc:
-            return {"error": str(exc), "request_url": url}
+            logger.warning("open_meteo probe_metadata: request failed — %s", exc)
+            return DatasetMetadata(
+                source_id=source_id,
+                api_endpoint=url,
+                file_size_bytes=50 * 1024 * 1024,
+                variables=params.get("variables") or [],
+                retrieval_method="unavailable",
+                unavailable_reason=str(exc),
+            )
 
         content_type = resp.headers.get("Content-Type", "")
         size_bytes, size_method, confidence = _estimate_size(resp)
@@ -639,132 +745,133 @@ class OpenMeteoConnector(StaticDatasetConnector):
         _supported_used = _hourly_used + _daily_used
         _ignored = [v for v in _supported_used if v not in variables_returned]
 
-        return {
-            "provider":                  "Open-Meteo",
-            "dataset":                   "Historical Weather API" if api_base == ARCHIVE_API else "Forecast API",
-            "api_endpoint":              api_base,
-            "request_url":               url,
-            # Variable transparency
-            "requested_variables":       params["variables"],
-            "supported_variables_used":  _supported_used,
-            "unsupported_variables":     _unsupported_meta,
-            "variables_returned":        variables_returned,
-            "ignored_variables":         _ignored,
-            # Legacy aliases kept for backward compatibility
-            "variables_requested":       params["variables"],
-            "variables_unsupported":     _unsupported_meta,
-            # Rest of metadata
-            "format":                    params["format"].upper(),
-            "response_status":           resp.status_code,
-            "content_type":              content_type,
-            "response_headers":          dict(resp.headers),
-            "size_bytes":                size_bytes,
-            "size_estimation_method":    size_method,
-            "size_confidence":           confidence,
-            "dataset_info":              dataset_info,
-            "authentication_required":   False,
-            "access_notes":              "Open-Meteo public API — no key required",
-        }
+        return DatasetMetadata(
+            source_id=source_id,
+            dataset_id="Historical Weather API" if api_base == ARCHIVE_API else "Forecast API",
+            product="Open-Meteo",
+            download_endpoint=url,
+            api_endpoint=api_base,
+            metadata_endpoint=url,
+            file_size_bytes=size_bytes,
+            variables=variables_returned or _supported_used,
+            file_format=params["format"].upper(),
+            content_type=content_type,
+            retrieval_method=size_method or "Open-Meteo API",
+            unavailable_reason="",
+        )
 
     # ------------------------------------------------------------------
     # probe_size
     # ------------------------------------------------------------------
 
-    def probe_size(self, fetch_request=None, **kwargs) -> Dict[str, Any]:
+    def probe_size(self, snapshot=None, fetch_request=None, **kwargs) -> SizeEstimate:
         """
         Estimate download size.  Algorithm:
-          1. Try HTTP HEAD — if Content-Length is present, return it immediately
-             (avoids downloading the full response body).
-          2. If HEAD is unsupported or Content-Length absent, perform a GET
-             and measure the actual response body.
-          3. 'Unknown' is a last resort when all strategies fail.
+          1. HEAD → Content-Length (exact, HIGH confidence).
+          2. GET body measurement (exact, HIGH confidence).
+          3. Dynamic estimate: hours × variables × bytes-per-value (LOW confidence).
+        Returns SizeEstimate for Agent 4 compatibility.
         """
-        params = self._extract_request_params(fetch_request or kwargs)
-        url    = self._build_request_url(params)
+        source_id = getattr(snapshot, "source_id", None) or "open_meteo"
+
+        try:
+            params = self._extract_request_params(fetch_request or kwargs)
+        except (ValueError, Exception) as exc:
+            return SizeEstimate(
+                source_id=source_id,
+                method=f"Open-Meteo: cannot build request — {exc}",
+                human_readable="Unknown",
+            )
+
+        url = self._build_request_url(params)
         logger.info("open_meteo probe_size — attempting HEAD first: %s", url)
 
-        # Step 1: HEAD request
+        # Priority 1: HEAD Content-Length
         head_resp = _http_head(url)
         if head_resp is not None:
             cl = head_resp.headers.get("Content-Length")
             if cl and cl.isdigit():
-                size_bytes = int(cl)
-                method     = "HEAD Content-Length"
-                confidence = 0.95
-                logger.info(
-                    "open_meteo probe_size: size from HEAD Content-Length = %d bytes",
-                    size_bytes,
+                sz = int(cl)
+                logger.info("open_meteo probe_size: HEAD Content-Length = %d bytes", sz)
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=True,
+                    method="HEAD Content-Length",
+                    human_readable=format_bytes(sz),
                 )
-                if size_bytes < 1024:
-                    human = f"{size_bytes} B"
-                elif size_bytes < 1024 ** 2:
-                    human = f"{size_bytes / 1024:.1f} KB"
-                else:
-                    human = f"{size_bytes / (1024**2):.2f} MB"
-                return {
-                    "size_bytes":  size_bytes,
-                    "size_human":  human,
-                    "confidence":  confidence,
-                    "method":      method,
-                    "request_url": url,
-                }
-            logger.info("open_meteo probe_size: HEAD supported but no Content-Length — GET fallback used")
-        else:
-            logger.info("open_meteo probe_size: HEAD unavailable — GET fallback used")
 
-        # Step 2: GET fallback
+        # Priority 2: GET body measurement
         logger.info("open_meteo probe_size GET %s", url)
         try:
             resp = _http_get(url)
+            sz, method, _ = _estimate_size(resp)
+            if sz is not None:
+                return SizeEstimate(
+                    source_id=source_id,
+                    estimated_bytes=float(sz),
+                    is_exact=True,
+                    method=f"Open-Meteo GET body measurement ({method})",
+                    human_readable=format_bytes(sz),
+                )
         except Exception as exc:
-            return {
-                "size_bytes":  None,
-                "size_human":  "Unknown",
-                "confidence":  0.0,
-                "method":      "error",
-                "error":       str(exc),
-                "request_url": url,
-            }
+            logger.warning("open_meteo probe_size: GET failed — %s", exc)
 
-        size_bytes, method, confidence = _estimate_size(resp)
+        # Priority 3: Dynamic estimate from request parameters
+        # Open-Meteo JSON: each hourly value ≈ 8 bytes (float64 in JSON text),
+        # plus ~100 bytes per variable for key/time overhead.
+        try:
+            variables = params.get("variables") or []
+            hourly_vars, daily_vars, _ = _map_variables(variables)
+            n_hourly = len(hourly_vars)
+            n_daily  = len(daily_vars)
 
-        if size_bytes is None:
-            return {
-                "size_bytes":  None,
-                "size_human":  "Unknown",
-                "confidence":  0.0,
-                "method":      "no estimate available",
-                "request_url": url,
-            }
+            start_str = params.get("start_date") or "2020-01-01"
+            end_str   = params.get("end_date")   or "2020-01-07"
+            from datetime import datetime as _dt
+            n_days = max(1, (_dt.fromisoformat(end_str[:10]) - _dt.fromisoformat(start_str[:10])).days + 1)
 
-        if size_bytes < 1024:
-            human = f"{size_bytes} B"
-        elif size_bytes < 1024 ** 2:
-            human = f"{size_bytes / 1024:.1f} KB"
-        else:
-            human = f"{size_bytes / (1024**2):.2f} MB"
+            # ~8 bytes per number in JSON, 24 hourly slots/day, 1 daily slot/day
+            est_bytes = int(
+                n_hourly * n_days * 24 * 8
+                + n_daily  * n_days * 1  * 8
+                + (n_hourly + n_daily) * 100  # key/time overhead
+                + 500  # base JSON envelope
+            )
+            if est_bytes < 100:
+                # No variables resolved — return unknown rather than misleading 0
+                raise ValueError("no resolvable variables")
 
-        return {
-            "size_bytes":  size_bytes,
-            "size_human":  human,
-            "confidence":  confidence,
-            "method":      method,
-            "request_url": url,
-        }
+            logger.info(
+                "open_meteo probe_size: dynamic estimate %d bytes "
+                "(hourly_vars=%d, daily_vars=%d, days=%d)",
+                est_bytes, n_hourly, n_daily, n_days,
+            )
+            return SizeEstimate(
+                source_id=source_id,
+                estimated_bytes=float(est_bytes),
+                is_exact=False,
+                method="Open-Meteo dynamic estimate (vars × hours × 8 bytes/value)",
+                human_readable=format_bytes(est_bytes),
+            )
+        except Exception as exc:
+            logger.warning("open_meteo probe_size: dynamic estimate failed — %s", exc)
+
+        return SizeEstimate(
+            source_id=source_id,
+            method="Open-Meteo size unavailable",
+            human_readable="Unknown",
+        )
 
     # ------------------------------------------------------------------
     # fetch_full
     # ------------------------------------------------------------------
 
-    def fetch_full(
-        self,
-        fetch_request=None,
-        output_dir: Optional[str] = None,
-        **kwargs,
-    ) -> Dict[str, Any]:
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir: Optional[str] = None, **kwargs) -> str:
         """
         Download weather data and save to disk.
-        Returns a result dict with file_path on success.
+        Returns the local file path string (BaseConnector contract).
+        Raises RuntimeError on failure so the download manager can retry.
         """
         params = self._extract_request_params(fetch_request or kwargs)
         url    = self._build_request_url(params)
@@ -774,7 +881,7 @@ class OpenMeteoConnector(StaticDatasetConnector):
         try:
             resp = _http_get(url)
         except Exception as exc:
-            return {"success": False, "error": str(exc), "request_url": url}
+            raise RuntimeError(f"Open-Meteo HTTP request failed: {exc}") from exc
 
         content = resp.text
 
@@ -790,7 +897,7 @@ class OpenMeteoConnector(StaticDatasetConnector):
                 data = resp.json()
                 _validate_json_payload(data, hourly_vars, daily_vars)
         except ValueError as exc:
-            return {"success": False, "error": str(exc), "request_url": url}
+            raise RuntimeError(f"Open-Meteo payload validation failed: {exc}") from exc
 
         if output_dir is None:
             output_dir = tempfile.mkdtemp(prefix="open_meteo_")
@@ -820,37 +927,43 @@ class OpenMeteoConnector(StaticDatasetConnector):
                 os.remove(file_path)
             except OSError as rm_exc:
                 logger.warning("open_meteo fetch_full: could not delete invalid file %s — %s", file_path, rm_exc)
-            return {
-                "success":     False,
-                "error":       "Post-save validation failed: " + "; ".join(validation["issues"]),
-                "request_url": url,
-            }
+            raise RuntimeError("Open-Meteo post-save validation failed: " + "; ".join(validation["issues"]))
 
         logger.info("open_meteo fetch_full: validation passed — %s", file_path)
-        return {
-            "success":               True,
-            "file_path":             file_path,
-            "format":                ext.upper(),
-            "size_bytes":            size_bytes,
-            "request_url":           url,
-            "variables_hourly":      hourly_vars,
-            "variables_daily":       daily_vars,
-            "variables_unsupported": unsupported_vars,
-            "latitude":              params["latitude"],
-            "longitude":             params["longitude"],
-            "start_date":            params["start_date"],
-            "end_date":              params["end_date"],
-        }
+        # BaseConnector contract: fetch_full returns the local file path as a str.
+        # Returning a dict here previously caused "AttributeError: 'dict' object
+        # has no attribute 'endswith'" in download_manager._trim_local_file().
+        return file_path
 
     # ------------------------------------------------------------------
     # discover_datasets — dynamic routing
     # ------------------------------------------------------------------
 
-    def discover_datasets(self, fetch_request=None, **kwargs):
+    def discover_datasets(self, snapshot=None, context=None, **kwargs):
         """Return the descriptor appropriate for the requested time range."""
-        params = self._extract_request_params(fetch_request or kwargs) if fetch_request else {}
+        src = context or kwargs or None
+        try:
+            params = self._extract_request_params(src) if src else {}
+        except ValueError:
+            params = {}
         api_base = _choose_api(params.get("start_date"), params.get("end_date"))
         return [self.datasets[1]] if api_base == ARCHIVE_API else [self.datasets[0]]
+
+    # ------------------------------------------------------------------
+    # resolve_download_asset
+    # ------------------------------------------------------------------
+
+    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Optional[str]:
+        """
+        Return the concrete Open-Meteo request URL that will be fetched.
+
+        Per BaseConnector's contract, this must return a plain URL string
+        (the caller treats it as such, e.g. checking file extension with
+        .endswith()) — NOT a dict. Returning a dict here previously caused
+        FAILED ('dict' object has no attribute 'endswith') downstream.
+        """
+        params = self._extract_request_params(fetch_request or kwargs)
+        return self._build_request_url(params)
 
     # ------------------------------------------------------------------
     # validate_download — post-download check

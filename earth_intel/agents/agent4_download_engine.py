@@ -56,6 +56,7 @@ class DownloadTask:
     protocol: str = ""
     allow_resume: bool = True
     max_retries: int = 3
+    extra_headers: Optional[dict] = None
     progress_callback: Optional[Callable[[str, int, Optional[float]], None]] = None
 
 
@@ -92,6 +93,9 @@ class DownloadEngine:
             size = os.path.getsize(task.dest_path)
             if size > 0:
                 headers["Range"] = f"bytes={size}-"
+        if task.extra_headers:
+            for key, value in task.extra_headers.items():
+                headers.setdefault(key, value)
         return headers
 
     def _auth(self, credentials: Optional[Credentials]):

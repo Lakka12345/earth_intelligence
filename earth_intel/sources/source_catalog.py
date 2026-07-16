@@ -517,6 +517,11 @@ KNOWN_SOURCES: List[Dict] = [
 # ------------------------------------------------------------------ #
 
 DATASET_TYPE_KEYWORDS: Dict[str, List[str]] = {
+    "hydrology": [
+        "river", "streamflow", "discharge", "runoff", "groundwater",
+        "reservoir", "basin", "catchment", "hydrology", "hydrological",
+        "water level", "water resources", "irrigation", "drainage",
+    ],
     "ocean": [
         "sst", "sea surface temperature", "salinity", "currents",
         "chlorophyll", "wave", "ocean", "marine", "coastal", "tidal",
