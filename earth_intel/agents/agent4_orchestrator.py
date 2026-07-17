@@ -124,6 +124,7 @@ def _resolve_and_approve_plan(
     time_range=None,
     pre_collected_credentials=None,
     initial_excluded_source_ids=None,
+    ui_choices: dict | None = None,
 ) -> tuple:
     """
     Runs the coverage -> access -> size loop, rebuilding the plan each
@@ -211,7 +212,21 @@ def _resolve_and_approve_plan(
                 size_estimate.human_readable = format_bytes(dataset_metadata.file_size_bytes)
             decision.approved_size = size_estimate
 
-            if not ask_size_approval(snapshot.name, size_estimate, running_total):
+            if ui_choices is not None:
+                # Dashboard mode: auto-approve if under the configured size limit,
+                # otherwise auto-approve with a warning (never block on input).
+                size_limit_mb = ui_choices.get("size_limit_mb")
+                est_mb = (size_estimate.estimated_bytes or 0) / (1024 * 1024)
+                if size_limit_mb is not None and est_mb > size_limit_mb:
+                    print(f"  Auto-declining {snapshot.name}: {est_mb:.1f} MB exceeds limit of {size_limit_mb} MB.")
+                    size_approved = False
+                else:
+                    print(f"  Auto-approving {snapshot.name}: {format_bytes(size_estimate.estimated_bytes)} (dashboard mode).")
+                    size_approved = True
+            else:
+                size_approved = ask_size_approval(snapshot.name, size_estimate, running_total)
+
+            if not size_approved:
                 decision.decision = AccessDecisionType.skipped_declined
                 decision.notes = "User declined this source because of estimated download size."
                 approved[sid] = decision
@@ -334,7 +349,7 @@ def _print_retrieval_report(output: Agent4Output, source_snapshots: Dict[str, So
         )
 
 
-def _confirm_incomplete_coverage(uncovered_variables) -> bool:
+def _confirm_incomplete_coverage(uncovered_variables, ui_choices: dict | None = None) -> bool:
     missing = sorted(uncovered_variables or [])
     if not missing:
         return True
@@ -343,6 +358,15 @@ def _confirm_incomplete_coverage(uncovered_variables) -> bool:
     print("INCOMPLETE COVERAGE")
     print("=" * 70)
     print(f"Coverage is incomplete. Missing variables: {', '.join(missing)}")
+
+    # In dashboard mode, ui_choices["confirm_partial"] provides the answer
+    # non-interactively so the pipeline never blocks on input().
+    if ui_choices is not None:
+        choice = ui_choices.get("confirm_partial", True)
+        print(f"  (Dashboard: confirm_partial={choice})")
+        return bool(choice)
+
+    # CLI / terminal fallback — original interactive path.
     print("Agent 4 has already walked the ranked Agent 3 source list available in this handoff.")
     print("Choose:")
     print("  1. Stop and return to source discovery/ranking")
@@ -357,13 +381,21 @@ def _confirm_incomplete_coverage(uncovered_variables) -> bool:
         print("Please choose 1 to stop or 2 to continue anyway.")
 
 
-def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
+def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | None = None) -> Agent4Output:
     """
     `request` is the original RetrievalRequest (same object passed to
     run_agent3) -- optional only for backward compatibility / ad-hoc
     testing; without it, no bounding box or time range can be derived
     and every source falls back to full-download (still correct, just
     not storage-optimal).
+
+    `ui_choices` is provided by the Streamlit dashboard to answer the
+    three interactive prompts non-interactively:
+        confirm_partial   bool  — continue with partial variable coverage
+        wants_preprocessing bool — send to Agent 5 instead of raw download
+        size_limit_mb     int|None — auto-approve sizes below this limit
+    When None (CLI usage) all prompts fall through to the original
+    interactive input() path.
     """
     print("\n" + "=" * 70)
     print("AGENT 4 — INTELLIGENT RETRIEVAL")
@@ -428,6 +460,7 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
     approved, approved_credentials, total_bytes, still_uncovered = _resolve_and_approve_plan(
         ranked_ids, website_analyses, source_snapshots, requested_variables, bounding_box, time_range,
         pre_collected_credentials=payload.pre_collected_credentials,
+        ui_choices=ui_choices,
     )
 
     source_decisions = list(approved.values())
@@ -452,7 +485,7 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
     print(f"\nResolved {len(source_decisions)} source decision(s), total estimated downloadable size: {format_bytes(total_bytes)}")
     if still_uncovered:
         print(f"NOTE: the following requested variables are not covered by any approved source: {', '.join(sorted(still_uncovered))}")
-        if not _confirm_incomplete_coverage(still_uncovered):
+        if not _confirm_incomplete_coverage(still_uncovered, ui_choices=ui_choices):
             coverage_table, retrieved_variables, coverage_percent = _build_coverage_table(
                 requested_variables, source_decisions, source_snapshots, []
             )
@@ -481,22 +514,31 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
         print("Every requested variable is covered by the approved sources.")
 
     print("\nStep 3 -- Next step")
-    wants_preprocessing = input(
-        "What would you like to do? Type 'raw' to download retrieved raw datasets, "
-        "or 'preprocess' to continue directly to Agent 5 preprocessing: "
-    ).strip().lower().startswith("p")
+    if ui_choices is not None:
+        wants_preprocessing = bool(ui_choices.get("wants_preprocessing", False))
+        print(f"  (Dashboard: wants_preprocessing={wants_preprocessing})")
+    else:
+        wants_preprocessing = input(
+            "What would you like to do? Type 'raw' to download retrieved raw datasets, "
+            "or 'preprocess' to continue directly to Agent 5 preprocessing: "
+        ).strip().lower().startswith("p")
 
     location = None
     if downloadable_ids:
         if wants_preprocessing:
             location = DEFAULT_MANAGED_FOLDER
             print("Agent 5 preprocessing selected. Agent 4 will use the managed project data folder without asking for a custom location.")
+        elif ui_choices is not None:
+            # Dashboard mode: use user-specified path if provided, else managed folder.
+            location = ui_choices.get("save_path") or DEFAULT_MANAGED_FOLDER
+            print(f"  (Dashboard: download location = {location})")
         else:
             print(f"\nTotal download size: {format_bytes(total_bytes)}")
             print(f"Estimated local storage required: {format_bytes(total_bytes)}")
             print("Estimated download time depends on provider throughput and network speed.")
             location = ask_download_location()
-        ask_download_format()  # currently informational only -- see agent4_download_manager's honest scope note
+        if ui_choices is None:
+            ask_download_format()  # currently informational only -- CLI only
 
     print("\nStep 4 -- Downloading...")
     manifest = []
@@ -714,6 +756,7 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
                         time_range,
                         pre_collected_credentials=payload.pre_collected_credentials,
                         initial_excluded_source_ids=failed_source_ids,
+                        ui_choices=ui_choices,
                     )
                     total_bytes += added_bytes
                     for new_sid, new_decision in new_decisions.items():

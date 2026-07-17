@@ -2359,6 +2359,2527 @@
         "Improve or verify 'completeness' before relying on this provider (current score 0.33).",
         "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
       ]
+    },
+    {
+      "provider_name": "NOAA CoastWatch ERDDAP",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.432022+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.7,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2583,
+        "explanation": "Scientific acceptance derived from: 570 scientific citations (scaled score 0.28); 170 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4375,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 570 scientific citations (scaled score 0.28); 170 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.26)."
+      ]
+    },
+    {
+      "provider_name": "NOAA IOOS ERDDAP",
+      "provider_url": "https://erddap.ioos.us/erddap",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.442470+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2433,
+        "explanation": "Scientific acceptance derived from: 528 scientific citations (scaled score 0.26); 158 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6667,
+        "explanation": "Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4137,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.41 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "real_time_availability: Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      ],
+      "weaknesses": [
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "scientific_acceptance: Scientific acceptance derived from: 528 scientific citations (scaled score 0.26); 158 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.24)."
+      ]
+    },
+    {
+      "provider_name": "NOAA NCEI",
+      "provider_url": "https://www.ncei.noaa.gov/access/services/data/v1/",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.452817+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.3,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.263,
+        "explanation": "Scientific acceptance derived from: 582 scientific citations (scaled score 0.29); 174 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6667,
+        "explanation": "Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3793,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.38 (Very Low Trust) is driven most positively by 'real_time_availability' (score 0.67) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "real_time_availability: Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      ],
+      "weaknesses": [
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; no documentation flagged as available.",
+        "scientific_acceptance: Scientific acceptance derived from: 582 scientific citations (scaled score 0.29); 174 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.26)."
+      ]
+    },
+    {
+      "provider_name": "World Ocean Atlas (WOA)",
+      "provider_url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.462837+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.9,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.90 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2838,
+        "explanation": "Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.45,
+        "explanation": "Real-time availability derived from: API uptime 10.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3891,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.39 (Very Low Trust) is driven most positively by 'consistency' (score 0.90) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "consistency: Consistency derived from a declared agreement ratio of 0.90 with other candidate providers covering the same variables/region.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "historical_reliability: No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.27).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.28)."
+      ]
+    },
+    {
+      "provider_name": "Scripps Institution of Oceanography",
+      "provider_url": "https://scripps.ucsd.edu/research/data-programs",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.473840+00:00",
+      "authority_score": {
+        "score": 0.3,
+        "explanation": "Authority derived from: domain suffix '.edu' associated with academic/nonprofit bodies (+0.05)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2607,
+        "explanation": "Scientific acceptance derived from: 576 scientific citations (scaled score 0.29); 172 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6667,
+        "explanation": "Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3809,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.38 (Very Low Trust) is driven most positively by 'consistency' (score 0.80) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 576 scientific citations (scaled score 0.29); 172 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.30).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.23).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.26)."
+      ]
+    },
+    {
+      "provider_name": "World Ocean Database (WOD)",
+      "provider_url": "https://www.ncei.noaa.gov/products/world-ocean-database",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.484375+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 40.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.7,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2838,
+        "explanation": "Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.45,
+        "explanation": "Real-time availability derived from: API uptime 10.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3664,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.37 (Very Low Trust) is driven most positively by 'consistency' (score 0.70) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "consistency: Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "historical_reliability: No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 40.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.20).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.28)."
+      ]
+    },
+    {
+      "provider_name": "Argo Float Data (global, all GDACs)",
+      "provider_url": "https://www.gdacs.org/gdacsapi/api/",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.494710+00:00",
+      "authority_score": {
+        "score": 0.3,
+        "explanation": "Authority derived from: domain suffix '.org' associated with academic/nonprofit bodies (+0.05)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.1667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 30.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2862,
+        "explanation": "Scientific acceptance derived from: 645 scientific citations (scaled score 0.32); 193 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3728,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.37 (Very Low Trust) is driven most positively by 'consistency' (score 0.80) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 645 scientific citations (scaled score 0.32); 193 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 30.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.30).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.17).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.29)."
+      ]
+    },
+    {
+      "provider_name": "HadISST Average Sea Surface Temperature, 1\u00b0;, Global, Monthly, 1870-present",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdHadISST",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.506039+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.9,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.90 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4526,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.45 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.90 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.MO.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstdmdayR20190",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.516795+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4413,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.8D.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd8dayR20190",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.526620+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4413,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.MO.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstdmdayR20190_Lon0360",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.538474+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4413,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.DAY.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, N",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd1dayR20190",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.549096+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4413,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.8D.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd8dayR20190_Lon0360",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.559386+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4413,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.DAY.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, N",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd1dayR20190_Lon0360",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.571362+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4413,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "HadISST Average Sea Surface Temperature, 1\u00b0;, Global, Monthly, 1870-present, Lon0360",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdHadISST_Lon0360",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.584124+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.7,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.43,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.43 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "Malin Head Sea Surface Temperature daily averaged product, from 1958 to near-present",
+      "provider_url": "https://erddap.marine.ie/erddap/griddap/climate_malin_daily_average",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.595505+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.4667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2712,
+        "explanation": "Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4058,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.41 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.27)."
+      ]
+    },
+    {
+      "provider_name": "Malin Head Sea Surface Temperature data collection, from 1958 to near-present",
+      "provider_url": "https://erddap.marine.ie/erddap/griddap/climate_malin",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.604683+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.4667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2712,
+        "explanation": "Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4058,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.41 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.27)."
+      ]
+    },
+    {
+      "provider_name": "Ballycotton, Co.Cork, Ireland: Sea Surface Temperature data (2010 - )",
+      "provider_url": "https://erddap.marine.ie/erddap/griddap/climate_ballycotton",
+      "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+      "evaluation_timestamp": "2026-07-16T17:12:54.612171+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.4667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4036,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.40 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'Understand the sea surface temperature in Chennai during 2023'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "NOAA CoastWatch ERDDAP",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:17.965883+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.7,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2583,
+        "explanation": "Scientific acceptance derived from: 570 scientific citations (scaled score 0.28); 170 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4375,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 570 scientific citations (scaled score 0.28); 170 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.26)."
+      ]
+    },
+    {
+      "provider_name": "NOAA IOOS ERDDAP",
+      "provider_url": "https://erddap.ioos.us/erddap",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.008495+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2433,
+        "explanation": "Scientific acceptance derived from: 528 scientific citations (scaled score 0.26); 158 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4097,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.41 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "scientific_acceptance: Scientific acceptance derived from: 528 scientific citations (scaled score 0.26); 158 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.24)."
+      ]
+    },
+    {
+      "provider_name": "NOAA NCEI",
+      "provider_url": "https://www.ncei.noaa.gov/access/services/data/v1/",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.022451+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.3,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.263,
+        "explanation": "Scientific acceptance derived from: 582 scientific citations (scaled score 0.29); 174 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3753,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.38 (Very Low Trust) is driven most positively by 'metadata_quality' (score 0.65) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 70.0%; no documentation flagged as available.",
+        "scientific_acceptance: Scientific acceptance derived from: 582 scientific citations (scaled score 0.29); 174 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.26)."
+      ]
+    },
+    {
+      "provider_name": "World Ocean Atlas (WOA)",
+      "provider_url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.035652+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.7,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2838,
+        "explanation": "Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.45,
+        "explanation": "Real-time availability derived from: API uptime 10.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.373,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.37 (Very Low Trust) is driven most positively by 'consistency' (score 0.70) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "consistency: Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "historical_reliability: No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.27).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.28)."
+      ]
+    },
+    {
+      "provider_name": "Argo Float Data (global, all GDACs)",
+      "provider_url": "https://www.gdacs.org/gdacsapi/api/",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.049475+00:00",
+      "authority_score": {
+        "score": 0.3,
+        "explanation": "Authority derived from: domain suffix '.org' associated with academic/nonprofit bodies (+0.05)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2862,
+        "explanation": "Scientific acceptance derived from: 645 scientific citations (scaled score 0.32); 193 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6667,
+        "explanation": "Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3674,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.37 (Very Low Trust) is driven most positively by 'real_time_availability' (score 0.67) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "real_time_availability: Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 645 scientific citations (scaled score 0.32); 193 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.30).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.23).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.29)."
+      ]
+    },
+    {
+      "provider_name": "World Ocean Database (WOD)",
+      "provider_url": "https://www.ncei.noaa.gov/products/world-ocean-database",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.063546+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 40.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.5,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.50 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2838,
+        "explanation": "Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.45,
+        "explanation": "Real-time availability derived from: API uptime 10.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3504,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.35 (Very Low Trust) is driven most positively by 'metadata_quality' (score 0.65) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.50 with other candidate providers covering the same variables/region.",
+        "historical_reliability: No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 639 scientific citations (scaled score 0.32); 191 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 40.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.20).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.28)."
+      ]
+    },
+    {
+      "provider_name": "Scripps Institution of Oceanography",
+      "provider_url": "https://scripps.ucsd.edu/research/data-programs",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.077652+00:00",
+      "authority_score": {
+        "score": 0.3,
+        "explanation": "Authority derived from: domain suffix '.edu' associated with academic/nonprofit bodies (+0.05)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.2,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 40.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.5,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.50 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2607,
+        "explanation": "Scientific acceptance derived from: 576 scientific citations (scaled score 0.29); 172 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6667,
+        "explanation": "Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3536,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.35 (Very Low Trust) is driven most positively by 'real_time_availability' (score 0.67) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "real_time_availability: Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.50 with other candidate providers covering the same variables/region."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 576 scientific citations (scaled score 0.29); 172 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 40.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.30).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.20).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.26)."
+      ]
+    },
+    {
+      "provider_name": "HadISST Average Sea Surface Temperature, 1\u00b0;, Global, Monthly, 1870-present",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdHadISST",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.091125+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.5333,
+        "explanation": "Real-time availability derived from: API uptime 35.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4406,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.MO.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstdmdayR20190",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.101571+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.438,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.8D.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd8dayR20190",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.112994+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.438,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.MO.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstdmdayR20190_Lon0360",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.125329+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.438,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.DAY.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, N",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd1dayR20190",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.136758+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.438,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.8D.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, Ne",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd8dayR20190_Lon0360",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.148869+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.438,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "SST, AQUA_MODIS, L3m.DAY.SST.sst.4km.NRT, Masked, SMI, NASA GSFC OBPG, R2019.0, Global, 0.04166\u00b0;, N",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1sstd1dayR20190_Lon0360",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.162214+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.8,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.438,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.44 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.80 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "HadISST Average Sea Surface Temperature, 1\u00b0;, Global, Monthly, 1870-present, Lon0360",
+      "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdHadISST_Lon0360",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.173949+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 60.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.7,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.43,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.43 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.70 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "resolution: Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "Malin Head Sea Surface Temperature daily averaged product, from 1958 to near-present",
+      "provider_url": "https://erddap.marine.ie/erddap/griddap/climate_malin_daily_average",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.185067+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2712,
+        "explanation": "Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4158,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.42 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.27)."
+      ]
+    },
+    {
+      "provider_name": "Malin Head Sea Surface Temperature data collection, from 1958 to near-present",
+      "provider_url": "https://erddap.marine.ie/erddap/griddap/climate_malin",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.198122+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.5667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 80.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.6,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2712,
+        "explanation": "Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.4158,
+      "trust_level": "Low Trust",
+      "ranking_reason": "Overall trust score 0.42 (Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "consistency: Consistency derived from a declared agreement ratio of 0.60 with other candidate providers covering the same variables/region.",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 603 scientific citations (scaled score 0.30); 181 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.27)."
+      ]
+    },
+    {
+      "provider_name": "Ballycotton, Co.Cork, Ireland: Sea Surface Temperature data (2010 - )",
+      "provider_url": "https://erddap.marine.ie/erddap/griddap/climate_ballycotton",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.211307+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.4667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 50.0%; documentation is available."
+      },
+      "consistency_score": {
+        "score": 0.5,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.50 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 1.0,
+        "explanation": "Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2497,
+        "explanation": "Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6,
+        "explanation": "Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3956,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.40 (Very Low Trust) is driven most positively by 'metadata_quality' (score 1.00) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "metadata_quality: Metadata quality derived from: has_documentation=True; units_documented=True; crs_documented=True; has_metadata_standard=True; license_type='open' (+0.10).",
+        "real_time_availability: Real-time availability derived from: API uptime 55.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "consistency: Consistency derived from a declared agreement ratio of 0.50 with other candidate providers covering the same variables/region."
+      ],
+      "weaknesses": [
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "scientific_acceptance: Scientific acceptance derived from: 546 scientific citations (scaled score 0.27); 163 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.25)."
+      ]
+    },
+    {
+      "provider_name": "IMD (India Meteorological Department)",
+      "provider_url": "https://internal.imd.gov.in/section/nhac/dynamic/",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.223352+00:00",
+      "authority_score": {
+        "score": 0.35,
+        "explanation": "Authority derived from: domain suffix '.gov' associated with government/treaty bodies (+0.10)."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.1667,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 30.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.4,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.40 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2752,
+        "explanation": "Scientific acceptance derived from: 615 scientific citations (scaled score 0.31); 184 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.7333,
+        "explanation": "Real-time availability derived from: API uptime 95.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3552,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.36 (Very Low Trust) is driven most positively by 'real_time_availability' (score 0.73) and most negatively by 'relevance' (score 0.15), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "real_time_availability: Real-time availability derived from: API uptime 95.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "historical_reliability: No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      ],
+      "weaknesses": [
+        "scientific_acceptance: Scientific acceptance derived from: 615 scientific citations (scaled score 0.31); 184 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 30.0%; no documentation flagged as available.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.35).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.17).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.28)."
+      ]
+    },
+    {
+      "provider_name": "ICES Data Centre",
+      "provider_url": "https://www.ices.dk/data",
+      "requested_task": "To analyze the sea surface temperature in Chennai during the year 2022",
+      "evaluation_timestamp": "2026-07-16T18:57:18.234361+00:00",
+      "authority_score": {
+        "score": 0.25,
+        "explanation": "Authority derived from: no authority-related metadata supplied; scored at conservative baseline."
+      },
+      "freshness_score": {
+        "score": 0.35,
+        "explanation": "Freshness derived from: no 'last_updated' timestamp supplied; scored at low baseline; provider flags a recent dataset as available (+0.05)."
+      },
+      "relevance_score": {
+        "score": 0.15,
+        "explanation": "Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline."
+      },
+      "resolution_score": {
+        "score": 0.3,
+        "explanation": "Resolution derived from: no spatial_resolution_km supplied; scored at low baseline for this component; no temporal_resolution_hours supplied; scored at low baseline for this component."
+      },
+      "completeness_score": {
+        "score": 0.1333,
+        "explanation": "Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 20.0%; no documentation flagged as available."
+      },
+      "consistency_score": {
+        "score": 0.3,
+        "explanation": "Consistency derived from a declared agreement ratio of 0.30 with other candidate providers covering the same variables/region."
+      },
+      "metadata_quality_score": {
+        "score": 0.65,
+        "explanation": "Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10)."
+      },
+      "historical_reliability_score": {
+        "score": 0.5,
+        "explanation": "No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      },
+      "scientific_acceptance_score": {
+        "score": 0.2798,
+        "explanation": "Scientific acceptance derived from: 627 scientific citations (scaled score 0.31); 188 peer-reviewed publications referencing this provider; no used_by_agencies supplied; scored at low baseline for this component."
+      },
+      "real_time_availability_score": {
+        "score": 0.6667,
+        "explanation": "Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible."
+      },
+      "overall_trust_score": 0.3253,
+      "trust_level": "Very Low Trust",
+      "ranking_reason": "Overall trust score 0.33 (Very Low Trust) is driven most positively by 'real_time_availability' (score 0.67) and most negatively by 'completeness' (score 0.13), combined via fixed criterion weights {'authority_score': 0.15, 'freshness_score': 0.08, 'relevance_score': 0.15, 'resolution_score': 0.1, 'completeness_score': 0.1, 'consistency_score': 0.08, 'metadata_quality_score': 0.08, 'historical_reliability_score': 0.1, 'scientific_acceptance_score': 0.1, 'real_time_availability_score': 0.06}.",
+      "strengths": [
+        "real_time_availability: Real-time availability derived from: API uptime 75.0%; no avg_response_latency_ms supplied; scored at low baseline for this component; endpoint reported as currently accessible.",
+        "metadata_quality: Metadata quality derived from: has_documentation=False; units_documented=True; crs_documented=True; has_metadata_standard=False; license_type='open' (+0.10).",
+        "historical_reliability: No historical retrieval records found for this provider; score defaults to the neutral statistical prior pending data from Agent 4."
+      ],
+      "weaknesses": [
+        "authority: Authority derived from: no authority-related metadata supplied; scored at conservative baseline.",
+        "relevance: Provider supplied no 'data_domains' metadata to compare against the requested task 'To analyze the sea surface temperature in Chennai during the year 2022'; scored at low baseline.",
+        "completeness: Completeness derived from: 0/3 expected variables present ([]); declared spatial/temporal coverage 20.0%; no documentation flagged as available."
+      ],
+      "recommendations": [
+        "Improve or verify 'authority' before relying on this provider (current score 0.25).",
+        "Improve or verify 'freshness' before relying on this provider (current score 0.35).",
+        "Improve or verify 'relevance' before relying on this provider (current score 0.15).",
+        "Improve or verify 'resolution' before relying on this provider (current score 0.30).",
+        "Improve or verify 'completeness' before relying on this provider (current score 0.13).",
+        "Improve or verify 'consistency' before relying on this provider (current score 0.30).",
+        "Improve or verify 'scientific acceptance' before relying on this provider (current score 0.28)."
+      ]
     }
   ],
   "historical_data": {

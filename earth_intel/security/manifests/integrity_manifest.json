@@ -31,5 +31,38 @@
     "algorithm": "SHA-256",
     "checksum": "6d93f0aa89218004dddd7fbfae5475a22045d4f3b382b144cda41debe9027914",
     "timestamp": "2026-07-16T07:15:22.542388+00:00"
+  },
+  {
+    "dataset_id": "erdHadISST",
+    "dataset_name": "NOAA CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch ERDDAP",
+    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_size": 485245472,
+    "algorithm": "SHA-256",
+    "checksum": "aeeadf37fc43b50d39985fe2c2a8ebd2dee92c9b6e3e7adfb38f5e705850a44c",
+    "timestamp": "2026-07-16T17:35:41.021250+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch ERDDAP",
+    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "14226609f106c2b612b5611c73368632812d73f1f70b1ff16e44e54c3eba9222",
+    "timestamp": "2026-07-17T07:10:48.943591+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "SST, Aqua MODIS, NPP, 0.0125\u00b0, West US, Day time (11 microns), 2002-present (3 Day Composite)",
+    "provider": "SST, Aqua MODIS, NPP, 0.0125\u00b0, West US, Day time (11 microns), 2002-present (3 Day Composite)",
+    "filename": "SST__Aqua_MODIS__NPP__0.0125___West_US__Day_time__11_microns___2002-present__3_D_erddap_erdMWsstd3day.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\SST__Aqua_MODIS__NPP__0.0125___West_US__Day_time__11_microns___2002-present__3_D_erddap_erdMWsstd3day.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "14226609f106c2b612b5611c73368632812d73f1f70b1ff16e44e54c3eba9222",
+    "timestamp": "2026-07-17T07:10:57.309394+00:00"
   }
 ]

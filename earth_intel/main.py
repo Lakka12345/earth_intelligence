@@ -1177,8 +1177,21 @@ def main():
         if _AGENT5_AVAILABLE:
             print("\nHanding downloaded data to Agent 5 for preprocessing...")
             try:
-                agent5_result = run_agent5(agent4_result)
-                print(f"\nAgent 5 complete. Output: {getattr(agent5_result, 'output_path', 'see Agent 5 logs')}")
+                # Agent 5 requires both the RetrievalRequest and the Agent4Output.
+                agent5_result = run_agent5(retrieval_request, agent4_result)
+                # Agent5Output exposes clean_dataset_paths (a list), not output_path.
+                output_paths = getattr(agent5_result, "clean_dataset_paths", None)
+                if output_paths:
+                    print(f"\nAgent 5 complete. Status: {agent5_result.status.value}")
+                    print(f"  Output dataset(s):")
+                    for p in output_paths:
+                        print(f"    {p}")
+                else:
+                    stop_reason = getattr(agent5_result, "stop_reason", None)
+                    print(
+                        f"\nAgent 5 complete. Status: {agent5_result.status.value}"
+                        + (f" — {stop_reason}" if stop_reason else "")
+                    )
             except Exception as exc:
                 print(f"\n[Agent 5] Error during preprocessing: {exc}")
                 print(f"Raw downloaded files are still available at: {agent4_result.download_location}")
