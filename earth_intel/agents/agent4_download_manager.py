@@ -162,6 +162,7 @@ from models.agent4_schemas import (
     FetchMethod,
 )
 from models.website_analysis_schemas import SourceSnapshot
+from browser.browser_utils import playwright_available, provider_key_from_url
 
 def playwright_available() -> bool:
     """
@@ -797,10 +798,10 @@ def _browser_download_fallback(
 
     Returns a ``BrowserDownloadResult`` — the caller checks ``.success``.
     """
-    from agents.browser_manager import BrowserManager
-    from agents.browser_login import BrowserLogin
-    from agents.browser_download import BrowserDownload, BrowserDownloadResult
-    from agents.browser_utils import provider_key_from_url
+    from browser.browser_manager import BrowserManager
+    from browser.browser_login import BrowserLogin
+    from browser.browser_download import BrowserDownload, BrowserDownloadResult
+    from browser.browser_utils import provider_key_from_url
 
     provider_key = provider_key_from_url(snapshot.url)
     login_url = getattr(connector, "login_url", None)
@@ -837,7 +838,7 @@ def _browser_download_fallback(
                 return BrowserDownloadResult(success=False, error=f"Browser login failed: {error}")
         else:
             # No login required or no credentials — create a plain session wrapper
-            from agents.browser_session import BrowserSession
+            from browser.browser_session import BrowserSession
             session = BrowserSession(provider_key=provider_key, context=ctx, page=page, is_authenticated=True)
 
         downloader = BrowserDownload(session=session, dest_dir=dest_dir)

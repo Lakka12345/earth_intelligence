@@ -324,18 +324,130 @@
     "provenance_record_created_at": "2026-07-15T09:10:19.348648+00:00"
   },
   {
+<<<<<<< HEAD
     "dataset_id": "erdHadISST",
     "dataset_name": "NOAA CoastWatch ERDDAP",
     "provider": "NOAA CoastWatch ERDDAP",
     "provider_url": "https://coastwatch.pfeg.noaa.gov/erddap",
     "download_url": "https://coastwatch.pfeg.noaa.gov/erddap",
+=======
+    "dataset_id": "GISTEMP-v4",
+    "dataset_name": "NASA EarthData (Earthdata Login required)",
+    "provider": "NASA EarthData (Earthdata Login required)",
+    "provider_url": "https://cmr.earthdata.nasa.gov/search/",
+    "download_url": "https://cmr.earthdata.nasa.gov/search/",
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     "documentation_url": "",
     "dataset_version": "Unknown",
     "license": "Unknown",
     "variables": [
+<<<<<<< HEAD
       "location",
       "sea surface temperature (sst)",
       "time"
+=======
+      "soil moisture"
+    ],
+    "spatial_coverage": "Unknown",
+    "temporal_coverage": "Unknown",
+    "spatial_resolution": "Unknown",
+    "temporal_resolution": "Unknown",
+    "file_format": "Unknown",
+    "retrieval_method": "full_download_untrimmed",
+    "authentication_required": true,
+    "rank": 0,
+    "overall_score": 0.0,
+    "confidence_score": 0.0,
+    "authority_score": 0.0,
+    "freshness_score": 0.0,
+    "relevance_score": 0.0,
+    "resolution_score": 0.0,
+    "completeness_score": 0.0,
+    "consistency_score": 0.0,
+    "metadata_quality_score": 0.0,
+    "historical_reliability_score": 0.0,
+    "scientific_acceptance_score": 0.0,
+    "realtime_availability_score": 0.0,
+    "selected_by_agent": "Agent 4",
+    "selection_reason": "User-supplied credentials.",
+    "original_user_query": "To understand the causes and impacts of the 2013 floods in Chennai",
+    "scientific_goal": "To understand the causes and impacts of the 2013 floods in Chennai",
+    "study_area": "Unknown",
+    "time_period": "Unknown",
+    "requested_variables": [],
+    "download_timestamp": null,
+    "download_status": "completed",
+    "downloaded_by": "Agent 4",
+    "local_file_path": "C:\\Users\\cthan\\Downloads\\NASA_EarthData__Earthdata_Login_required__nasa_earthdata.dat",
+    "file_size": 12881,
+    "mime_type": "",
+    "sha256_checksum": "",
+    "integrity_verified": false,
+    "integrity_verification_timestamp": null,
+    "provenance_record_created_at": "2026-07-16T12:49:41.810230+00:00"
+  },
+  {
+    "dataset_id": "open_meteo",
+    "dataset_name": "Open-Meteo Weather API",
+    "provider": "Open-Meteo Weather API",
+    "provider_url": "https://api.open-meteo.com/v1/forecast",
+    "download_url": "https://api.open-meteo.com/v1/forecast",
+    "documentation_url": "",
+    "dataset_version": "Unknown",
+    "license": "Unknown",
+    "variables": [
+      "rainfall intensity"
+    ],
+    "spatial_coverage": "Unknown",
+    "temporal_coverage": "Unknown",
+    "spatial_resolution": "Unknown",
+    "temporal_resolution": "Unknown",
+    "file_format": "Unknown",
+    "retrieval_method": "full_download_untrimmed",
+    "authentication_required": false,
+    "rank": 0,
+    "overall_score": 0.0,
+    "confidence_score": 0.0,
+    "authority_score": 0.0,
+    "freshness_score": 0.0,
+    "relevance_score": 0.0,
+    "resolution_score": 0.0,
+    "completeness_score": 0.0,
+    "consistency_score": 0.0,
+    "metadata_quality_score": 0.0,
+    "historical_reliability_score": 0.0,
+    "scientific_acceptance_score": 0.0,
+    "realtime_availability_score": 0.0,
+    "selected_by_agent": "Agent 4",
+    "selection_reason": "No login required.",
+    "original_user_query": "To understand the causes and impacts of the 2013 floods in Chennai",
+    "scientific_goal": "To understand the causes and impacts of the 2013 floods in Chennai",
+    "study_area": "Unknown",
+    "time_period": "Unknown",
+    "requested_variables": [],
+    "download_timestamp": null,
+    "download_status": "completed",
+    "downloaded_by": "Agent 4",
+    "local_file_path": "C:\\Users\\cthan\\Downloads\\open_meteo_20260716T125104Z.json",
+    "file_size": 219280,
+    "mime_type": "",
+    "sha256_checksum": "",
+    "integrity_verified": false,
+    "integrity_verification_timestamp": null,
+    "provenance_record_created_at": "2026-07-16T12:51:04.057381+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "provider_url": "https://www.gdacs.org/gdacsapi/api/",
+    "download_url": "https://www.gdacs.org/gdacsapi/api/",
+    "documentation_url": "",
+    "dataset_version": "Unknown",
+    "license": "Unknown",
+    "variables": [
+      "flood extent"
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     ],
     "spatial_coverage": "Unknown",
     "temporal_coverage": "Unknown",
@@ -359,20 +471,31 @@
     "realtime_availability_score": 0.0,
     "selected_by_agent": "Agent 4",
     "selection_reason": "No login required.",
+<<<<<<< HEAD
     "original_user_query": "Understand the sea surface temperature in Chennai during 2023",
     "scientific_goal": "Understand the sea surface temperature in Chennai during 2023",
+=======
+    "original_user_query": "To analyze the floods that occurred in Chennai in 2013 and understand their causes, impacts, and effects on the city.",
+    "scientific_goal": "To analyze the floods that occurred in Chennai in 2013 and understand their causes, impacts, and effects on the city.",
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     "study_area": "Unknown",
     "time_period": "Unknown",
     "requested_variables": [],
     "download_timestamp": null,
     "download_status": "completed",
     "downloaded_by": "Agent 4",
+<<<<<<< HEAD
     "local_file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
     "file_size": 485245472,
+=======
+    "local_file_path": "C:\\Users\\cthan\\Downloads\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     "mime_type": "",
     "sha256_checksum": "",
     "integrity_verified": false,
     "integrity_verification_timestamp": null,
+<<<<<<< HEAD
     "provenance_record_created_at": "2026-07-16T17:35:39.977504+00:00"
   },
   {
@@ -387,6 +510,20 @@
     "variables": [
       "Sea Surface Temperature"
     ],
+=======
+    "provenance_record_created_at": "2026-07-17T04:13:25.001098+00:00"
+  },
+  {
+    "dataset_id": "gfs-0p25",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": "NOAA GFS via NOMADS",
+    "provider_url": "https://nomads.ncep.noaa.gov/dods/gfs_0p25",
+    "download_url": "https://nomads.ncep.noaa.gov/dods/gfs_0p25",
+    "documentation_url": "",
+    "dataset_version": "Unknown",
+    "license": "Unknown",
+    "variables": [],
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     "spatial_coverage": "Unknown",
     "temporal_coverage": "Unknown",
     "spatial_resolution": "Unknown",
@@ -409,20 +546,34 @@
     "realtime_availability_score": 0.0,
     "selected_by_agent": "Agent 4",
     "selection_reason": "No login required.",
+<<<<<<< HEAD
     "original_user_query": "To analyze the sea surface temperature in Chennai during the year 2023",
     "scientific_goal": "To analyze the sea surface temperature in Chennai during the year 2023",
+=======
+    "original_user_query": "To analyze the floods that occurred in Chennai in 2013 and understand their causes, impacts, and effects on the city.",
+    "scientific_goal": "To analyze the floods that occurred in Chennai in 2013 and understand their causes, impacts, and effects on the city.",
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     "study_area": "Unknown",
     "time_period": "Unknown",
     "requested_variables": [],
     "download_timestamp": null,
     "download_status": "completed",
     "downloaded_by": "Agent 4",
+<<<<<<< HEAD
     "local_file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
     "file_size": 136512,
+=======
+    "local_file_path": "C:\\Users\\cthan\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 505285056,
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     "mime_type": "",
     "sha256_checksum": "",
     "integrity_verified": false,
     "integrity_verification_timestamp": null,
+<<<<<<< HEAD
     "provenance_record_created_at": "2026-07-17T07:10:48.925316+00:00"
+=======
+    "provenance_record_created_at": "2026-07-17T04:20:16.856538+00:00"
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
   }
 ]

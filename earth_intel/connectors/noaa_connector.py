@@ -146,40 +146,35 @@ def _erddap_tabledap_url(
 
 def _resolve_oisst_url(time_range=None) -> Optional[str]:
     """
-    Navigate NCEI directory listing to find a real OISST NetCDF file.
-    If time_range is given, try to pick the relevant year/month.
+    Build a direct OISST NetCDF URL without directory scraping.
+
+    The old approach scraped the NCEI directory listing for year/month/file
+    links, but NCEI's directory server now returns 500 Server Error on that
+    path, which the DownloadEngine correctly rejects as "HTML response
+    rejected". Constructing the URL directly from time_range avoids the
+    scrape entirely and matches the real NCEI file-naming convention.
+
+    File naming: oisst-avhrr-v02r01.YYYYMMDD.nc
+    Path:        {_OISST_BASE}{YYYY}/{MM}/oisst-avhrr-v02r01.{YYYYMMDD}.nc
     """
-    try:
-        r = requests.get(_OISST_BASE, timeout=20, verify=False)
-        if not r.ok:
-            return None
-        years = re.findall(r'href="(\d{4})/"', r.text)
-        if not years:
-            return None
+    import datetime
 
-        # Pick year from time_range or latest
-        target_year = None
-        if time_range and time_range[0]:
-            m = re.match(r"(\d{4})", time_range[0])
-            if m and m.group(1) in years:
-                target_year = m.group(1)
-        year = target_year or max(years)
+    # Determine target date from time_range, defaulting to yesterday
+    target_date = None
+    if time_range and time_range[0]:
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})", str(time_range[0]))
+        if m:
+            try:
+                target_date = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            except ValueError:
+                pass
+    if target_date is None:
+        target_date = datetime.date.today() - datetime.timedelta(days=14)
 
-        r2 = requests.get(f"{_OISST_BASE}{year}/", timeout=15, verify=False)
-        months = re.findall(r'href="(\d{2})/"', r2.text)
-        if not months:
-            return None
-        month = months[-1]
-
-        r3 = requests.get(f"{_OISST_BASE}{year}/{month}/", timeout=15, verify=False)
-        # e.g. oisst-avhrr-v02r01.19810901.nc
-        files = re.findall(r'href="(oisst-avhrr[^"]+\.nc)"', r3.text)
-        if not files:
-            return None
-        # Use last file in the listing (most recent day in that month)
-        return f"{_OISST_BASE}{year}/{month}/{files[-1]}"
-    except Exception:
-        return None
+    year  = target_date.strftime("%Y")
+    month = target_date.strftime("%m")
+    day   = target_date.strftime("%Y%m%d")
+    return f"{_OISST_BASE}{year}/{month}/oisst-avhrr-v02r01.{day}.nc"
 
 
 # ── NOMADS GFS resolver ────────────────────────────────────────────────────────
@@ -362,9 +357,76 @@ class NOAAConnector(StaticDatasetConnector):
 
     # ── internal helpers ───────────────────────────────────────────────────────
 
-    def _pick_dataset(self, fetch_request: FetchRequest) -> Optional[DatasetDescriptor]:
-        ds = self._best_dataset(None, fetch_request)  # type: ignore[arg-type]
-        return ds
+    # CHANGED: this connector bundles four unrelated NOAA products (OISST,
+    # ERDDAP CoastWatch SST, GHCN-Daily, GFS) behind one connector class.
+    # _best_dataset() (inherited from StaticDatasetConnector) scores
+    # fetch_request.variables against each dataset's supported_variables
+    # and picks the best match -- it has no way to know which of the four
+    # products a *specific source* (e.g. a source explicitly ranked as
+    # "NOAA GFS via NOMADS") was actually supposed to mean. Since SST-type
+    # variables dominate most queries, OISST's supported_variables list
+    # wins the scoring almost every time, so every NOAA source in a plan
+    # -- including ones explicitly meant to be GFS or GHCN-D -- silently
+    # resolved to OISST. That's why "NOAA GFS via NOMADS" kept printing
+    # "Dataset selected: NOAA Optimum Interpolation SST v2.1 (OISST)".
+    #
+    # Fix: if the snapshot's name/url clearly identifies one of the four
+    # products, pin to that dataset directly and skip the generic
+    # variable-based scoring entirely. Only fall back to _best_dataset()
+    # when the snapshot gives no such signal (e.g. a generic "NOAA" entry
+    # with no sub-product indicated).
+    _SNAPSHOT_DATASET_HINTS: List[tuple] = [
+        (("gfs", "nomads"), "gfs-0p25"),
+        (("ghcn", "cdo", "climate data online"), "GHCND"),
+        (("coastwatch", "erddap", "erdatssta"), "erdATssta3day"),
+        (("oisst", "optimum interpolation"), "oisst-avhrr-v02r01"),
+    ]
+
+    def _dataset_by_id(self, dataset_id: str) -> Optional[DatasetDescriptor]:
+        for ds in self.datasets:
+            if ds.dataset_id == dataset_id:
+                return ds
+        return None
+
+    def _dataset_for_snapshot(
+        self,
+        snapshot,
+        fetch_request: FetchRequest,
+    ) -> Optional[DatasetDescriptor]:
+        """
+        Resolve which of the four bundled NOAA products applies, preferring
+        an explicit signal from the snapshot (name/url/source_id) over
+        generic variable-similarity scoring. See class-level comment above
+        _SNAPSHOT_DATASET_HINTS for why this matters.
+        """
+        haystack = " ".join(
+            str(x) for x in (
+                getattr(snapshot, "name", "") if snapshot else "",
+                getattr(snapshot, "source_id", "") if snapshot else "",
+                getattr(snapshot, "url", "") if snapshot else "",
+            )
+        ).lower()
+
+        if haystack.strip():
+            for keywords, dataset_id in self._SNAPSHOT_DATASET_HINTS:
+                if any(kw in haystack for kw in keywords):
+                    pinned = self._dataset_by_id(dataset_id)
+                    if pinned is not None:
+                        return pinned
+
+        # No unambiguous signal from the snapshot -- fall back to the
+        # original variable-similarity matching.
+        return self._best_dataset(snapshot, fetch_request)
+
+    def _pick_dataset(
+        self, fetch_request: FetchRequest, snapshot=None,
+    ) -> Optional[DatasetDescriptor]:
+        # CHANGED: was `self._best_dataset(None, fetch_request)`, silently
+        # discarding whatever snapshot the caller had. Even though this
+        # method isn't currently called elsewhere in this file, it's part
+        # of the connector's internal API surface and should not carry a
+        # latent version of the same bug fixed above.
+        return self._dataset_for_snapshot(snapshot, fetch_request)
 
     def _resolve_url_for(
         self,
@@ -448,7 +510,7 @@ class NOAAConnector(StaticDatasetConnector):
         fetch_request: FetchRequest,
         credentials: Optional[Credentials] = None,
     ) -> DatasetMetadata:
-        dataset = self._best_dataset(snapshot, fetch_request)
+        dataset = self._dataset_for_snapshot(snapshot, fetch_request)
         if dataset is None:
             return DatasetMetadata(
                 source_id=snapshot.source_id,
@@ -573,7 +635,7 @@ class NOAAConnector(StaticDatasetConnector):
             )
 
         # Priority 2: Dataset-specific estimation fallbacks
-        dataset = self._best_dataset(snapshot, fetch_request)
+        dataset = self._dataset_for_snapshot(snapshot, fetch_request)
         if dataset is not None:
             est = self._estimate_size_from_dataset(dataset, fetch_request)
             if est is not None:
@@ -668,7 +730,7 @@ class NOAAConnector(StaticDatasetConnector):
         fetch_request: FetchRequest,
         credentials: Optional[Credentials] = None,
     ) -> Optional[str]:
-        dataset = self._best_dataset(snapshot, fetch_request)
+        dataset = self._dataset_for_snapshot(snapshot, fetch_request)
         if dataset is None:
             return None
         return self._resolve_url_for(dataset, fetch_request, credentials)
@@ -683,7 +745,7 @@ class NOAAConnector(StaticDatasetConnector):
         Use ERDDAP server-side subsetting where available.
         OISST and GFS receive a full download (server-side subset not supported).
         """
-        dataset = self._best_dataset(snapshot, fetch_request)
+        dataset = self._dataset_for_snapshot(snapshot, fetch_request)
         if dataset is None:
             raise RuntimeError("NOAA connector: no dataset matched for subsetting.")
 

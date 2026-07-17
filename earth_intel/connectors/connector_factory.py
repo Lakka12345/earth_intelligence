@@ -50,6 +50,7 @@ class ConnectorFactory:
         import connectors.copernicus_marine_connector  # noqa: F401
         import connectors.dataone_connector  # noqa: F401
         import connectors.earth_engine_connector  # noqa: F401
+        import connectors.gdacs_connector  # noqa: F401
         import connectors.ghrsst_connector  # noqa: F401
         import connectors.incois_connector  # noqa: F401
         import connectors.nasa_earthdata_connector  # noqa: F401
@@ -75,13 +76,37 @@ class ConnectorFactory:
             "metadata": context.metadata,
         }
 
+        # CHANGED: previously started best_score = -1, so when NO connector
+        # genuinely matched (every can_handle() correctly returned False,
+        # every score was 0), the first-registered connector still "won"
+        # the tie purely because 0 > -1 the first time through the loop --
+        # subsequent 0-scores never beat it (strict >). copernicus_cds_connector
+        # is first in the import list above, so any source nothing else
+        # recognized silently defaulted to the CDS connector instead of the
+        # intended generic_rest fallback. Starting at 0 means only a real
+        # match (score > 0) can ever become best_connector; if nothing
+        # matches, we fall through to an explicit, visible fallback below
+        # instead of an accidental one based on import order.
         best_connector = None
-        best_score = -1
+        best_score = 0
         for connector in self.registry.list_connectors():
             match = connector.match_score(snapshot, context_dict)
             if match.score > best_score:
                 best_connector = connector
                 best_score = match.score
+
+        if best_connector is None:
+            # Nothing genuinely matched -- explicitly use the generic
+            # fallback connector rather than letting registration order
+            # decide. Look it up by connector_id first (fast path); if the
+            # id ever changes, fall back to a provider_name search so this
+            # doesn't silently break.
+            best_connector = self.registry.get("generic_rest") or self.registry.get("generic_http")
+            if best_connector is None:
+                for connector in self.registry.list_connectors():
+                    if "generic" in connector.descriptor.provider_name.lower():
+                        best_connector = connector
+                        break
 
         if best_connector is None:
             raise RuntimeError("No connectors are registered. GenericHTTPConnector should be registered as fallback.")

@@ -228,6 +228,13 @@ class CopernicusMarineConnector(StaticDatasetConnector):
         p = os.environ.get("COPERNICUSMARINE_SERVICE_PASSWORD", "")
         if u and p:
             return {"username": u, "password": p}
+        # Fall back to this connector's own per-provider keyring identity
+        # (see BaseConnector.stored_credentials). Previously this method
+        # never checked the keyring at all, so CMEMS could only ever work
+        # via an explicitly-passed Credentials object or env vars.
+        stored = self.stored_credentials()
+        if stored and stored.username and stored.password:
+            return {"username": stored.username, "password": stored.password}
         return None
 
     def _catalogue_metadata(self, product_id: str) -> Optional[Dict[str, Any]]:
@@ -423,17 +430,27 @@ class CopernicusMarineConnector(StaticDatasetConnector):
                 authentication_required=True,
             )
         except Exception as exc:
-            # Safe absolute fallback block ensuring a properly initialized DatasetMetadata object
+            # Safe absolute fallback block ensuring a properly initialized DatasetMetadata object.
+            # Every attribute is read defensively — this is the last-resort handler, so it must
+            # not itself be able to raise (a prior version read snapshot.name / snapshot.url /
+            # fetch_request.variables directly, which threw AttributeError and crashed the probe).
+            source_id = getattr(snapshot, "source_id", None) or "copernicus_marine"
+            fallback_url = getattr(snapshot, "url", "") or ""
+            fallback_vars = list(
+                getattr(snapshot, "variables_available", None)
+                or getattr(fetch_request, "variables", None)
+                or []
+            )
             return DatasetMetadata(
-                source_id=snapshot.source_id,
-                dataset_id=snapshot.source_id,
+                source_id=source_id,
+                dataset_id=source_id,
                 collection=getattr(snapshot, "dataset_type", "Unknown"),
-                product=snapshot.name,
-                download_endpoint=snapshot.url,
+                product=getattr(snapshot, "name", None) or source_id,
+                download_endpoint=fallback_url,
                 api_endpoint="copernicusmarine",
-                metadata_endpoint=snapshot.url,
+                metadata_endpoint=fallback_url,
                 file_size_bytes=50.0 * 1024 * 1024,
-                variables=list(getattr(snapshot, "variables_available", []) or fetch_request.variables or []),
+                variables=fallback_vars,
                 file_format="NetCDF",
                 content_type="application/x-netcdf",
                 retrieval_method="Copernicus Marine Global Fallback",
@@ -527,9 +544,14 @@ class CopernicusMarineConnector(StaticDatasetConnector):
             "output_directory": os.path.dirname(dest) or ".",
             "username":      creds["username"],
             "password":      creds["password"],
-            "overwrite_output_data": True,
             "disable_progress_bar": True,
         }
+
+        if os.path.exists(dest):
+            try:
+                os.remove(dest)
+            except OSError:
+                pass
 
         if fetch_request.bounding_box and len(fetch_request.bounding_box) == 4:
             west, south, east, north = fetch_request.bounding_box
@@ -678,21 +700,39 @@ class CopernicusMarineConnector(StaticDatasetConnector):
             list(fetch_request.variables or dataset.supported_variables)
         )
 
-        # Use get() for full product download
+        # NOTE: copernicusmarine.get() downloads original provider files
+        # as-is and does NOT accept `variables` or `output_filename` --
+        # those are subset()-only args. Passing them raised
+        # "get() got an unexpected keyword argument 'variables'" on every
+        # call, so fetch_full() never actually reached the network.
+        #
+        # get() has no way to filter by variable, so if the caller actually
+        # wants a variable/space/time subset, route through the real
+        # subsetting path instead of silently downloading everything.
+        if fetch_request.bounding_box or fetch_request.time_range or fetch_request.variables:
+            if _cmems_sdk_available():
+                return self._subset_via_sdk(dataset, variables, fetch_request, creds, dest)
+            return self._subset_via_opendap(dataset, variables, fetch_request, creds, dest)
+
+        # True full-product download (no filtering possible with get()).
         result = cm.get(
             dataset_id=dataset.dataset_id,
-            variables=variables,
             output_directory=os.path.dirname(dest) or ".",
             username=creds["username"],
             password=creds["password"],
-            overwrite_output_data=True,
             disable_progress_bar=True,
+            overwrite=True,
         )
-        # SDK returns list of downloaded paths
-        if result and hasattr(result, "__iter__"):
-            downloaded = list(result)
-            if downloaded:
-                dest = str(downloaded[0])
+        # get() returns a ResponseGet (pydantic model with a `.files` list of
+        # FileGet records), NOT a plain iterable of path strings -- the old
+        # `hasattr(result, "__iter__")` check was always False for this type,
+        # so `dest` silently stayed as our guessed (wrong) filename and
+        # validate_download() would fail on a file that was never written
+        # under that name.
+        files = getattr(result, "files", None) or []
+        if files:
+            first = files[0]
+            dest = str(os.path.join(first.output_directory, first.file_path))
         self.validate_download(dest)
         return dest
 

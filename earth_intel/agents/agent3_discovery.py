@@ -193,6 +193,89 @@ _CATALOG_ENDPOINT_OVERRIDES: Dict[str, str] = {
 }
 
 
+# Path segments that mark a page as a human-facing "browse/download" landing
+# page rather than a machine-readable endpoint, even when the path has two
+# or more segments (e.g. /en/open-data, /data/downloads, /products/catalogue).
+# These are checked ONLY when the URL has no API marker and no data-file
+# extension — a URL like /erddap/griddap/x.nc still passes fine.
+_LANDING_PAGE_SEGMENT_MARKERS = (
+    "open-data", "opendata", "open_data", "downloads", "download",
+    "datasets", "dataset", "data-portal", "dataportal", "resources",
+    "products", "catalogue", "library", "publications", "en", "home",
+)
+
+
+def _is_landing_page_url(url: str) -> bool:
+    """
+    Returns True when a URL's path is composed entirely of "landing page"
+    segments (browse/marketing pages) and it carries no API marker and no
+    data-file extension. This catches multi-segment landing pages that
+    _is_bare_domain_url misses, e.g. https://www.deltares.nl/en/open-data.
+    """
+    from urllib.parse import urlparse
+    lower = url.lower()
+
+    has_api_marker = any(marker in lower for marker in _DATA_API_PATH_MARKERS)
+    has_data_ext = any(lower.rstrip("/").endswith(ext) for ext in
+                        (".nc", ".nc4", ".hdf", ".h5", ".csv", ".json", ".tif", ".tiff",
+                         ".grib", ".grb", ".grb2", ".zip", ".gz", ".tar"))
+    if has_api_marker or has_data_ext:
+        return False
+
+    try:
+        path = urlparse(url).path.rstrip("/")
+    except Exception:
+        return False
+
+    segments = [s for s in path.split("/") if s]
+    if not segments:
+        return False  # handled by _is_bare_domain_url already
+
+    return all(seg.lower() in _LANDING_PAGE_SEGMENT_MARKERS for seg in segments)
+
+
+def _resolve_landing_page_to_data_endpoint(
+    url: str, timeout: int = PROBE_TIMEOUT_SECONDS
+) -> Optional[str]:
+    """
+    Lightweight, best-effort crawl of an HTML landing page to find a real
+    data endpoint linked from it — a .nc/.csv/.json/.tif file, or an
+    ERDDAP/THREDDS/CKAN/STAC/WCS/WFS entry point. Returns the first strong
+    match found, or None if nothing usable is on the page.
+
+    This is intentionally cheap (single GET, one page, no recursion) so it
+    never becomes the bottleneck of Phase 1. It exists so that a landing
+    page isn't just dropped when it is, in fact, one click away from the
+    real endpoint — which is common for provider "open data" pages that
+    link out to their ERDDAP/THREDDS server or a downloadable file.
+    """
+    import re
+    from urllib.parse import urljoin
+
+    try:
+        resp = requests.get(url, timeout=timeout, headers={"User-Agent": "EarthIntelligenceAgent/1.0"})
+        if resp.status_code >= 400 or "text/html" not in resp.headers.get("Content-Type", "").lower():
+            return None
+        html = resp.text
+    except Exception:
+        return None
+
+    hrefs = re.findall(r'href=["\']([^"\']+)["\']', html, flags=re.IGNORECASE)
+    candidates = [urljoin(url, h) for h in hrefs]
+
+    # Prefer explicit data-file links first, then API/service entry points.
+    data_exts = (".nc", ".nc4", ".hdf", ".h5", ".csv", ".json", ".tif", ".tiff",
+                 ".grib", ".grb", ".grb2")
+    for link in candidates:
+        if link.lower().rstrip("/").endswith(data_exts):
+            return link
+    for link in candidates:
+        if any(marker in link.lower() for marker in _DATA_API_PATH_MARKERS):
+            if not _is_portal_url(link):
+                return link
+    return None
+
+
 def _is_bare_domain_url(url: str) -> bool:
     """
     Returns True when a URL is nothing more than a bare homepage —
@@ -444,8 +527,29 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
             dropped.append(c)
             continue
 
-        curated = origin in ("catalog", "provider_registry", "qdrant_cache")
-        if not curated and not _is_api_url(c.url):
+        # ── Stage 2b: multi-segment landing pages (ALL origins) ──────
+        # Catches pages like /en/open-data that _is_bare_domain_url
+        # misses because they have 2+ path segments. Try a cheap crawl
+        # to rescue the real endpoint before giving up on the source —
+        # this is the main fix for HTML pages ending up in Qdrant instead
+        # of the actual download/API endpoint.
+        if _is_landing_page_url(c.url):
+            resolved = _resolve_landing_page_to_data_endpoint(c.url)
+            if resolved:
+                rescued.append(f"{c.name}  ({c.url} → {resolved})")
+                c.url = resolved
+            else:
+                dropped.append(c)
+                continue
+
+        # CHANGED: curated origins ("catalog", "provider_registry",
+        # "qdrant_cache") no longer get a blanket bypass here. That
+        # bypass is exactly what let landing pages like
+        # https://www.deltares.nl/en/open-data reach Qdrant when the
+        # LLM/catalog labelled them as a trusted origin. Curated origins
+        # are still trusted for *authority scoring* elsewhere, but the
+        # URL itself must still look like a real data endpoint.
+        if not _is_api_url(c.url):
             dropped.append(c)
             continue
 

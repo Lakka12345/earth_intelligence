@@ -866,7 +866,6 @@ class OpenMeteoConnector(StaticDatasetConnector):
     # ------------------------------------------------------------------
     # fetch_full
     # ------------------------------------------------------------------
-
     def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir: Optional[str] = None, **kwargs) -> str:
         """
         Download weather data and save to disk.

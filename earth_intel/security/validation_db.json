@@ -361,11 +361,19 @@
       ]
     },
     {
+<<<<<<< HEAD
       "validation_id": "df59d1cc-ebdb-4ef5-bc37-8ffc2ff9d4f4",
       "dataset_id": "erdHadISST",
       "dataset_name": "NOAA CoastWatch ERDDAP",
       "provider": "NOAA CoastWatch ERDDAP",
       "validation_timestamp": "2026-07-16T17:35:42.026352+00:00",
+=======
+      "validation_id": "7b19de9d-fa00-40b4-a578-0c0ad71d3943",
+      "dataset_id": "GISTEMP-v4",
+      "dataset_name": "NASA EarthData (Earthdata Login required)",
+      "provider": "NASA EarthData (Earthdata Login required)",
+      "validation_timestamp": "2026-07-16T12:49:41.821724+00:00",
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       "file_validation": {
         "passed": false,
         "score": 0.3,
@@ -373,6 +381,7 @@
           "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
         ],
         "warnings": [],
+<<<<<<< HEAD
         "details": "File: NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat, size: 485,245,472 bytes, format: .dat."
       },
       "metadata_validation": {
@@ -455,6 +464,9 @@
         ],
         "warnings": [],
         "details": "File: NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat, size: 136,512 bytes, format: .dat."
+=======
+        "details": "File: NASA_EarthData__Earthdata_Login_required__nasa_earthdata.dat, size: 12,881 bytes, format: .dat."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       },
       "metadata_validation": {
         "passed": false,
@@ -479,7 +491,11 @@
         "score": 1.0,
         "errors": [],
         "warnings": [],
+<<<<<<< HEAD
         "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+=======
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       },
       "temporal_validation": {
         "passed": true,
@@ -504,7 +520,11 @@
         "score": 1.0,
         "errors": [],
         "warnings": [],
+<<<<<<< HEAD
         "details": "Integrity verified. Algorithm: SHA-256. Checksum: 14226609f106c2b6..."
+=======
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 99d659d8c955c659..."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       },
       "overall_validation": false,
       "validation_score": 0.7988,
@@ -523,6 +543,7 @@
       ]
     },
     {
+<<<<<<< HEAD
       "validation_id": "791e59dc-a5e4-4ad2-8358-8061160a49cb",
       "dataset_id": "erdlasFnOscursLL",
       "dataset_name": "SST, Aqua MODIS, NPP, 0.0125°, West US, Day time (11 microns), 2002-present (3 Day Composite)",
@@ -536,6 +557,19 @@
         ],
         "warnings": [],
         "details": "File: SST__Aqua_MODIS__NPP__0.0125___West_US__Day_time__11_microns___2002-present__3_D_erddap_erdMWsstd3day.dat, size: 136,512 bytes, format: .dat."
+=======
+      "validation_id": "96724ce9-0d12-415a-90d9-02fa1eeecad1",
+      "dataset_id": "open_meteo",
+      "dataset_name": "Open-Meteo Weather API",
+      "provider": "Open-Meteo Weather API",
+      "validation_timestamp": "2026-07-16T12:51:04.065723+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: open_meteo_20260716T125104Z.json, size: 219,280 bytes, format: .json."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       },
       "metadata_validation": {
         "passed": false,
@@ -560,7 +594,11 @@
         "score": 1.0,
         "errors": [],
         "warnings": [],
+<<<<<<< HEAD
         "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+=======
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       },
       "temporal_validation": {
         "passed": true,
@@ -585,7 +623,258 @@
         "score": 1.0,
         "errors": [],
         "warnings": [],
+<<<<<<< HEAD
         "details": "Integrity verified. Algorithm: SHA-256. Checksum: 14226609f106c2b6..."
+=======
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 1ca24d1e01246179..."
+      },
+      "overall_validation": true,
+      "validation_score": 0.8688,
+      "confidence_score": 0.66,
+      "validation_summary": "PASSED — all 6 required stages succeeded. Score: 0.87, Confidence: 0.66.",
+      "validation_errors": [
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "d2f842be-8ebd-497e-ab1d-fffc25e4e410",
+      "dataset_id": "gdacs-fl",
+      "dataset_name": "GDACS (Global Disaster Alerts)",
+      "provider": "GDACS (Global Disaster Alerts)",
+      "validation_timestamp": "2026-07-17T04:13:25.011443+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: GDACS__Global_Disaster_Alerts__gdacs.dat, size: 299 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai, India', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Coastal city with a complex drainage system', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai, India', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Coastal city with a complex drainage system', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 295714f65a5e326f..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "294d5bbb-f413-42d0-a2b9-fb9107299e83",
+      "dataset_id": "gfs-0p25",
+      "dataset_name": "NOAA GFS via NOMADS",
+      "provider": "NOAA GFS via NOMADS",
+      "validation_timestamp": "2026-07-17T04:20:19.594883+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat, size: 505,285,056 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.575,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [
+          "Field 'variables' is present but empty."
+        ],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "No specific variables required — stage skipped."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai, India', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Coastal city with a complex drainage system', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai, India', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Coastal city with a complex drainage system', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.0,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No variable descriptions found.",
+          "No resolution information declared."
+        ],
+        "details": "0/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: dab3df3658b6401d..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7663,
+      "confidence_score": 0.5,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.77, Confidence: 0.50.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[metadata_validation] Field 'variables' is present but empty.",
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No variable descriptions found.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "99be1355-6fd8-4364-beea-ce8b62da2f1c",
+      "dataset_id": "gdacs-fl",
+      "dataset_name": "GDACS (Global Disaster Alerts)",
+      "provider": "GDACS (Global Disaster Alerts)",
+      "validation_timestamp": "2026-07-17T04:26:33.939046+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: GDACS__Global_Disaster_Alerts__gdacs.dat, size: 299 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 295714f65a5e326f..."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
       },
       "overall_validation": false,
       "validation_score": 0.7988,

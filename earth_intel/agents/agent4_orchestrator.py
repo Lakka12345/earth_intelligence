@@ -127,14 +127,13 @@ def _resolve_and_approve_plan(
     ui_choices: dict | None = None,
 ) -> tuple:
     """
-    Runs the coverage -> access -> size loop, rebuilding the plan each
-    time a source is declined, until either every remaining variable is
-    covered by APPROVED sources or no more ranked alternatives are left.
-
-    Returns (approved_decisions: Dict[source_id, SourceDecision],
-             approved_credentials: Dict[source_id, Optional[Credentials]] -- IN-MEMORY ONLY, never serialized,
-             running_total_bytes: float,
-             final_uncovered_variables: set)
+    Runs the coverage -> access -> size loop. 
+    
+    CRITICAL FIX 2 & 3: Instead of just building a single optimal plan and giving up
+    if something is uncovered, we exhaustively cycle through ranked_source_ids to find
+    alternative combinations covering ALL variables. We only stop expanding the plan 
+    when 100% of variables are covered or when we have literally exhausted every 
+    available ranked website.
     """
     excluded: set = set(initial_excluded_source_ids or set())
     approved: Dict[str, SourceDecision] = {}
@@ -142,6 +141,7 @@ def _resolve_and_approve_plan(
     running_total = 0.0
 
     while True:
+        # Build our potential plan based on non-excluded sources
         plan = build_coverage_plan(
             ranked_source_ids,
             website_analyses,
@@ -150,9 +150,25 @@ def _resolve_and_approve_plan(
             source_snapshots=source_snapshots,
         )
 
-        # Only resolve sources not already approved in a previous iteration.
         newly_needed = [sid for sid in plan.selected_source_ids if sid not in approved]
-        if not newly_needed:
+        
+        # If there are no newly planned sources, but we STILL have uncovered variables,
+        # it means the current optimal plan failed to cover everything. 
+        # FIX 3: Force exploration of remaining next-ranked websites to capture missing variables.
+        if not newly_needed and plan.uncovered_variables:
+            unplanned_available = [
+                sid for sid in ranked_source_ids 
+                if sid not in excluded and sid not in approved
+            ]
+            if unplanned_available:
+                # Force-add the next highest ranked available site to check its parameters
+                next_alternative = unplanned_available[0]
+                newly_needed = [next_alternative]
+            else:
+                # Absolutely no more websites left to explore
+                return approved, approved_credentials, running_total, plan.uncovered_variables
+        elif not newly_needed and not plan.uncovered_variables:
+            # 100% coverage achieved and all selected sources are processed
             return approved, approved_credentials, running_total, plan.uncovered_variables
 
         any_declined_this_pass = False
@@ -166,45 +182,56 @@ def _resolve_and_approve_plan(
                 continue
 
             decision, credentials = resolve_access(snapshot, analysis, pre_collected_credentials)
-
             decision.variables_expected = list(plan.per_source_new_coverage.get(sid, []))
 
+            # If the user skips or it fails access evaluation, immediately search next ranks
             if decision.decision in (AccessDecisionType.skipped_declined, AccessDecisionType.skipped_unresolved):
                 approved[sid] = decision
                 excluded.add(sid)
                 any_declined_this_pass = True
+                print(f"  [Auto-Alt] Skipping {snapshot.name}. Searching next-ranked alternative websites automatically...")
                 continue
 
             if decision.decision == AccessDecisionType.payment_redirect:
                 approved[sid] = decision
                 excluded.add(sid)
                 any_declined_this_pass = True
-                print("  Payment is pending. Agent 4 will continue with remaining ranked alternatives.")
+                print(f"  [Auto-Alt] Payment pending for {snapshot.name}. Searching next-ranked alternative websites automatically...")
                 continue
 
-            dataset_candidates = discover_source_datasets(snapshot, requested_variables, bounding_box, time_range)
-            if dataset_candidates:
-                best_dataset = dataset_candidates[0]
-                print(
-                    "  Dataset selected: "
-                    f"{best_dataset.dataset_name} ({best_dataset.dataset_id})"
-                )
-            else:
-                print("  Dataset discovery: no structured dataset descriptor available; using connector metadata probe.")
+            try:
+                dataset_candidates = discover_source_datasets(snapshot, requested_variables, bounding_box, time_range)
+                if dataset_candidates:
+                    best_dataset = dataset_candidates[0]
+                    print(f"  Dataset selected: {best_dataset.dataset_name} ({best_dataset.dataset_id})")
+                else:
+                    print("  Dataset discovery: no structured dataset descriptor available; using connector metadata probe.")
 
-            dataset_metadata = probe_dataset_metadata(snapshot, requested_variables, bounding_box, time_range)
-            decision.dataset_metadata = dataset_metadata
-            if dataset_metadata.unavailable_reason:
-                print(f"  Metadata: unavailable ({dataset_metadata.unavailable_reason})")
-            else:
-                print(
-                    "  Metadata: "
-                    f"dataset={dataset_metadata.dataset_id or 'unknown'}, "
-                    f"format={dataset_metadata.file_format or dataset_metadata.content_type or 'unknown'}, "
-                    f"size={format_bytes(dataset_metadata.file_size_bytes)}"
-                )
+                dataset_metadata = probe_dataset_metadata(snapshot, requested_variables, bounding_box, time_range)
+                decision.dataset_metadata = dataset_metadata
+                if dataset_metadata.unavailable_reason:
+                    print(f"  Metadata: unavailable ({dataset_metadata.unavailable_reason})")
+                else:
+                    print(
+                        "  Metadata: "
+                        f"dataset={dataset_metadata.dataset_id or 'unknown'}, "
+                        f"format={dataset_metadata.file_format or dataset_metadata.content_type or 'unknown'}, "
+                        f"size={format_bytes(dataset_metadata.file_size_bytes)}"
+                    )
 
-            size_estimate = estimate_size(snapshot, requested_variables, bounding_box, time_range)
+                size_estimate = estimate_size(snapshot, requested_variables, bounding_box, time_range)
+            except Exception as exc:
+                print(
+                    f"  Metadata/size probe failed for {snapshot.name} ({exc.__class__.__name__}) — "
+                    f"URL might be a landing page. Skipping and searching next-ranked alternatives..."
+                )
+                decision.decision = AccessDecisionType.skipped_declined
+                decision.notes = f"Metadata/size probe raised {exc.__class__.__name__}."
+                approved[sid] = decision
+                excluded.add(sid)
+                any_declined_this_pass = True
+                continue
+                
             if size_estimate.estimated_bytes is None and dataset_metadata.file_size_bytes is not None:
                 size_estimate.estimated_bytes = dataset_metadata.file_size_bytes
                 size_estimate.is_exact = True
@@ -234,25 +261,12 @@ def _resolve_and_approve_plan(
                 any_declined_this_pass = True
                 continue
 
+            # Target variable coverage confirmation
             approved[sid] = decision
             approved_credentials[sid] = credentials
             running_total += size_estimate.estimated_bytes or 0.0
 
-        if not any_declined_this_pass:
-            # Everyone in this pass was approved -- re-check coverage
-            # once more in case the plan is now already complete.
-            plan = build_coverage_plan(
-                ranked_source_ids,
-                website_analyses,
-                requested_variables,
-                excluded_source_ids=excluded,
-                source_snapshots=source_snapshots,
-            )
-            if not plan.uncovered_variables or all(sid in approved for sid in plan.selected_source_ids):
-                return approved, approved_credentials, running_total, plan.uncovered_variables
-        # else: loop again -- build_coverage_plan will try the next-ranked alternative(s)
-
-
+        # Loop back to evaluate if our newly aggregated plan achieves complete parameter coverage
 def _source_access_label(decision: SourceDecision) -> str:
     mapping = {
         AccessDecisionType.free_access: "Public",
@@ -483,7 +497,15 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | 
         return output
 
     print(f"\nResolved {len(source_decisions)} source decision(s), total estimated downloadable size: {format_bytes(total_bytes)}")
+
+    # ------------------------------------------------------------------
+    # Step 2.5 — Interactive Incomplete Coverage Gate
+    # ------------------------------------------------------------------
+    # If the exhaustive fallback search checked every single website and 
+    # some variables are still missing, prompt the user for direction.
+    # ------------------------------------------------------------------
     if still_uncovered:
+<<<<<<< HEAD
         print(f"NOTE: the following requested variables are not covered by any approved source: {', '.join(sorted(still_uncovered))}")
         if not _confirm_incomplete_coverage(still_uncovered, ui_choices=ui_choices):
             coverage_table, retrieved_variables, coverage_percent = _build_coverage_table(
@@ -510,6 +532,51 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | 
             )
             _print_retrieval_report(output, source_snapshots)
             return output
+=======
+        print("\n" + "=" * 70)
+        print("INCOMPLETE COVERAGE DETECTED")
+        print("=" * 70)
+        print(f"The following requested variables could not be found: {', '.join(sorted(still_uncovered))}")
+        print("\nHow would you like to proceed?")
+        print("  1. Continue anyway with partial data coverage")
+        print("  2. Go back to retrieval / adjust source rankings")
+        
+        while True:
+            user_action = input("\nYour choice [1/2]: ").strip()
+            if user_action == "1":
+                print("\nProceeding with partial data coverage allocation...")
+                break
+            elif user_action == "2":
+                print("\nReturning to source discovery and re-ranking (not aborting) -- "
+                      "the caller should loop back to Agent 3 with this signal.")
+                coverage_table, retrieved_variables, coverage_percent = _build_coverage_table(
+                    requested_variables, source_decisions, source_snapshots, []
+                )
+                output = Agent4Output(
+                    plan_source_ids=list(approved.keys()),
+                    source_decisions=source_decisions,
+                    manifest=[],
+                    total_size_bytes=total_bytes,
+                    actual_downloaded_bytes=0.0,
+                    covers_full_query=False,
+                    uncovered_variables=[row["Variable"] for row in coverage_table if row["Coverage Status"] != "Retrieved"],
+                    retrieved_variables=retrieved_variables,
+                    coverage_percent=coverage_percent,
+                    coverage_table=coverage_table,
+                    download_location=None,
+                    send_to_agent5=False,
+                    notes=[
+                        "REQUEUE_TO_DISCOVERY: user chose to return to source discovery/ranking "
+                        "due to incomplete coverage. This is not an abort -- the caller (main.py) "
+                        "should loop back to Agent 3 with this output rather than terminating.",
+                    ],
+                    security_reports={},
+                )
+                _print_retrieval_report(output, source_snapshots)
+                return output
+            else:
+                print("Invalid input. Please type '1' to continue or '2' to return to ranking.")
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     else:
         print("Every requested variable is covered by the approved sources.")
 
