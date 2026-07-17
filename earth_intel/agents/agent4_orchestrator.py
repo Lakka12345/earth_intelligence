@@ -505,7 +505,6 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | 
     # some variables are still missing, prompt the user for direction.
     # ------------------------------------------------------------------
     if still_uncovered:
-<<<<<<< HEAD
         print(f"NOTE: the following requested variables are not covered by any approved source: {', '.join(sorted(still_uncovered))}")
         if not _confirm_incomplete_coverage(still_uncovered, ui_choices=ui_choices):
             coverage_table, retrieved_variables, coverage_percent = _build_coverage_table(
@@ -525,58 +524,15 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | 
                 download_location=None,
                 send_to_agent5=False,
                 notes=[
-                    "Retrieval stopped because approved Agent 3 ranked sources did not cover every requested variable.",
+                    "REQUEUE_TO_DISCOVERY: user chose to return to source discovery/ranking "
+                    "due to incomplete coverage. This is not an abort -- the caller (main.py) "
+                    "should loop back to Agent 3 with this output rather than terminating.",
                 ],
                 # FIX 4 — security_reports declared on Agent4Output, not set dynamically.
                 security_reports={},
             )
             _print_retrieval_report(output, source_snapshots)
             return output
-=======
-        print("\n" + "=" * 70)
-        print("INCOMPLETE COVERAGE DETECTED")
-        print("=" * 70)
-        print(f"The following requested variables could not be found: {', '.join(sorted(still_uncovered))}")
-        print("\nHow would you like to proceed?")
-        print("  1. Continue anyway with partial data coverage")
-        print("  2. Go back to retrieval / adjust source rankings")
-        
-        while True:
-            user_action = input("\nYour choice [1/2]: ").strip()
-            if user_action == "1":
-                print("\nProceeding with partial data coverage allocation...")
-                break
-            elif user_action == "2":
-                print("\nReturning to source discovery and re-ranking (not aborting) -- "
-                      "the caller should loop back to Agent 3 with this signal.")
-                coverage_table, retrieved_variables, coverage_percent = _build_coverage_table(
-                    requested_variables, source_decisions, source_snapshots, []
-                )
-                output = Agent4Output(
-                    plan_source_ids=list(approved.keys()),
-                    source_decisions=source_decisions,
-                    manifest=[],
-                    total_size_bytes=total_bytes,
-                    actual_downloaded_bytes=0.0,
-                    covers_full_query=False,
-                    uncovered_variables=[row["Variable"] for row in coverage_table if row["Coverage Status"] != "Retrieved"],
-                    retrieved_variables=retrieved_variables,
-                    coverage_percent=coverage_percent,
-                    coverage_table=coverage_table,
-                    download_location=None,
-                    send_to_agent5=False,
-                    notes=[
-                        "REQUEUE_TO_DISCOVERY: user chose to return to source discovery/ranking "
-                        "due to incomplete coverage. This is not an abort -- the caller (main.py) "
-                        "should loop back to Agent 3 with this output rather than terminating.",
-                    ],
-                    security_reports={},
-                )
-                _print_retrieval_report(output, source_snapshots)
-                return output
-            else:
-                print("Invalid input. Please type '1' to continue or '2' to return to ranking.")
->>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
     else:
         print("Every requested variable is covered by the approved sources.")
 
