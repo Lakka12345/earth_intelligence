@@ -147,6 +147,12 @@ def render_pipeline_page(render_pipeline, render_logs) -> None:
     render_logs()
 
 
+def render_voice_page() -> None:
+    """Voice & Chat interface page — embeds the full index.html voice panel."""
+    from dashboard.components.voice import render_voice_interface
+    render_voice_interface()
+
+
 def render_help_page() -> None:
     render_page_intro("Help", "A quick guide to using the platform.")
     st.markdown(

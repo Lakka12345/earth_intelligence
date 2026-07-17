@@ -7,9 +7,27 @@ plaintext file). Only called when the user explicitly opts to persist
 credentials for a source; otherwise credentials live only in memory
 for the current run and are discarded when the process exits.
 
-Install: pip install keyring
+CHANGED (bug fix): added a file-based fallback for systems where keyring
+is unavailable (no secret service, headless servers, CI environments).
+The fallback writes base64-obfuscated credential blobs to
+.credentials/<source_id>.cred in the project root. This is NOT encryption
+— it prevents casual shoulder-surfing but is not secure against a
+determined attacker with filesystem access. Users are warned about this.
+The fallback is only activated when keyring is genuinely unavailable,
+not just missing the pip package.
+
+CHANGED: added delete_all_credentials() to wipe every stored source at
+once — clears both the OS keyring (all earth_intel_agent4 entries) and
+every .cred file in the fallback directory. Call this to reset all
+credentials before re-entering fresh ones.
+
+Install keyring for full security: pip install keyring
 """
 
+import base64
+import glob
+import json
+import os
 from dataclasses import dataclass
 from typing import Optional
 
@@ -19,8 +37,91 @@ try:
 except ImportError:
     _KEYRING_AVAILABLE = False
 
-_SERVICE_NAME = "earth_intel_agent4"
+_SERVICE_NAME  = "earth_intel_agent4"
+_FALLBACK_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".credentials")
 
+# Known source IDs used by the agent — extended when new sources are added.
+_KNOWN_SOURCE_IDS = [
+    "cmems",
+    "copernicus_marine",
+    "Copernicus Marine Service (CMEMS)",
+    "era5",
+    "cds",
+    "Copernicus Climate Data Store (ERA5)",
+    "noaa_tides",
+    "NOAA Tides and Currents API",
+    "argo",
+    "Argo Float Data (global, all GDACs)",
+    "erddap",
+    "hadisst",
+]
+
+_CREDENTIAL_FIELDS = (
+    "username",
+    "password",
+    "api_key",
+    "token",
+    "session_token",
+    "refresh_token",
+    "bearer_token",
+)
+
+
+# ── File-based fallback helpers ───────────────────────────────────────────
+
+def _fallback_path(source_id: str) -> str:
+    safe_id = "".join(c if c.isalnum() or c in "-_." else "_" for c in source_id)
+    return os.path.join(_FALLBACK_DIR, f"{safe_id}.cred")
+
+
+def _fallback_save(source_id: str, values: dict) -> bool:
+    """Save credentials to a base64-obfuscated file. NOT secure storage."""
+    try:
+        os.makedirs(_FALLBACK_DIR, exist_ok=True)
+        # Write a .gitignore so the folder is never accidentally committed
+        gi_path = os.path.join(_FALLBACK_DIR, ".gitignore")
+        if not os.path.exists(gi_path):
+            with open(gi_path, "w") as f:
+                f.write("*\n")
+        payload = base64.b64encode(json.dumps(values).encode()).decode()
+        with open(_fallback_path(source_id), "w") as f:
+            f.write(payload)
+        print(
+            f"[Credential Store] WARNING: keyring unavailable — credentials for "
+            f"'{source_id}' saved to .credentials/ in obfuscated (NOT encrypted) form. "
+            "Install keyring for secure storage: pip install keyring"
+        )
+        return True
+    except Exception as exc:
+        print(f"[Credential Store] File fallback save failed for {source_id}: {exc}")
+        return False
+
+
+def _fallback_load(source_id: str) -> Optional[dict]:
+    path = _fallback_path(source_id)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r") as f:
+            payload = f.read().strip()
+        return json.loads(base64.b64decode(payload).decode())
+    except Exception as exc:
+        print(f"[Credential Store] File fallback load failed for {source_id}: {exc}")
+        return None
+
+
+def _fallback_delete(source_id: str) -> bool:
+    path = _fallback_path(source_id)
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+        return True
+    except Exception as exc:
+        print(f"[Credential Store] File fallback delete failed for {source_id}: {exc}")
+        return False
+
+
+# ── Public API ────────────────────────────────────────────────────────────
 
 @dataclass
 class StoredCredentials:
@@ -57,27 +158,28 @@ def save_provider_credentials(
     refresh_token: Optional[str] = None,
     bearer_token: Optional[str] = None,
 ) -> bool:
-    if not keyring_available():
-        print("[Credential Store] keyring is not available on this system -- cannot persist credentials. "
-              "Install with: pip install keyring")
-        return False
-    try:
-        values = {
-            "username": username,
-            "password": password,
-            "api_key": api_key,
-            "token": token,
+    values = {
+        k: v for k, v in {
+            "username":      username,
+            "password":      password,
+            "api_key":       api_key,
+            "token":         token,
             "session_token": session_token,
             "refresh_token": refresh_token,
-            "bearer_token": bearer_token,
-        }
-        for field, value in values.items():
-            if value:
+            "bearer_token":  bearer_token,
+        }.items() if v
+    }
+
+    if keyring_available():
+        try:
+            for field, value in values.items():
                 keyring.set_password(_SERVICE_NAME, f"{source_id}::{field}", value)
-        return True
-    except Exception as exc:
-        print(f"[Credential Store] Failed to save credentials for {source_id}: {exc}")
-        return False
+            return True
+        except Exception as exc:
+            print(f"[Credential Store] keyring save failed for {source_id}: {exc} — falling back to file store.")
+
+    # File-based fallback
+    return _fallback_save(source_id, values)
 
 
 def load_credentials(source_id: str) -> Optional[StoredCredentials]:
@@ -85,42 +187,107 @@ def load_credentials(source_id: str) -> Optional[StoredCredentials]:
 
 
 def load_provider_credentials(source_id: str) -> Optional[StoredCredentials]:
-    if not keyring_available():
+    if keyring_available():
+        try:
+            username      = keyring.get_password(_SERVICE_NAME, f"{source_id}::username")
+            password      = keyring.get_password(_SERVICE_NAME, f"{source_id}::password")
+            api_key       = keyring.get_password(_SERVICE_NAME, f"{source_id}::api_key")
+            token         = keyring.get_password(_SERVICE_NAME, f"{source_id}::token")
+            session_token = keyring.get_password(_SERVICE_NAME, f"{source_id}::session_token")
+            refresh_token = keyring.get_password(_SERVICE_NAME, f"{source_id}::refresh_token")
+            bearer_token  = keyring.get_password(_SERVICE_NAME, f"{source_id}::bearer_token")
+            if (username and password) or api_key or token or session_token or refresh_token or bearer_token:
+                return StoredCredentials(
+                    username=username or "",
+                    password=password or "",
+                    api_key=api_key,
+                    token=token,
+                    session_token=session_token,
+                    refresh_token=refresh_token,
+                    bearer_token=bearer_token,
+                )
+        except Exception as exc:
+            print(f"[Credential Store] keyring load failed for {source_id}: {exc} — trying file fallback.")
+
+    # File-based fallback
+    values = _fallback_load(source_id)
+    if not values:
         return None
-    try:
-        username = keyring.get_password(_SERVICE_NAME, f"{source_id}::username")
-        password = keyring.get_password(_SERVICE_NAME, f"{source_id}::password")
-        api_key = keyring.get_password(_SERVICE_NAME, f"{source_id}::api_key")
-        token = keyring.get_password(_SERVICE_NAME, f"{source_id}::token")
-        session_token = keyring.get_password(_SERVICE_NAME, f"{source_id}::session_token")
-        refresh_token = keyring.get_password(_SERVICE_NAME, f"{source_id}::refresh_token")
-        bearer_token = keyring.get_password(_SERVICE_NAME, f"{source_id}::bearer_token")
-        if (username and password) or api_key or token or session_token or refresh_token or bearer_token:
-            return StoredCredentials(
-                username=username or "",
-                password=password or "",
-                api_key=api_key,
-                token=token,
-                session_token=session_token,
-                refresh_token=refresh_token,
-                bearer_token=bearer_token,
-            )
-        return None
-    except Exception as exc:
-        print(f"[Credential Store] Failed to load credentials for {source_id}: {exc}")
-        return None
+    return StoredCredentials(
+        username=values.get("username", ""),
+        password=values.get("password", ""),
+        api_key=values.get("api_key"),
+        token=values.get("token"),
+        session_token=values.get("session_token"),
+        refresh_token=values.get("refresh_token"),
+        bearer_token=values.get("bearer_token"),
+    )
 
 
 def delete_credentials(source_id: str) -> bool:
-    if not keyring_available():
-        return False
-    try:
-        for field in ("username", "password", "api_key", "token", "session_token", "refresh_token", "bearer_token"):
+    deleted_keyring = False
+    if keyring_available():
+        try:
+            for field in _CREDENTIAL_FIELDS:
+                try:
+                    keyring.delete_password(_SERVICE_NAME, f"{source_id}::{field}")
+                except keyring.errors.PasswordDeleteError:
+                    pass
+            deleted_keyring = True
+        except Exception as exc:
+            print(f"[Credential Store] keyring delete failed for {source_id}: {exc}")
+
+    deleted_file = _fallback_delete(source_id)
+    return deleted_keyring or deleted_file
+
+
+def delete_all_credentials() -> dict:
+    """
+    Wipe ALL stored credentials for this agent — both OS keyring entries
+    (every known source ID under earth_intel_agent4) and every .cred file
+    in the fallback directory.
+
+    Returns a summary dict: { source_id: True/False, ... } plus a
+    '_files_removed' key listing any fallback .cred files deleted.
+
+    Use this to fully reset before re-entering fresh credentials.
+    """
+    results: dict = {}
+
+    # 1. Delete every known source from keyring + its file entry
+    for source_id in _KNOWN_SOURCE_IDS:
+        results[source_id] = delete_credentials(source_id)
+
+    # 2. Sweep the fallback dir for any .cred files not in _KNOWN_SOURCE_IDS
+    #    (e.g. sources added dynamically at runtime)
+    removed_files = []
+    if os.path.isdir(_FALLBACK_DIR):
+        for cred_file in glob.glob(os.path.join(_FALLBACK_DIR, "*.cred")):
             try:
-                keyring.delete_password(_SERVICE_NAME, f"{source_id}::{field}")
-            except keyring.errors.PasswordDeleteError:
-                pass  # nothing stored for this field -- fine
-        return True
-    except Exception as exc:
-        print(f"[Credential Store] Failed to delete credentials for {source_id}: {exc}")
-        return False
+                os.remove(cred_file)
+                removed_files.append(os.path.basename(cred_file))
+            except Exception as exc:
+                print(f"[Credential Store] Could not remove {cred_file}: {exc}")
+
+    results["_files_removed"] = removed_files
+
+    total = len(_KNOWN_SOURCE_IDS)
+    ok    = sum(1 for k, v in results.items() if k != "_files_removed" and v)
+    print(
+        f"[Credential Store] delete_all_credentials complete: "
+        f"{ok}/{total} known sources cleared, "
+        f"{len(removed_files)} fallback file(s) removed."
+    )
+    return results
+
+
+# ── CLI helper ────────────────────────────────────────────────────────────
+# Run directly to nuke all credentials:  python agent4_credential_store.py --clear-all
+
+if __name__ == "__main__":
+    import sys
+    if "--clear-all" in sys.argv:
+        summary = delete_all_credentials()
+        print("Removed fallback files:", summary.get("_files_removed", []))
+    else:
+        print("Usage: python agent4_credential_store.py --clear-all")

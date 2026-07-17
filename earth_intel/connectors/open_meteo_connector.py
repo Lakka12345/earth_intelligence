@@ -208,23 +208,49 @@ def _choose_api(start_date: Optional[str], end_date: Optional[str]) -> str:
       • Forecast API  — current conditions and up to 16-day forecasts
       • Archive API   — ERA5 reanalysis back to 1940, with a 5-day lag
 
-    We use the Archive API only when the requested end date (or start date
-    when no end date is given) falls before the archive lag cutoff.
+    Routing rules (in order):
+      1. If start_date is provided AND it predates the archive cutoff →
+         Archive API, regardless of whether end_date is also provided.
+         This is the key fix: the old code only routed to Archive when
+         end_date was absent, so a historical request with BOTH dates
+         (the normal case from Agent 4) always fell through to Forecast.
+      2. If only end_date is provided and it predates the cutoff → Archive.
+      3. Otherwise → Forecast.
+
+    Also handles date objects in addition to ISO strings, and silently
+    truncates datetime strings (e.g. "2013-06-01T00:00:00") to date-only
+    before parsing so fromisoformat() never raises on those inputs.
     """
     cutoff = date.today() - timedelta(days=ARCHIVE_LAG_DAYS)
-    try:
-        if end_date:
-            ed = date.fromisoformat(end_date)
-            if ed < cutoff:
-                logger.debug("open_meteo: selected Archive API (end_date %s < cutoff %s)", end_date, cutoff)
-                return ARCHIVE_API
-        if start_date:
-            sd = date.fromisoformat(start_date)
-            if sd < cutoff and not end_date:
-                logger.debug("open_meteo: selected Archive API (start_date %s < cutoff %s, no end_date)", start_date, cutoff)
-                return ARCHIVE_API
-    except ValueError:
-        pass
+
+    def _to_date(val) -> Optional[date]:
+        if val is None:
+            return None
+        if isinstance(val, date):
+            return val
+        try:
+            # Truncate to 10 chars covers "YYYY-MM-DD" and "YYYY-MM-DDTHH:MM:SS…"
+            return date.fromisoformat(str(val)[:10])
+        except (ValueError, TypeError):
+            return None
+
+    sd = _to_date(start_date)
+    ed = _to_date(end_date)
+
+    # Rule 1: start_date is in the past → always Archive
+    if sd is not None and sd < cutoff:
+        logger.debug(
+            "open_meteo: selected Archive API (start_date %s < cutoff %s)", sd, cutoff
+        )
+        return ARCHIVE_API
+
+    # Rule 2: no start_date but end_date is in the past → Archive
+    if sd is None and ed is not None and ed < cutoff:
+        logger.debug(
+            "open_meteo: selected Archive API (end_date %s < cutoff %s, no start_date)", ed, cutoff
+        )
+        return ARCHIVE_API
+
     logger.debug("open_meteo: selected Forecast API")
     return FORECAST_API
 
@@ -471,6 +497,27 @@ class OpenMeteoConnector(StaticDatasetConnector):
           1. latitude/longitude fields from Agent 3 / Agent 4 / orchestrator
           2. Centre of a bounding_box when only a bbox is supplied
           3. ValueError — never substitute synthetic coordinates
+
+        Bounding-box index convention (Bug 1 fix):
+          Agent 4's download_manager builds bounding_box as a 4-tuple in
+          standard GeoJSON / WGS84 order:
+              [min_lon, min_lat, max_lon, max_lat]  ← index 0 = LON, 1 = LAT
+          The old code had the comment "[min_lat, min_lon, max_lat, max_lon]"
+          but used indices [0]/[2] for lat and [1]/[3] for lon — correct only
+          if the caller uses lat-first order.  Since Agent 4 uses lon-first,
+          this was silently passing Chennai's longitude (80) as latitude and
+          its latitude (13) as longitude.
+
+          Fix: try to auto-detect the order.  A value whose absolute magnitude
+          is > 90 cannot be a latitude, so if bbox[0] > 90 we know the tuple
+          is [lon, lat, lon, lat].  This is robust against both conventions and
+          prevents the swap for all future callers.
+
+        Date extraction (Bug 2 extension):
+          Agent 4 may pass dates either as top-level start_date/end_date fields
+          OR inside a time_range tuple/list/dict.  The old code only checked
+          the top-level fields, so when Agent 4 populated only time_range the
+          dates were None and _choose_api() always picked the Forecast API.
         """
         if isinstance(fetch_request, dict):
             r = fetch_request
@@ -484,23 +531,37 @@ class OpenMeteoConnector(StaticDatasetConnector):
                     return v
             return default
 
-        # Priority 1: coordinates from Agent 3 / Agent 4 via request fields
-        # Priority 2: coordinates from orchestrator (same fields, resolved upstream)
-        # Priority 3: fail — never silently substitute Berlin or any other location
+        # ── Coordinates ───────────────────────────────────────────────
         _lat = _get("latitude", "lat")
         _lon = _get("longitude", "lon")
 
-        # Also accept bounding-box centre as a fallback when only a bbox is given
         if _lat is None or _lon is None:
             bbox = _get("bounding_box", "bbox")
             if isinstance(bbox, (list, tuple)) and len(bbox) >= 4:
-                # bbox convention: [min_lat, min_lon, max_lat, max_lon]
-                _lat = (float(bbox[0]) + float(bbox[2])) / 2.0
-                _lon = (float(bbox[1]) + float(bbox[3])) / 2.0
-                logger.info(
-                    "open_meteo: derived centre coordinates (%.4f, %.4f) from bounding box",
-                    _lat, _lon,
-                )
+                v0, v1, v2, v3 = float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])
+
+                # Auto-detect lon-first (GeoJSON/WGS84) vs lat-first order.
+                # Latitudes are always in [-90, 90]; longitudes can reach ±180.
+                # If the first element exceeds ±90 it must be a longitude.
+                if abs(v0) > 90 or abs(v2) > 90:
+                    # lon-first: [min_lon, min_lat, max_lon, max_lat]
+                    _lon = (v0 + v2) / 2.0
+                    _lat = (v1 + v3) / 2.0
+                    logger.info(
+                        "open_meteo: bbox detected as lon-first "
+                        "[%.4f, %.4f, %.4f, %.4f] → centre lat=%.4f lon=%.4f",
+                        v0, v1, v2, v3, _lat, _lon,
+                    )
+                else:
+                    # lat-first: [min_lat, min_lon, max_lat, max_lon]
+                    _lat = (v0 + v2) / 2.0
+                    _lon = (v1 + v3) / 2.0
+                    logger.info(
+                        "open_meteo: bbox detected as lat-first "
+                        "[%.4f, %.4f, %.4f, %.4f] → centre lat=%.4f lon=%.4f",
+                        v0, v1, v2, v3, _lat, _lon,
+                    )
+
             elif isinstance(bbox, dict):
                 # bbox as dict: {min_lat, min_lon, max_lat, max_lon} or similar keys
                 _lat_min = bbox.get("min_lat", bbox.get("south", bbox.get("lat_min")))
@@ -524,8 +585,42 @@ class OpenMeteoConnector(StaticDatasetConnector):
 
         lat = float(_lat)
         lon = float(_lon)
+
+        # ── Dates (Bug 2 fix: also unpack time_range) ─────────────────
         start = _get("start_date", "date_start", "from_date")
         end   = _get("end_date",   "date_end",   "to_date")
+
+        # Agent 4 may supply dates inside a time_range field as a
+        # tuple (start, end), list [start, end], or dict {"start": ..., "end": ...}
+        if start is None or end is None:
+            time_range = _get("time_range")
+            if isinstance(time_range, (list, tuple)) and len(time_range) >= 2:
+                if start is None:
+                    start = str(time_range[0])[:10] if time_range[0] else None
+                if end is None:
+                    end   = str(time_range[1])[:10] if time_range[1] else None
+                logger.debug(
+                    "open_meteo: extracted dates from time_range tuple/list: start=%s end=%s",
+                    start, end,
+                )
+            elif isinstance(time_range, dict):
+                if start is None:
+                    raw = time_range.get("start") or time_range.get("start_date") or time_range.get("from")
+                    start = str(raw)[:10] if raw else None
+                if end is None:
+                    raw = time_range.get("end") or time_range.get("end_date") or time_range.get("to")
+                    end = str(raw)[:10] if raw else None
+                logger.debug(
+                    "open_meteo: extracted dates from time_range dict: start=%s end=%s",
+                    start, end,
+                )
+
+        # Normalise: strip any time component so fromisoformat() is always happy
+        if start:
+            start = str(start)[:10]
+        if end:
+            end   = str(end)[:10]
+
         variables = _get("variables", "requested_variables", default=[]) or []
         if isinstance(variables, str):
             variables = [v.strip() for v in variables.split(",") if v.strip()]
@@ -771,11 +866,11 @@ class OpenMeteoConnector(StaticDatasetConnector):
     # ------------------------------------------------------------------
     # fetch_full
     # ------------------------------------------------------------------
-
-    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir: Optional[str] = None, **kwargs) -> str:
         """
         Download weather data and save to disk.
-        Returns a result dict with file_path on success.
+        Returns the local file path string (BaseConnector contract).
+        Raises RuntimeError on failure so the download manager can retry.
         """
         params = self._extract_request_params(fetch_request or kwargs)
         url    = self._build_request_url(params)
@@ -785,7 +880,7 @@ class OpenMeteoConnector(StaticDatasetConnector):
         try:
             resp = _http_get(url)
         except Exception as exc:
-            return {"success": False, "error": str(exc), "request_url": url}
+            raise RuntimeError(f"Open-Meteo HTTP request failed: {exc}") from exc
 
         content = resp.text
 
@@ -801,7 +896,7 @@ class OpenMeteoConnector(StaticDatasetConnector):
                 data = resp.json()
                 _validate_json_payload(data, hourly_vars, daily_vars)
         except ValueError as exc:
-            return {"success": False, "error": str(exc), "request_url": url}
+            raise RuntimeError(f"Open-Meteo payload validation failed: {exc}") from exc
 
         if output_dir is None:
             output_dir = tempfile.mkdtemp(prefix="open_meteo_")
@@ -831,27 +926,13 @@ class OpenMeteoConnector(StaticDatasetConnector):
                 os.remove(file_path)
             except OSError as rm_exc:
                 logger.warning("open_meteo fetch_full: could not delete invalid file %s — %s", file_path, rm_exc)
-            return {
-                "success":     False,
-                "error":       "Post-save validation failed: " + "; ".join(validation["issues"]),
-                "request_url": url,
-            }
+            raise RuntimeError("Open-Meteo post-save validation failed: " + "; ".join(validation["issues"]))
 
         logger.info("open_meteo fetch_full: validation passed — %s", file_path)
-        return {
-            "success":               True,
-            "file_path":             file_path,
-            "format":                ext.upper(),
-            "size_bytes":            size_bytes,
-            "request_url":           url,
-            "variables_hourly":      hourly_vars,
-            "variables_daily":       daily_vars,
-            "variables_unsupported": unsupported_vars,
-            "latitude":              params["latitude"],
-            "longitude":             params["longitude"],
-            "start_date":            params["start_date"],
-            "end_date":              params["end_date"],
-        }
+        # BaseConnector contract: fetch_full returns the local file path as a str.
+        # Returning a dict here previously caused "AttributeError: 'dict' object
+        # has no attribute 'endswith'" in download_manager._trim_local_file().
+        return file_path
 
     # ------------------------------------------------------------------
     # discover_datasets — dynamic routing
@@ -871,11 +952,17 @@ class OpenMeteoConnector(StaticDatasetConnector):
     # resolve_download_asset
     # ------------------------------------------------------------------
 
-    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Dict[str, Any]:
-        """Return the concrete Open-Meteo request URL that will be fetched."""
+    def resolve_download_asset(self, snapshot=None, fetch_request=None, credentials=None, **kwargs) -> Optional[str]:
+        """
+        Return the concrete Open-Meteo request URL that will be fetched.
+
+        Per BaseConnector's contract, this must return a plain URL string
+        (the caller treats it as such, e.g. checking file extension with
+        .endswith()) — NOT a dict. Returning a dict here previously caused
+        FAILED ('dict' object has no attribute 'endswith') downstream.
+        """
         params = self._extract_request_params(fetch_request or kwargs)
-        url = self._build_request_url(params)
-        return {"download_url": url, "request_url": url, "params": params}
+        return self._build_request_url(params)
 
     # ------------------------------------------------------------------
     # validate_download — post-download check

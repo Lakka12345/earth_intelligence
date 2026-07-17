@@ -270,7 +270,14 @@ class ScientificIntentOutput(BaseModel):
     measurements: List[Measurement] = Field(min_length=1)
     dataset_requirements: List[DatasetRequirement] = Field(min_length=1)
 
-    planning_steps: List[PlanningStep] = Field(min_length=23)
+    planning_steps: List[PlanningStep] = Field(
+        min_length=1,
+        description=(
+            "High-level OUTPUT steps summarising the analysis plan "
+            "(typically 3-10 items). NOT the 23 internal reasoning stages "
+            "the LLM executes silently before producing this JSON."
+        ),
+    )
 
     uncertainty_items: List[UncertaintyItem] = Field(default_factory=list)
 
@@ -314,60 +321,13 @@ class ScientificIntentOutput(BaseModel):
                 "Planning steps must be sequential starting from 1."
             )
 
-        required_stage_order = [
-            "Goal identification",
-            "Objective decomposition",
-            "Research question extraction",
-            "Decision context inference",
-            "User intent classification",
-            "Domain identification",
-            "Cross-domain dependency detection",
-            "Event/hazard identification",
-            "Spatial reasoning",
-            "Temporal reasoning",
-            "Scientific variable discovery",
-            "Variable prioritization",
-            "Dependency mapping",
-            "Measurement planning",
-            "Expected output identification",
-            "Data fusion requirement analysis",
-            "Gap detection",
-            "Uncertainty assessment",
-            "Clarification planning",
-            "Interactive clarification strategy",
-            "Dataset requirement planning",
-            "Retrieval readiness assessment",
-            "Structured scientific planning output",
-        ]
+        # NOTE: the stage-name ordering check against the 23 internal
+        # reasoning stages has been removed. Those stages are the LLM's
+        # silent chain-of-thought, not output fields; enforcing their names
+        # and order on the JSON output was the root cause of the min_length=23
+        # crash and would break valid plans that use different stage labels.
 
-        actual_stages = [
-            step.stage.lower().strip()
-            for step in self.planning_steps
-        ]
-
-        required_stage_order = [
-            stage.lower().strip()
-            for stage in required_stage_order
-        ]
-
-        """missing_stages = [
-            stage
-            for stage in required_stage_order
-            if stage not in actual_stages
-        ]
-
-        if missing_stages:
-            raise ValueError(
-                f"Missing required planning stages: {missing_stages}"
-            )"""
-
-        stage_index = {
-            step.stage: step.step_number
-            for step in self.planning_steps
-        }
-
-        # Temporarily disabled for Groq compatibility.
-        # Groq uses different stage naming than Gemini.
+        # Cross-reference: every measurement must reference a known variable.
         variable_names = {
             v.variable.lower().strip()
             for v in self.scientific_variables
@@ -385,6 +345,7 @@ class ScientificIntentOutput(BaseModel):
                     f"'{measurement.variable_measured}'."
                 )
 
+        # Cross-reference: every scientific variable must have a priority record.
         priority_variables = {
             v.variable.lower().strip()
             for v in self.variable_priorities

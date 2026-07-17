@@ -112,6 +112,31 @@ Dataset types: {', '.join(dataset_types_needed)}
 Location: {location}
 Time period: {date_range}
 {sensor_line}
+=== ENDPOINT QUALITY RULES (STRICT — apply before scoring) ===
+- A source is only valid if it provides a MACHINE-READABLE endpoint: a REST API,
+  OPeNDAP URL, ERDDAP endpoint, STAC catalog, or a direct binary file link
+  (.nc, .nc4, .grib, .grib2, .csv, .json, .zarr, .hdf5, .h5, .tif, .tiff).
+- If a source URL points to an HTML landing page, a general website homepage,
+  an interactive web map, a login portal, or a documentation page, you MUST mark
+  it with failed_criteria=["Broken Resource"] and rejection_confidence >= 0.85.
+  Do NOT give it a passing score simply because the organisation behind it is credible.
+- If a source endpoint is known to be retired, deprecated, or returns HTTP 410/404,
+  mark it failed_criteria=["Broken Resource"], rejection_confidence >= 0.90.
+- Examples of INVALID source URLs: https://www.openstreetmap.org,
+  https://www.gdacs.org, https://reliefweb.int, any URL ending in .html or /about.
+
+=== VARIABLE MATCH RULES (STRICT) ===
+- relevance and completeness scores MUST reflect whether this source actually
+  provides the SPECIFIC variables listed under "Variables needed" above.
+- If the source provides sea surface temperature variables but the query needs
+  terrestrial soil moisture or rainfall, relevance MUST be < 0.3 and
+  completeness MUST be < 0.3. Do NOT give high scores just because both involve
+  environmental data.
+- If the source provides NONE of the required variables, failed_criteria MUST
+  include "Required Variables" regardless of how authoritative the provider is.
+- A globally authoritative source (NASA, NOAA, ESA) with the wrong variables for
+  THIS query scores LOW. Authority does not substitute for variable match.
+
 === SCORING RULES ===
 - relevance: does this source match the scientific goal and variables? (0.0-1.0)
 - completeness: does it cover the required variables, region, and time period? (0.0-1.0)

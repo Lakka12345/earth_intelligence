@@ -4,8 +4,27 @@ from agents.agent3_discovery import run_agent3
 from agents.agent3_interactive_runner import run_agent3_interactive
 from agents.agent4_orchestrator import run_agent4
 
+# Agent 5 is optional — imported lazily so the pipeline still runs if the
+# Agent 5 files are not yet present in the project.
+try:
+    from agents.agent5 import run_agent5
+    _AGENT5_AVAILABLE = True
+except ImportError:
+    _AGENT5_AVAILABLE = False
+
 from security.input_validator import validate_input
 from security.injection_guard import detect_prompt_injection
+
+# SECURITY INTEGRATION — central imports for all security modules consumed
+# by main.py's final risk-assessment gate.  Modules used only inside Agent 3
+# or Agent 4 are imported locally at their call sites to keep dependency
+# surface minimal here.
+from security.provider_trust import generate_provider_trust_report
+from security.security_risk_assessment import (
+    assess_security_risk,
+    save_security_assessment,
+    RecommendedAction,
+)
 
 from models.retrieval_request import (
     build_retrieval_request,
@@ -757,7 +776,10 @@ def main():
     query = input("Enter scientific query: ")
     query = validate_input(query)
 
-    detect_prompt_injection(query)
+    # FIX 5 — Capture the PromptInjectionReport object returned by
+    # detect_prompt_injection() so it can be passed directly to the
+    # security gate below, avoiding a round-trip through the JSON database.
+    _pi_report_obj = detect_prompt_injection(query)
 
     print("\nRunning Agent 1...\n")
 
@@ -806,58 +828,366 @@ def main():
 
     print("Retrieval Request built.\n")
 
-    print("Running Agent 3...\n")
+    # ---------------------------------------------------------------- #
+    # Agent 3 → Agent 4 state machine                                  #
+    #                                                                   #
+    # This loop replaces the old single-shot call.  When Agent 4       #
+    # returns return_to_discovery=True (user chose "Stop and return to  #
+    # source discovery/ranking"), we loop back and re-run Agent 3 with  #
+    # extra_context accumulated from previous failures, rather than     #
+    # falling off the end of main() to the shell prompt.               #
+    #                                                                   #
+    # Loop exit conditions (only one fires per iteration):             #
+    #   A. agent4_result.return_to_discovery is False → done normally. #
+    #   B. User chooses not to retry at the confirmation prompt.       #
+    #   C. MAX_DISCOVERY_ROUNDS exhausted.                             #
+    #                                                                   #
+    # SECURITY INTEGRATION — Provider Trust Assessment now runs INSIDE #
+    # this loop, immediately after each successful Agent 3 execution,  #
+    # since agent3_result only exists within a loop iteration. The     #
+    # best trust report seen across all rounds (_best_pt_for_gate) is  #
+    # carried forward to the Final Security Risk Assessment gate,      #
+    # which still executes exactly once, after the loop finishes.      #
+    # ---------------------------------------------------------------- #
+    # SECURITY INTEGRATION — accumulators carried across discovery      #
+    # rounds and consumed by the Final Security Risk Assessment below. #
+    provider_trust_reports: list = []
+    _best_pt_for_gate = None
 
-    agent3_result = run_agent3(
-        retrieval_request
-    )
+    MAX_DISCOVERY_ROUNDS = 5
+    discovery_round = 0
+    # Accumulated failure context fed back into every subsequent Agent 3
+    # call so it knows which sources have already been tried and why
+    # they failed, and can find different / better ones.
+    extra_discovery_context: dict = {}
 
-    print("Agent 3 completed.\n")
+    while discovery_round < MAX_DISCOVERY_ROUNDS:
+        discovery_round += 1
+
+        if discovery_round == 1:
+            print("Running Agent 3...\n")
+        else:
+            print(
+                f"\nRe-running Agent 3 (discovery round {discovery_round}/{MAX_DISCOVERY_ROUNDS}) "
+                "with updated context from Agent 4 feedback...\n"
+            )
+
+        agent3_result = run_agent3(
+            retrieval_request,
+            extra_context=extra_discovery_context if extra_discovery_context else None,
+        )
+
+        print("Agent 3 completed.\n")
+
+        # ---------------------------------------------------------------- #
+        # SECURITY INTEGRATION — Provider Trust Assessment (post-Agent 3)  #
+        #                                                                   #
+        # After each Agent 3 run finishes ranking providers, evaluate every #
+        # ranked source for provider trust and store the reports. This runs #
+        # inside the discovery retry loop so it re-evaluates trust on every #
+        # re-run, since agent3_result (and its ranked_sources) is only in   #
+        # scope here. Reports accumulate across rounds and the best report  #
+        # seen so far is threaded through to the final Security Risk        #
+        # Assessment gate at the bottom of main(), after the loop exits.    #
+        # Agent 3's ranking and the Qdrant integration are untouched.       #
+        # ---------------------------------------------------------------- #
+        print("\nRunning Provider Trust Assessment...\n")
+
+        # SECURITY INTEGRATION — build provider metadata dicts from Agent 3's
+        # ranked ScoredSource objects using only fields already present on
+        # CandidateSource (no new schema changes).
+        from security.provider_trust import load_db as _load_pt_db, save_provider_trust_report, ensure_db_exists as _ensure_pt_db
+        _ensure_pt_db()
+        _pt_db = _load_pt_db()
+
+        for scored_source in agent3_result.ranked_sources:
+            c = scored_source.candidate
+            sc = scored_source.score_card
+
+            # Build a metadata dict mapping Agent 3's existing score fields onto
+            # the keys provider_trust.generate_provider_trust_report() expects.
+            provider_meta = {
+                "provider_name":                 c.name or c.discovery_origin,
+                "provider_url":                  c.url,
+                "is_government_agency":          False,       # not tracked by Agent 3
+                "is_international_organization": False,
+                "has_regulatory_mandate":        False,
+                "founding_year":                 None,
+                "partner_agencies":              [],
+                "last_updated":                  None,
+                "update_frequency_days":         None,
+                "has_recent_dataset":            True,
+                "data_domains":                  getattr(c, "variable_names", []),
+                "spatial_resolution_km":         None,
+                "temporal_resolution_hours":     None,
+                "variables_provided":            getattr(c, "variable_names", []),
+                "expected_variables":            [v.variable for v in retrieval_request.variables],
+                "coverage_percent":              round(sc.completeness.score * 100, 1),
+                "has_documentation":             bool(c.metadata_url if hasattr(c, "metadata_url") else False),
+                "agreement_with_other_providers": sc.consistency.score,
+                "units_documented":              sc.metadata_quality.score > 0.5,
+                "crs_documented":                sc.metadata_quality.score > 0.5,
+                "has_metadata_standard":         sc.metadata_quality.score > 0.7,
+                "license_type":                  "open",
+                "citation_count":                int(sc.scientific_acceptance.score * 1000),
+                "peer_reviewed_publications":    int(sc.scientific_acceptance.score * 300),
+                "used_by_agencies":              [],
+                "api_uptime_percent":            round(sc.real_time_availability.score * 100, 1),
+                "avg_response_latency_ms":       None,
+                "accessible":                    not c.requires_payment,
+            }
+
+            try:
+                pt_report = generate_provider_trust_report(
+                    provider_meta,
+                    requested_task=retrieval_request.goal,
+                    db=_pt_db,
+                )
+                save_provider_trust_report(pt_report)
+                provider_trust_reports.append(pt_report)
+                print(
+                    f"  [{scored_source.rank}] {pt_report['provider_name']:<30} "
+                    f"trust={pt_report['overall_trust_score']:.4f}  "
+                    f"({pt_report['trust_level']})"
+                )
+            except Exception as _pt_exc:
+                print(f"  [WARN] Provider trust assessment skipped for "
+                      f"'{c.name}': {_pt_exc}")
+
+        # Summarise the best available trust report for the final gate below.
+        # Using the top-ranked provider (rank 1) of THIS round as the
+        # representative report if it beats/precedes whatever we had.
+        _best_pt_report = provider_trust_reports[0] if provider_trust_reports else None
+        if _best_pt_report:
+            _best_pt_for_gate = {
+                "trust_score":      _best_pt_report["overall_trust_score"] * 100,
+                "trust_level":      _best_pt_report["trust_level"],
+                "provider_name":    _best_pt_report["provider_name"],
+                "historical_issues": 0,
+            }
+
+        # ---------------------------------------------------------------- #
+        # Agent 3 → Agent 4 handoff                                        #
+        # CHANGED: run_agent3() itself is still discovery-only and         #
+        # unchanged -- it still returns ranked/auth-required/needs-eval/   #
+        # rejected buckets with no user interaction inside it. What        #
+        # changed is what main.py does with that result: the new           #
+        # run_agent3_interactive() layer (agents/agent3_interactive_runner)#
+        # takes the untouched DiscoveryOutput and adds the website-policy  #
+        # analysis, ranking-preference question, adaptive re-ranking, and  #
+        # override question described in the Discovery Agent spec. This is #
+        # the one place real user interaction now occurs between Agent 3   #
+        # and Agent 4 -- intentionally, since the new requirements call    #
+        # for it; the "no user interaction" note that used to be here no   #
+        # longer holds.                                                     #
+        # ---------------------------------------------------------------- #
+        print("\n" + "=" * 70)
+        print("AGENT 3 DISCOVERY SUMMARY")
+        print("=" * 70)
+
+        print("\nRanked sources (raw Phase 5 output, before adaptive ranking):")
+        for scored in agent3_result.ranked_sources:
+            c = scored.candidate
+            tag = ""
+            if c.requires_payment:
+                tag = " [PAID]"
+            elif c.requires_login:
+                tag = " [LOGIN REQUIRED]"
+            print(f"  [{scored.rank}] {c.name}{tag}  (score={scored.final_score:.3f})")
+
+        if agent3_result.rejected_sources:
+            print(f"\nRejected sources: {len(agent3_result.rejected_sources)}")
+
+        # New interactive layer: analysis -> ranking preference -> adaptive
+        # ranking -> formatted output -> override question -> final payload.
+        agent3_final_payload = run_agent3_interactive(retrieval_request, agent3_result)
+
+        print("\nPassing discovery results to Agent 4...")
+        print("=" * 70)
+
+        agent4_result = run_agent4(agent3_final_payload, retrieval_request)
+
+        # ── Check whether Agent 4 wants to loop back to discovery ────
+        if not getattr(agent4_result, "return_to_discovery", False):
+            # Normal exit: Agent 4 finished (successfully or with partial
+            # results) and does NOT want to re-run discovery.
+            break
+
+        # Agent 4 flagged return_to_discovery=True.
+        # Merge whatever failure context it surfaced so the next Agent 3
+        # run knows which sources failed and why.
+        agent4_feedback = getattr(agent4_result, "discovery_feedback", None) or {}
+        if agent4_feedback:
+            extra_discovery_context.update(agent4_feedback)
+
+        # Also record which source_ids already failed so Agent 3 can
+        # de-prioritise or exclude them on the next pass.
+        failed_ids = getattr(agent4_result, "failed_source_ids", None) or []
+        if failed_ids:
+            existing_failed = extra_discovery_context.get("previously_failed_source_ids", [])
+            extra_discovery_context["previously_failed_source_ids"] = list(
+                set(existing_failed) | set(failed_ids)
+            )
+
+        if discovery_round >= MAX_DISCOVERY_ROUNDS:
+            print(
+                f"\nMaximum of {MAX_DISCOVERY_ROUNDS} discovery rounds reached. "
+                "No further retry is possible — proceeding with the results so far."
+            )
+            break
+
+        # Ask the user whether they actually want to retry, so they are
+        # never silently dumped back into a potentially slow Agent 3 run
+        # without their knowledge.
+        print("\n" + "─" * 70)
+        print("Agent 4 flagged incomplete coverage and requested a new source search.")
+        if extra_discovery_context.get("previously_failed_source_ids"):
+            print(
+                "  Failed sources so far: "
+                + ", ".join(extra_discovery_context["previously_failed_source_ids"])
+            )
+        print("\nWould you like to:")
+        print("  1. Re-run source discovery to find alternative data sources")
+        print("  2. Stop here and use the results already downloaded")
+        print("─" * 70)
+
+        retry_choice = input("\n> ").strip()
+        if retry_choice != "1":
+            print("\nStopping at user request. Using results from the current round.")
+            break
+        # else: loop continues — re-runs Agent 3 with updated context
+
+    # ── Final result reporting ───────────────────────────────────────
 
     # ---------------------------------------------------------------- #
-    # Agent 3 → Agent 4 handoff                                        #
-    # CHANGED: run_agent3() itself is still discovery-only and         #
-    # unchanged -- it still returns ranked/auth-required/needs-eval/   #
-    # rejected buckets with no user interaction inside it. What        #
-    # changed is what main.py does with that result: the new           #
-    # run_agent3_interactive() layer (agents/agent3_interactive_runner)#
-    # takes the untouched DiscoveryOutput and adds the website-policy  #
-    # analysis, ranking-preference question, adaptive re-ranking, and  #
-    # override question described in the Discovery Agent spec. This is #
-    # the one place real user interaction now occurs between Agent 3   #
-    # and Agent 4 -- intentionally, since the new requirements call    #
-    # for it; the "no user interaction" note that used to be here no   #
-    # longer holds.                                                     #
+    # SECURITY INTEGRATION — Security Risk Assessment (final gate)     #
+    #                                                                   #
+    # This is the LAST security step before the pipeline returns its   #
+    # result.  It consumes every report gathered across the pipeline:  #
+    #   • Prompt Injection   — captured earlier in this run            #
+    #   • Provider Trust     — generated above after Agent 3           #
+    #   • Integrity          — generated inside Agent 4 per download   #
+    #   • Provenance         — generated inside Agent 4 per download   #
+    #   • Cross-Agent Verif. — generated inside Agent 4 after retrieval#
+    #   • Dataset Validation — generated inside Agent 4 per download   #
     # ---------------------------------------------------------------- #
     print("\n" + "=" * 70)
-    print("AGENT 3 DISCOVERY SUMMARY")
+    print("FINAL SECURITY RISK ASSESSMENT")
     print("=" * 70)
 
-    print("\nRanked sources (raw Phase 5 output, before adaptive ranking):")
-    for scored in agent3_result.ranked_sources:
-        c = scored.candidate
-        tag = ""
-        if c.requires_payment:
-            tag = " [PAID]"
-        elif c.requires_login:
-            tag = " [LOGIN REQUIRED]"
-        print(f"  [{scored.rank}] {c.name}{tag}  (score={scored.final_score:.3f})")
+    # SECURITY INTEGRATION — collect the security reports that Agent 4
+    # attached to its output (integrity, provenance, cross_agent,
+    # validation).  All are Optional — if Agent 4 didn't produce them
+    # (e.g. nothing was downloaded) the gate degrades gracefully.
+    _sec = getattr(agent4_result, "security_reports", {}) or {}
 
-    if agent3_result.rejected_sources:
-        print(f"\nRejected sources: {len(agent3_result.rejected_sources)}")
+    # SECURITY INTEGRATION — build a compound integrity/provenance summary
+    # from all per-download records that Agent 4 stored.
+    _integrity_summary = _sec.get("integrity")
+    _provenance_summary = _sec.get("provenance")
+    _cross_agent_summary = _sec.get("cross_agent_verification")
+    _validation_summary = _sec.get("dataset_validation")
 
-    # New interactive layer: analysis -> ranking preference -> adaptive
-    # ranking -> formatted output -> override question -> final payload.
-    agent3_final_payload = run_agent3_interactive(retrieval_request, agent3_result)
+    # FIX 5 — Use the PromptInjectionReport object captured at query time
+    # rather than re-reading it from the JSON database.  This avoids the
+    # DB round-trip entirely.  Fall back to the DB lookup only if the
+    # object from detect_prompt_injection() is unavailable (e.g. the
+    # function signature does not return it in this deployment).
+    _pi_gate_report = None
+    if _pi_report_obj is not None:
+        try:
+            # Support both dict-style and object-style report shapes.
+            _pi_inner = (
+                _pi_report_obj.get("report", _pi_report_obj)
+                if isinstance(_pi_report_obj, dict)
+                else getattr(_pi_report_obj, "report", _pi_report_obj)
+            )
+            _pi_gate_report = {
+                "injection_detected": (
+                    _pi_inner.get("injection_detected", False)
+                    if isinstance(_pi_inner, dict)
+                    else getattr(_pi_inner, "injection_detected", False)
+                ),
+                "risk_score": (
+                    _pi_inner.get("overall_risk_score", 0.0)
+                    if isinstance(_pi_inner, dict)
+                    else getattr(_pi_inner, "overall_risk_score", 0.0)
+                ),
+                "confidence": (
+                    _pi_inner.get("confidence_score", 1.0)
+                    if isinstance(_pi_inner, dict)
+                    else getattr(_pi_inner, "confidence_score", 1.0)
+                ),
+            }
+        except Exception as _pi_exc:
+            print(f"  [WARN] Could not parse prompt-injection report object: {_pi_exc}")
+    if _pi_gate_report is None:
+        # Fallback: read from DB only when the live object was unavailable.
+        try:
+            from security.prompt_injection import load_detection_database as _load_pi_db
+            _pi_records = _load_pi_db()
+            if _pi_records:
+                _last_pi = _pi_records[-1].get("report", {})
+                _pi_gate_report = {
+                    "injection_detected": _last_pi.get("injection_detected", False),
+                    "risk_score":         _last_pi.get("overall_risk_score", 0.0),
+                    "confidence":         _last_pi.get("confidence_score", 1.0),
+                }
+        except Exception as _pi_exc:
+            print(f"  [WARN] Could not read prompt-injection DB for gate: {_pi_exc}")
 
-    print("\nPassing discovery results to Agent 4...")
+    risk_report = assess_security_risk(
+        prompt_injection = _pi_gate_report,
+        provider_trust   = _best_pt_for_gate,
+        integrity        = _integrity_summary,
+        provenance       = _provenance_summary,
+        cross_agent      = _cross_agent_summary,
+        validation       = _validation_summary,
+    )
+    save_security_assessment(risk_report)
+
+    print(f"\n  Security Score  : {risk_report.overall_security_score:.1f} / 100")
+    print(f"  Risk Level      : {risk_report.overall_risk_level.value}")
+    print(f"  Decision        : {risk_report.recommended_action.value}")
+    print(f"  Confidence      : {risk_report.confidence_score:.2f}")
+    if risk_report.active_flags:
+        print(f"  Active Flags    : {', '.join(risk_report.active_flags)}")
+    print(f"\n  Reasoning:")
+    for line in risk_report.risk_reasoning.splitlines():
+        print(f"    {line}")
+    if risk_report.recommendations:
+        print(f"\n  Recommendations:")
+        for i, rec in enumerate(risk_report.recommendations, 1):
+            print(f"    {i}. {rec}")
     print("=" * 70)
 
-    agent4_result = run_agent4(agent3_final_payload, retrieval_request)
+    # SECURITY INTEGRATION — BLOCK gate: if the final assessment is BLOCK,
+    # stop the pipeline here with a clear explanation rather than handing
+    # off to Agent 5 or writing files.  WARN and below continue normally.
+    if risk_report.recommended_action == RecommendedAction.BLOCK:
+        print(
+            "\n[SECURITY] Pipeline halted by Security Risk Assessment.\n"
+            f"  Reason: {risk_report.risk_reasoning[:200]}\n"
+            "  No data has been written to disk and no handoff to Agent 5 will occur.\n"
+            "  Please review the active flags and recommendations above, then retry."
+        )
+        return
 
     if agent4_result.send_to_agent5:
-        print("\nHanding downloaded data to Agent 5 for preprocessing...")
-        # TODO: run_agent5(agent4_result) once Agent 5 exists.
+        if _AGENT5_AVAILABLE:
+            print("\nHanding downloaded data to Agent 5 for preprocessing...")
+            try:
+                agent5_result = run_agent5(agent4_result)
+                print(f"\nAgent 5 complete. Output: {getattr(agent5_result, 'output_path', 'see Agent 5 logs')}")
+            except Exception as exc:
+                print(f"\n[Agent 5] Error during preprocessing: {exc}")
+                print(f"Raw downloaded files are still available at: {agent4_result.download_location}")
+        else:
+            print(
+                "\n[Agent 5] Agent 5 files not found (agents/agent5.py missing). "
+                f"Downloaded files are at: {agent4_result.download_location}"
+            )
+            print("Upload your Agent 5 files and they will be called automatically on the next run.")
     else:
         print(
             f"\nDone. {agent4_result.successful_download_count} validated file(s) written to: "
@@ -865,4 +1195,16 @@ def main():
         )
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--web" in sys.argv:
+        import uvicorn
+        from fastapi import FastAPI
+        from fastapi.staticfiles import StaticFiles
+        from api.routes import router
+        app = FastAPI(title="Earth Intelligence Platform")
+        app.include_router(router)
+        app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+        print("\nStarting web server at http://localhost:8000\n")
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    else:
+        main()

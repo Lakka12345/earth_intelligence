@@ -25,10 +25,131 @@ claiming it was subsetted.
 """
 
 import os
+import shutil
 import time
 import hashlib
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+
+# ---------------------------------------------------------------------------
+# API token registry
+# ---------------------------------------------------------------------------
+# Load provider API keys from the project .env file at import time.
+# Connectors that need a token call _get_api_token(provider_key) — if
+# the key is missing they receive None and should raise MissingApiToken
+# so download_source() can catch it and flag the entry as
+# "Authentication Failed – Missing Key" instead of making a doomed
+# anonymous request that the server will reject with a cryptic 401/403.
+#
+# Supported env-var names (add new providers here):
+#   NOAA_CDO_TOKEN       – NOAA Climate Data Online API
+#   COPERNICUS_API_KEY   – Copernicus Climate Data Store (CDS)
+#   COPERNICUS_UID       – CDS UID (used alongside the key)
+#   NASA_EARTHDATA_TOKEN – NASA EarthData bearer token
+#   USGS_TOKEN           – USGS Water Services
+#   ECMWF_API_KEY        – ECMWF Open Data
+#   OPENAQ_API_KEY       – OpenAQ v3 (free tier, but rate-limited without key)
+# ---------------------------------------------------------------------------
+
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(override=False)   # never overwrite a key already in the environment
+except ImportError:
+    pass   # python-dotenv not installed; os.environ still works for keys set externally
+
+_PROVIDER_ENV_VARS: Dict[str, str] = {
+    # Maps a short provider key → the environment variable that holds its token.
+    # The short key matches what connectors pass to _get_api_token().
+    "noaa_cdo":          "NOAA_CDO_TOKEN",
+    "copernicus":        "COPERNICUS_API_KEY",
+    "copernicus_uid":    "COPERNICUS_UID",
+    "nasa_earthdata":    "NASA_EARTHDATA_TOKEN",
+    "usgs":              "USGS_TOKEN",
+    "ecmwf":             "ECMWF_API_KEY",
+    "openaq":            "OPENAQ_API_KEY",
+}
+
+
+class MissingApiToken(RuntimeError):
+    """
+    Raised by connectors (or _inject_auth_headers) when a required API
+    token is absent from the environment.  download_source() catches
+    this and records the manifest entry as an auth failure rather than
+    retrying the request.
+    """
+    def __init__(self, provider_key: str, env_var: str):
+        self.provider_key = provider_key
+        self.env_var = env_var
+        super().__init__(
+            f"Missing API token for '{provider_key}'. "
+            f"Set the environment variable {env_var} in your .env file or shell "
+            f"and restart the pipeline. "
+            f"(Free registration: see provider documentation for {provider_key}.)"
+        )
+
+
+def _get_api_token(provider_key: str) -> Optional[str]:
+    """
+    Returns the API token for a provider, or None if not configured.
+    Never raises — callers decide what to do with a missing token.
+    """
+    env_var = _PROVIDER_ENV_VARS.get(provider_key.lower())
+    if not env_var:
+        return None
+    return os.environ.get(env_var) or None
+
+
+def _require_api_token(provider_key: str) -> str:
+    """
+    Returns the token or raises MissingApiToken.
+    Use this in connectors where a token is unconditionally required
+    (e.g. NOAA CDO — anonymous requests always fail).
+    """
+    token = _get_api_token(provider_key)
+    if not token:
+        env_var = _PROVIDER_ENV_VARS.get(provider_key.lower(), f"{provider_key.upper()}_TOKEN")
+        raise MissingApiToken(provider_key, env_var)
+    return token
+
+
+def _inject_auth_headers(
+    headers: Dict[str, str],
+    provider_key: str,
+    *,
+    require: bool = False,
+) -> Dict[str, str]:
+    """
+    Adds the provider's API token to a headers dict and returns it.
+
+    Args:
+        headers:      Existing headers dict (not mutated; a copy is returned).
+        provider_key: Short provider key from _PROVIDER_ENV_VARS.
+        require:      If True, raise MissingApiToken when no token is found.
+                      If False, return the headers unchanged (anonymous request).
+
+    Token injection conventions by provider:
+      noaa_cdo        → 'token: <value>'           (CDO's non-standard header)
+      nasa_earthdata  → 'Authorization: Bearer <value>'
+      ecmwf           → 'X-ECMWF-Key: <value>'
+      all others      → 'Authorization: Bearer <value>'
+    """
+    token = _get_api_token(provider_key)
+    if not token:
+        if require:
+            env_var = _PROVIDER_ENV_VARS.get(provider_key.lower(), f"{provider_key.upper()}_TOKEN")
+            raise MissingApiToken(provider_key, env_var)
+        return dict(headers)   # no token available, return unchanged copy
+
+    h = dict(headers)
+    key_lower = provider_key.lower()
+    if key_lower == "noaa_cdo":
+        h["token"] = token                          # CDO uses a bare 'token' header
+    elif key_lower == "ecmwf":
+        h["X-ECMWF-Key"] = token
+    else:
+        h["Authorization"] = f"Bearer {token}"     # standard Bearer for everything else
+
+    return h
 
 from connectors.base_connector import Credentials, FetchRequest
 from connectors.connector_factory import get_connector
@@ -42,6 +163,25 @@ from models.agent4_schemas import (
 )
 from models.website_analysis_schemas import SourceSnapshot
 from browser.browser_utils import playwright_available, provider_key_from_url
+
+def playwright_available() -> bool:
+    """
+    Browser-assisted download support (agents/browser_utils.py,
+    browser_manager.py, browser_login.py, browser_download.py,
+    browser_session.py) has not been built yet in this project.
+
+    Returning False here keeps the whole Agent 4 pipeline importable
+    and runnable today -- every connector that only needs the API path
+    works exactly as before. The only thing disabled is the fallback
+    for connectors that declare requires_browser_download /
+    requires_browser_auth, which will now report a clear "browser
+    download not available" error instead of crashing on import.
+
+    Once those browser_*.py files exist, delete this stub and restore:
+        from agents.browser_utils import playwright_available, provider_key_from_url
+    """
+    return False
+
 
 DEFAULT_MANAGED_FOLDER = os.path.join(os.getcwd(), "data")
 MAX_DOWNLOAD_ATTEMPTS = 3
@@ -338,6 +478,74 @@ def _run_with_retries(label: str, fetch_callable):
     raise DownloadRetryError(str(last_error), retries_attempted) from last_error
 
 
+def _move_to_dest(local_path: str, dest_dir: str, filename_hint: str) -> str:
+    """
+    Ensures a successfully-downloaded file ends up in dest_dir.
+
+    Many connectors (open_meteo, CKAN, generic HTTP) write to the
+    system temp folder and return that temp path rather than the
+    dest_path we supplied in FetchRequest.  Without this step the
+    file lives in C:\\Users\\<user>\\AppData\\Local\\Temp\\... (or /tmp/...)
+    forever and the manifest points at a path the user never sees.
+
+    Strategy:
+      1. If local_path is already inside dest_dir — nothing to do.
+      2. Try shutil.move() first (rename on the same drive, copy+delete
+         across drives / filesystems).
+      3. If move raises (e.g. cross-device with a locked source file),
+         fall back to shutil.copy2() and leave the original in place —
+         the user still gets their data and we log a warning.
+
+    Returns the final path where the file now lives.
+    """
+    if not local_path or not os.path.exists(local_path):
+        return local_path  # nothing to move; caller will report the error
+
+    real_dest_dir = os.path.realpath(dest_dir)
+    real_src      = os.path.realpath(local_path)
+
+    # Already in the right place — skip the move entirely
+    if real_src.startswith(real_dest_dir + os.sep) or real_src == real_dest_dir:
+        return local_path
+
+    os.makedirs(dest_dir, exist_ok=True)
+
+    # Determine the final filename: prefer the connector's own filename
+    # over the generic .dat placeholder we generated in dest_path.
+    src_basename = os.path.basename(local_path)
+    final_name   = src_basename if src_basename else filename_hint
+    final_path   = os.path.join(dest_dir, final_name)
+
+    # Avoid silently overwriting a pre-existing file with the same name
+    if os.path.exists(final_path) and os.path.realpath(final_path) != real_src:
+        base, ext   = os.path.splitext(final_name)
+        final_name  = f"{base}_{int(time.time())}{ext}"
+        final_path  = os.path.join(dest_dir, final_name)
+
+    try:
+        shutil.move(local_path, final_path)
+        print(f"  [Download Manager] Moved to destination: {final_path}")
+    except Exception as move_exc:
+        # Cross-device or locked-file edge case — copy and keep the original
+        try:
+            shutil.copy2(local_path, final_path)
+            print(
+                f"  [Download Manager] move() failed ({move_exc}); "
+                f"copy2() succeeded — original remains at {local_path}"
+            )
+        except Exception as copy_exc:
+            # Both failed — return the original temp path so the manifest
+            # is honest about where the file actually is
+            print(
+                f"  [Download Manager] WARNING: could not move or copy file to "
+                f"{dest_dir}: move={move_exc}, copy={copy_exc}. "
+                f"File remains at {local_path}"
+            )
+            return local_path
+
+    return final_path
+
+
 def download_source(
     snapshot: SourceSnapshot,
     variables: List[str],
@@ -362,6 +570,45 @@ def download_source(
     )
     total_retries = 0
 
+    # ── Early-exit: missing API token ────────────────────────────────
+    # Some connectors raise MissingApiToken during initialisation or
+    # the first method call.  Catch it here — before any network
+    # attempt — so we record a clean "Authentication Failed" entry and
+    # move on, rather than letting an uninformative 401/403 bubble up
+    # through the retry loop.
+    #
+    # Connectors that need a token should call _require_api_token() at
+    # the start of fetch_subset / fetch_full.  The exception propagates
+    # instantly (no retries), lands here, and we return a failed
+    # DownloadManifestEntry with a clear human-readable message
+    # explaining which .env variable needs to be set.
+    try:
+        # Probe the connector's token requirement without making a
+        # network call.  Not all connectors implement this optional
+        # method; those that don't simply return None.
+        _connector_check = getattr(connector, "check_token_available", None)
+        if callable(_connector_check):
+            _connector_check()
+    except MissingApiToken as exc:
+        _auth_msg = (
+            f"Authentication Failed – Missing API Key: {exc}  "
+            f"Set {_PROVIDER_ENV_VARS.get(exc.provider_key.lower(), exc.env_var)} "
+            f"in your .env file and re-run."
+        )
+        print(f"  [Download Manager] {_auth_msg}")
+        return DownloadManifestEntry(
+            source_id=snapshot.source_id,
+            source_name=snapshot.name,
+            local_path=None,
+            fetch_method=None,
+            variables_included=variables,
+            success=False,
+            error=_auth_msg,
+            retries_attempted=0,
+            dataset_metadata=dataset_metadata,
+            provider=snapshot.name,
+        )
+
     try:
         local_path, retries = _run_with_retries(
             "Server-side subset",
@@ -369,6 +616,7 @@ def download_source(
         )
         total_retries += retries
         result = _engine_report(fetch_request)
+        local_path = _move_to_dest(local_path, dest_dir, os.path.basename(dest_path))
         expected_size = dataset_metadata.file_size_bytes if dataset_metadata else None
         validation_notes = list(getattr(result, "validation_notes", None) or _validate_download(local_path, expected_size=expected_size, metadata=dataset_metadata))
         success = _is_valid_download(local_path, validation_notes)
@@ -390,6 +638,16 @@ def download_source(
     except NotImplementedError:
         print(f"  {connector.name} connector doesn't support subsetting for this source -- "
               f"downloading full file and attempting a local trim.")
+    except MissingApiToken as exc:
+        # Token missing discovered mid-attempt — no point retrying
+        _auth_msg = f"Authentication Failed – Missing API Key: {exc}"
+        print(f"  [Download Manager] {_auth_msg}")
+        return DownloadManifestEntry(
+            source_id=snapshot.source_id, source_name=snapshot.name, local_path=None,
+            fetch_method=None, variables_included=variables, success=False,
+            error=_auth_msg, retries_attempted=total_retries,
+            dataset_metadata=dataset_metadata, provider=snapshot.name,
+        )
     except DownloadRetryError as exc:
         total_retries += exc.retries_attempted
         print(f"  Server-side subset failed after retries: {exc}")
@@ -405,6 +663,7 @@ def download_source(
         )
         total_retries += retries
         result = _engine_report(fetch_request)
+        local_path = _move_to_dest(local_path, dest_dir, os.path.basename(dest_path))
         trimmed = _trim_local_file(local_path, variables)
         expected_size = dataset_metadata.file_size_bytes if dataset_metadata else None
         if result is not None and trimmed:
@@ -427,6 +686,15 @@ def download_source(
             checksum_status=_checksum_status(local_path, dataset_metadata, result),
             validation_status=_validation_status(success, validation_notes),
             error=None if success else "; ".join(validation_notes),
+        )
+    except MissingApiToken as exc:
+        _auth_msg = f"Authentication Failed – Missing API Key: {exc}"
+        print(f"  [Download Manager] {_auth_msg}")
+        return DownloadManifestEntry(
+            source_id=snapshot.source_id, source_name=snapshot.name, local_path=None,
+            fetch_method=FetchMethod.full_download_untrimmed, variables_included=variables,
+            success=False, error=_auth_msg, retries_attempted=total_retries,
+            dataset_metadata=dataset_metadata, provider=snapshot.name,
         )
     except DownloadRetryError as exc:
         total_retries += exc.retries_attempted
@@ -464,7 +732,7 @@ def download_source(
                 dataset_metadata=dataset_metadata,
             )
             if browser_result.success and browser_result.local_path:
-                local_path = browser_result.local_path
+                local_path = _move_to_dest(browser_result.local_path, dest_dir, os.path.basename(dest_path))
                 validation_notes = _validate_download(
                     local_path,
                     expected_size=dataset_metadata.file_size_bytes if dataset_metadata else None,

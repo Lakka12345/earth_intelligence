@@ -3,7 +3,7 @@ Agent 4 core schemas.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -163,6 +163,12 @@ class Agent4Output(BaseModel):
     download_location: Optional[str] = None
     send_to_agent5: bool = False
     notes: List[str] = Field(default_factory=list)
+    # SECURITY INTEGRATION — compound per-category security report dict
+    # (integrity / provenance / cross_agent_verification / dataset_validation)
+    # attached by run_agent4() and consumed by main.py's final
+    # Security Risk Assessment gate. Must be a declared field -- passing it
+    # as an undeclared constructor kwarg is silently ignored by pydantic.
+    security_reports: Optional[Dict[str, Any]] = None
 
     @property
     def successful_download_count(self) -> int:

@@ -47,6 +47,15 @@ def init_session_state() -> None:
         "welcome_dismissed": False,
         "active_page": "Dashboard",
         "saved_analyses": [],
+
+        # Voice / chat interface state
+        "voice_session_id": None,           # session_id returned by /api/stt and /api/chat
+        "voice_thread": [],                 # list of {"role": "user"|"agent", "text": str, "meta": dict}
+        "voice_input_text": "",             # text that was transcribed or typed in voice panel
+        "voice_agent1_output": None,        # agent1_output dict from /api/chat response
+        "voice_status": "",                 # status bar message for the voice panel
+        "voice_mic_status": "Click 'Record' to speak your query",
+        "voice_is_processing": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:

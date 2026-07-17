@@ -41,14 +41,28 @@ class StaticDatasetConnector(BaseConnector):
     api_keywords: tuple = ()
 
     def can_handle(self, snapshot: SourceSnapshot) -> bool:
-        provider_text = f"{snapshot.name} {snapshot.url} {snapshot.api_type} {snapshot.dataset_type}"
+        # CHANGED: previously matched provider_keywords against
+        # f"{name} {url} {api_type} {dataset_type}". api_type and
+        # dataset_type are short, generic classifier tags (e.g.
+        # "reanalysis", "gridded") set by Agent 3 -- they're not
+        # identifying text about *which* provider a source is, and a
+        # keyword like "era5" only has to appear as a substring
+        # *anywhere* in that combined blob to count as a match. That's
+        # how a source like "Copernicus Land Monitoring Service" could
+        # end up matching the Copernicus Climate Data Store (ERA5)
+        # connector's keywords if its api_type/dataset_type tag happened
+        # to overlap one of them, even though its name/url don't.
+        # Provider identity should be judged from the provider's actual
+        # name and URL, not from short taxonomy tags that were never
+        # meant to carry provider-identifying information.
+        provider_text = f"{snapshot.name} {snapshot.url}"
         return any_token_matches(self.provider_keywords, provider_text)
 
     def match_score(self, snapshot: SourceSnapshot, context=None) -> ConnectorMatch:
         if not self.can_handle(snapshot):
             return ConnectorMatch(score=0, reason="Provider keywords did not match.")
         score = max(10, 1000 - self.descriptor.priority)
-        provider_text = f"{snapshot.name} {snapshot.url} {snapshot.api_type} {snapshot.dataset_type}"
+        provider_text = f"{snapshot.name} {snapshot.url}"
         if any_token_matches(
             (self.descriptor.provider_name, self.descriptor.connector_id.replace("_", " ")),
             provider_text,

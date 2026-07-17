@@ -1,56 +1,224 @@
 """
 Agent 4 — Access Resolver.
 
-For each source in the coverage plan, resolves how Agent 4 will
-actually get access to it, driven entirely by the AccessibilityProfile
-Agent 3 already computed. Produces one SourceDecision per source.
-Reuses stored credentials silently (no need to re-ask every run) --
-that's the whole point of the credential-persistence feature.
+Credential states: Free/Anonymous | Requires User Credentials | Paid.
+
+When a source requires login, the user is offered four options:
+  existing    — supply credentials they already have (cached for future runs)
+  new         — automated registration assistant (Playwright form-fill)
+  skip        — skip this source
+  alternatives — search lower-ranked alternatives
+
+Credentials are returned separately from SourceDecision so secrets never
+ride on the serialised output path.
 """
 
+import base64
 import getpass
-import random
-import string
-import time
+import json
+import os
 from typing import Dict, Optional
 
 from connectors.base_connector import Credentials
-from connectors.connector_factory import get_connector
-from agents.agent4_credential_store import load_credentials, save_credentials, save_provider_credentials
+# Renamed on import to avoid clashing with the simpler save_credentials/
+# load_credentials fallback pair defined below (point 2/3 of this change).
+# These two keep talking to the full multi-field credential store
+# (bearer tokens, API keys, refresh tokens, etc.) exactly as before.
+from agents.agent4_credential_store import (
+    load_credentials as store_load_credentials,
+    save_provider_credentials as store_save_provider_credentials,
+)
+from agents.agent4_registration_assistant import guided_new_account_flow
 from models.agent4_schemas import AccessDecisionType, SourceDecision
 from models.website_analysis_schemas import CredentialEase, SourceSnapshot, WebsiteAnalysisResult
 
+# ---------------------------------------------------------------------------
+# Keyring-missing fallback: local JSON credential cache
+# ---------------------------------------------------------------------------
+# `keyring` needs a working OS credential backend (macOS Keychain, Windows
+# Credential Locker, a Secret Service / KWallet on Linux, etc.). Headless
+# servers, containers, and some CI environments don't have one, so importing
+# it can fail outright or fail at first use. Either way we want retries in
+# the access-resolution loop to survive without re-prompting the user.
+#
+# IMPORTANT: base64 is *obfuscation*, not encryption -- it is trivially
+# reversible by anyone who can read the cache file. This fallback exists so
+# credentials aren't stored in cleartext-with-obvious-field-names, and so
+# retries don't force the user to retype a password every loop iteration.
+# It is NOT a substitute for real at-rest encryption. If that's a
+# requirement, swap this for something like `cryptography.fernet` with a
+# locally-stored key instead of the base64 encode/decode below.
+try:
+    import keyring
+    _KEYRING_AVAILABLE = True
+except ImportError:
+    keyring = None
+    _KEYRING_AVAILABLE = False
 
-def _generate_random_secret(length: int = 16) -> str:
-    alphabet = string.ascii_letters + string.digits
-    return "".join(random.choices(alphabet, k=length))
+_FALLBACK_CACHE_PATH = os.path.join("data", ".credentials_cache.json")
+_KEYRING_SERVICE_PREFIX = "agent4_source_credentials"
+
+# ---------------------------------------------------------------------------
+# Session-level credential registry
+# ---------------------------------------------------------------------------
+# Many providers in the same run share a single sign-on identity (e.g. a
+# researcher's personal email/password used to register on several small
+# data portals in one sitting). This registry remembers every credential
+# entered or reused *during this process's lifetime* — keyed by provider
+# name — purely in memory (never written to disk itself; persistence to
+# disk is still handled separately by store_save_provider_credentials /
+# save_credentials). It lets _login_required_menu offer "reuse the
+# credentials you just used for <other provider>?" instead of re-asking
+# from scratch for every single source.
+_SESSION_CREDENTIALS: Dict[str, Credentials] = {}
 
 
-def _generate_registration_email(snapshot: SourceSnapshot) -> str:
-    safe_provider = "".join(c.lower() for c in snapshot.source_id if c.isalnum())[:24] or "provider"
-    return f"earthintel.{safe_provider}.{int(time.time())}@example.com"
+def _register_session_credentials(provider_name: str, credentials: Optional[Credentials]) -> None:
+    """Remember a credential set against `provider_name` for the rest of this session."""
+    if credentials is None:
+        return
+    _SESSION_CREDENTIALS[provider_name] = credentials
 
 
-def _attempt_self_registration(snapshot: SourceSnapshot) -> Optional[Credentials]:
-    connector = get_connector(snapshot)
-    if not connector.supports_self_registration():
-        print(f"  Automated registration isn't implemented yet for this specific provider "
-              f"({connector.name} connector). This is a known gap, not a guess -- "
-              f"no fabricated credentials will be used.")
-        return None
+def _session_credential_choices(exclude_provider: str) -> Dict[str, Credentials]:
+    """All session-registered credentials except the ones for the provider being resolved."""
+    return {
+        name: creds for name, creds in _SESSION_CREDENTIALS.items()
+        if name != exclude_provider
+    }
 
-    generated_email = _generate_registration_email(snapshot)
+
+def _obfuscate(value: str) -> str:
+    return base64.b64encode(value.encode("utf-8")).decode("ascii")
+
+
+def _deobfuscate(value: str) -> str:
+    return base64.b64decode(value.encode("ascii")).decode("utf-8")
+
+
+def _load_fallback_cache() -> dict:
+    if not os.path.exists(_FALLBACK_CACHE_PATH):
+        return {}
     try:
-        creds = connector.self_register(snapshot, generated_email)
-        print(f"  Registered successfully with username '{creds.username}'.")
-        return creds
-    except NotImplementedError:
-        print(f"  Automated registration isn't implemented yet for this specific provider ({connector.name}).")
-        return None
-    except Exception as exc:
-        print(f"  Registration attempt failed: {exc}")
-        return None
+        with open(_FALLBACK_CACHE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        # Corrupt or unreadable cache -- treat as empty rather than crash.
+        return {}
 
+
+def _write_fallback_cache(cache: dict) -> None:
+    os.makedirs(os.path.dirname(_FALLBACK_CACHE_PATH) or ".", exist_ok=True)
+    with open(_FALLBACK_CACHE_PATH, "w", encoding="utf-8") as f:
+        json.dump(cache, f, indent=2)
+
+
+def clear_all_cached_credentials() -> None:
+    """
+    Wipe the local fallback credential cache (data/.credentials_cache.json)
+    AND clear the OS keyring entries for all known providers.
+
+    Call this to fully reset before entering fresh credentials.
+    This clears the cache that delete_all_credentials() in
+    agent4_credential_store.py does NOT touch.
+    """
+    # 1. Wipe the JSON fallback cache
+    if os.path.exists(_FALLBACK_CACHE_PATH):
+        try:
+            os.remove(_FALLBACK_CACHE_PATH)
+            print(f"[Access Resolver] Removed fallback cache: {_FALLBACK_CACHE_PATH}")
+        except Exception as exc:
+            print(f"[Access Resolver] Could not remove fallback cache: {exc}")
+    else:
+        print(f"[Access Resolver] No fallback cache found at {_FALLBACK_CACHE_PATH} (already clean).")
+
+    # 2. Clear OS keyring entries for known providers
+    if _KEYRING_AVAILABLE:
+        known_providers = [
+            "Copernicus Marine Service (CMEMS)",
+            "Copernicus Climate Data Store (ERA5)",
+            "Copernicus Data Space (Sentinel Hub)",
+            "Copernicus Land Monitoring Service",
+            "NOAA Tides and Currents API",
+            "NOAA GFS via NOMADS",
+            "INCOIS Ocean Data Portal",
+            "Argo Float Data (global, all GDACs)",
+            "GDACS (Global Disaster Alerts)",
+        ]
+        for provider in known_providers:
+            service_id = f"{_KEYRING_SERVICE_PREFIX}:{provider}"
+            try:
+                keyring.delete_password(service_id, provider)
+                print(f"[Access Resolver] Cleared keyring entry for: {provider}")
+            except Exception:
+                pass  # Not stored in keyring — skip silently
+
+    # 3. Also clear the session registry for this run
+    _SESSION_CREDENTIALS.clear()
+    print("[Access Resolver] Session credential registry cleared.")
+
+
+def save_credentials(provider_name: str, username: str, password: str) -> None:
+    """
+    Persist a username/password pair for `provider_name`.
+
+    Uses the OS keyring when available; otherwise falls back to a local
+    base64-obfuscated JSON cache at `data/.credentials_cache.json`, keyed
+    by a unique per-provider service ID so retries within the same
+    access-resolution loop (and later runs) don't need to re-ask the user.
+    """
+    service_id = f"{_KEYRING_SERVICE_PREFIX}:{provider_name}"
+
+    if _KEYRING_AVAILABLE:
+        try:
+            keyring.set_password(service_id, username or provider_name, password)
+            return
+        except Exception:
+            # Keyring import succeeded but the backend itself isn't usable
+            # at runtime (common in headless/containerized environments) --
+            # fall through to the local file cache below.
+            pass
+
+    cache = _load_fallback_cache()
+    cache[service_id] = {
+        "username": _obfuscate(username or ""),
+        "password": _obfuscate(password or ""),
+    }
+    _write_fallback_cache(cache)
+
+
+def load_credentials(provider_name: str) -> Optional[Dict[str, str]]:
+    """
+    Retrieve a previously saved username/password pair for `provider_name`.
+
+    Returns a plain dict with "username" and "password" keys, or None if
+    nothing has been saved yet. Mirrors the save/load pairing in
+    save_credentials(): keyring first, local obfuscated JSON cache as the
+    fallback when keyring is unavailable or fails.
+    """
+    service_id = f"{_KEYRING_SERVICE_PREFIX}:{provider_name}"
+
+    if _KEYRING_AVAILABLE:
+        try:
+            password = keyring.get_password(service_id, provider_name)
+            if password is not None:
+                return {"username": provider_name, "password": password}
+        except Exception:
+            pass
+
+    cache = _load_fallback_cache()
+    entry = cache.get(service_id)
+    if not entry:
+        return None
+    return {
+        "username": _deobfuscate(entry["username"]),
+        "password": _deobfuscate(entry["password"]),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
 
 def resolve_access(
     snapshot: SourceSnapshot,
@@ -58,33 +226,32 @@ def resolve_access(
     pre_collected_credentials: Optional[Dict[str, dict]] = None,
 ) -> "tuple[SourceDecision, Optional[Credentials]]":
     """
-    Returns (decision, credentials). Credentials are returned
-    separately from SourceDecision -- NEVER stored inside it -- because
-    SourceDecision ends up inside Agent4Output, which may be logged,
-    printed, or serialized and handed to Agent 5. Raw secrets must not
-    ride along on that path. The orchestrator is responsible for using
-    the returned Credentials for this run only and then discarding them
-    (persistence, if the user opted in, already happened via
-    save_credentials/keyring above -- that's the only place they touch
-    disk, encrypted, not in-process objects that get passed around).
+    Returns (decision, credentials).
+
+    Decision flow:
+      0. Credentials already collected by Agent 3 this session → reuse silently.
+      1. No authentication required → free_access.
+      2. Stored credentials from a previous run → reuse silently.
+      3. Payment required → user chooses skip or payment redirect.
+      4. Login required → 4-option menu (existing / new / skip / alternatives).
+      5. Unconfirmed access → same 4-option menu.
     """
     acc = analysis.accessibility
     sid = snapshot.source_id
 
     print(f"\n--- Access check: {snapshot.name} ---")
 
-    # 0. Credentials already collected by Agent 3's own access gate
-    # (DiscoveryOutput.retrieval_credentials) -- use these before asking
-    # the user anything or touching the local keyring. This is data
-    # Agent 3 already gathered THIS session; it takes priority.
+    # 0. Credentials already collected by Agent 3 this session.
     pre_collected = (pre_collected_credentials or {}).get(sid)
     if pre_collected:
-        print(f"  Using credentials already collected for this source during discovery.")
+        print("  Using credentials already collected for this source during discovery.")
         return (
             SourceDecision(
-                source_id=sid, decision=AccessDecisionType.user_provided_credentials,
-                credentials_used=True, credentials_persisted=False,
-                notes="Reused credentials already collected by Agent 3's access gate this session.",
+                source_id=sid,
+                decision=AccessDecisionType.user_provided_credentials,
+                credentials_used=True,
+                credentials_persisted=False,
+                notes="Reused credentials collected by Agent 3's access gate this session.",
             ),
             Credentials(
                 username=pre_collected.get("username", pre_collected.get("api_key", "")),
@@ -95,106 +262,313 @@ def resolve_access(
             ),
         )
 
-    # 1. Free access -- nothing to resolve.
+    # 1. Free / anonymous access.
     if not acc.authentication_required:
-        return SourceDecision(source_id=sid, decision=AccessDecisionType.free_access, notes="No login required."), None
-
-    # 2. Already have stored credentials from a previous run.
-    stored = load_credentials(sid)
-    if stored:
-        # Prefer the most capable token available: bearer > refresh > api_key > session > password.
-        effective_token = stored.bearer_token or stored.refresh_token or stored.token
-        print(f"  Using previously saved credentials for {snapshot.name} (no login needed this run).")
         return (
-            SourceDecision(
-                source_id=sid, decision=AccessDecisionType.user_provided_credentials,
-                credentials_used=True, credentials_persisted=True,
-                notes="Reused credentials saved from an earlier run.",
-            ),
-            Credentials(
-                username=stored.username,
-                password=stored.password,
-                api_key=stored.api_key,
-                token=effective_token or stored.session_token,
-                session_token=stored.session_token,
-            ),
+            SourceDecision(source_id=sid, decision=AccessDecisionType.free_access,
+                           notes="No login required."),
+            None,
         )
 
-    # 3. Paid access -- Agent 4 never automates payment.
-    if acc.payment_required:
-        print(f"  This source requires payment.")
-        print(f"  {acc.payment_notes}")
-        print(f"  Pricing/payment URL: {snapshot.url}")
-        print("  Agent 4 will not attempt payment. Free sources will continue while this remains pending.")
-        proceed = input("  Choose: pay now (pay), skip provider (skip), or search free alternatives (free): ").strip().lower()
-        if proceed in ("skip", "free"):
-            return SourceDecision(source_id=sid, decision=AccessDecisionType.skipped_declined, notes="User declined paid access; alternate source will be substituted if available."), None
-        return SourceDecision(source_id=sid, decision=AccessDecisionType.payment_redirect, notes=f"Waiting for user payment at {snapshot.url}."), None
-
-    # 4. Agent can self-register.
-    if acc.credential_ease == CredentialEase.agent_can_self_register:
-        print("  This source allows simple self-service registration. Agent 4 will try it automatically.")
-        creds = _attempt_self_registration(snapshot)
-        if creds:
-            save_credentials(sid, creds.username, creds.password)
+    # 2. Stored credentials from a previous run — validate before reusing.
+    stored = store_load_credentials(sid)
+    if stored:
+        effective_token = stored.bearer_token or stored.refresh_token or stored.token
+        reused_credentials = Credentials(
+            username=stored.username,
+            password=stored.password,
+            api_key=stored.api_key,
+            token=effective_token or stored.session_token,
+            session_token=stored.session_token,
+        )
+        # Quick sanity check: stored credentials must have at least one
+        # non-empty field. Empty/blank records from a failed previous run
+        # are treated as missing so the user is re-prompted rather than
+        # silently forwarding broken credentials downstream.
+        has_content = any([
+            stored.username, stored.password, stored.api_key,
+            stored.token, stored.session_token,
+            stored.bearer_token, stored.refresh_token,
+        ])
+        if has_content:
+            print(f"  Using previously saved credentials for {snapshot.name} (no login needed this run).")
+            print(f"  [Tip] If this source fails with a 401 error, re-run with cleared credentials.")
+            _register_session_credentials(snapshot.name, reused_credentials)
             return (
                 SourceDecision(
-                    source_id=sid, decision=AccessDecisionType.agent_self_registered,
-                    credentials_used=True, credentials_persisted=True,
-                    notes="Agent registered and authenticated automatically.",
+                    source_id=sid,
+                    decision=AccessDecisionType.user_provided_credentials,
+                    credentials_used=True,
+                    credentials_persisted=True,
+                    notes="Reused credentials saved from an earlier run.",
                 ),
-                creds,
+                reused_credentials,
             )
-        manual = input("  Automated registration is not available for this connector. Provide credentials, skip, or search alternatives? (credentials/skip/alternatives): ").strip().lower()
-        if manual in ("credentials", "credential", "creds", "mine"):
+        else:
+            # Stored record is empty/blank — delete it and fall through to prompt.
+            print(
+                f"  WARNING: Stored credentials for {snapshot.name} appear empty or corrupt "
+                f"— clearing and re-prompting."
+            )
+            from agents.agent4_credential_store import delete_credentials as store_delete_credentials
+            store_delete_credentials(sid)
+            # Also clear the fallback JSON cache entry for this provider
+            cache = _load_fallback_cache()
+            service_id = f"{_KEYRING_SERVICE_PREFIX}:{snapshot.name}"
+            if service_id in cache:
+                del cache[service_id]
+                _write_fallback_cache(cache)
+
+    # 3. Paid access.
+    if acc.payment_required:
+        print(f"  This source requires payment.")
+        if acc.payment_notes:
+            print(f"  {acc.payment_notes}")
+        print(f"  Pricing/payment URL: {snapshot.url}")
+        print("  Agent 4 will not automate payment.")
+        choice = input(
+            "  Choose: skip this source (skip) or search free alternatives (alternatives): "
+        ).strip().lower()
+        skipped = choice in ("skip", "s")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=(AccessDecisionType.skipped_declined if skipped
+                          else AccessDecisionType.payment_redirect),
+                notes=("User declined paid access; alternate source will be substituted if available."
+                       if skipped else f"Waiting for user payment at {snapshot.url}."),
+            ),
+            None,
+        )
+
+    # 4 & 5. Login required (confirmed or unconfirmed).
+    return _login_required_menu(sid, snapshot, acc)
+
+
+# ---------------------------------------------------------------------------
+# 4-option login menu
+# ---------------------------------------------------------------------------
+
+def _login_required_menu(
+    sid: str,
+    snapshot: SourceSnapshot,
+    acc,
+) -> "tuple[SourceDecision, Optional[Credentials]]":
+    """
+    Present the four-option menu whenever an account is needed.
+    Loops until the user makes a valid choice.
+    """
+    provider_name    = snapshot.name
+    registration_url = getattr(snapshot, "registration_url", None)
+    login_url        = getattr(snapshot, "login_url", None) or snapshot.url
+
+    print(f"\n  Provider:  {provider_name}")
+    if acc.credential_ease_notes:
+        print(f"  Note:      {acc.credential_ease_notes}")
+    if registration_url:
+        print(f"  Register:  {registration_url}")
+    print(f"  Login:     {login_url}")
+
+    # ------------------------------------------------------------------
+    # Session-level credential reuse offer
+    # ------------------------------------------------------------------
+    # If credentials were already entered (or silently reused) for a
+    # *different* provider earlier in this same run, offer to reuse them
+    # here before falling through to the full 4-option menu. Common case:
+    # one personal email/password used to register on several small
+    # portals in a single session.
+    reuse_candidates = _session_credential_choices(provider_name)
+    if reuse_candidates:
+        names = list(reuse_candidates.keys())
+        print("\n  You've already entered credentials for these provider(s) this session:")
+        for i, name in enumerate(names, start=1):
+            print(f"    {i}. {name}")
+        reuse_choice = input(
+            "  Reuse one of these for this provider too? "
+            "Enter a number, or press Enter to skip: "
+        ).strip()
+        if reuse_choice:
+            try:
+                idx = int(reuse_choice)
+                if 1 <= idx <= len(names):
+                    chosen_name = names[idx - 1]
+                    chosen_credentials = reuse_candidates[chosen_name]
+                    persist = input(
+                        f"  Save these credentials for {provider_name} too so you're never asked again? (yes/no): "
+                    ).strip().lower() in ("yes", "y")
+                    if persist:
+                        store_save_provider_credentials(
+                            sid,
+                            username=chosen_credentials.username,
+                            password=chosen_credentials.password,
+                            api_key=chosen_credentials.api_key,
+                            bearer_token=chosen_credentials.token,
+                        )
+                        print(f"  Credentials saved for {provider_name}.")
+                    _register_session_credentials(provider_name, chosen_credentials)
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.user_provided_credentials,
+                            credentials_used=True,
+                            credentials_persisted=persist,
+                            notes=f"Reused session credentials originally entered for {chosen_name}.",
+                        ),
+                        chosen_credentials,
+                    )
+                print("  Not a valid number -- continuing to the normal menu.")
+            except ValueError:
+                print("  Not a valid number -- continuing to the normal menu.")
+
+    while True:
+        print(
+            f"\n  This dataset requires an account. Do you want to use an [existing] account, "
+            f"make a [new] account, [skip] this source, or search [alternatives]?"
+        )
+        choice = input("  Your choice [existing / new / skip / alternatives]: ").strip().lower()
+
+        if choice in ("existing", "exist", "e"):
+            return _use_existing_credentials(sid, snapshot)
+
+        if choice in ("new", "n", "create"):
+            return _create_new_account(sid, snapshot, registration_url, login_url)
+
+        if choice in ("skip", "s"):
+            return (
+                SourceDecision(
+                    source_id=sid,
+                    decision=AccessDecisionType.skipped_declined,
+                    notes="User chose to skip this source; alternate will be substituted if available.",
+                ),
+                None,
+            )
+
+        if choice in ("alternatives", "alt", "a", "alternative"):
+            return (
+                SourceDecision(
+                    source_id=sid,
+                    decision=AccessDecisionType.skipped_declined,
+                    notes="User requested alternative sources; lower-ranked providers will be tried.",
+                ),
+                None,
+            )
+
+        print("  Please type 'existing', 'new', 'skip', or 'alternatives'.")
+
+
+# ---------------------------------------------------------------------------
+# Option A: existing account
+# ---------------------------------------------------------------------------
+
+def _use_existing_credentials(
+    sid: str,
+    snapshot: SourceSnapshot,
+) -> "tuple[SourceDecision, Optional[Credentials]]":
+    """Collect credentials the user already has and cache them."""
+    return _prompt_user_credentials(sid, snapshot)
+
+
+# ---------------------------------------------------------------------------
+# Option B: new account (Playwright-assisted registration)
+# ---------------------------------------------------------------------------
+
+def _create_new_account(
+    sid: str,
+    snapshot: SourceSnapshot,
+    registration_url: Optional[str],
+    login_url: str,
+) -> "tuple[SourceDecision, Optional[Credentials]]":
+    """
+    Run the guided registration assistant:
+      - Collect personal details from the console.
+      - Use Playwright to fill and submit the registration form.
+      - Wait for email verification.
+      - Cache and return the new credentials.
+    """
+    result = guided_new_account_flow(
+        provider_name=snapshot.name,
+        registration_url=registration_url or login_url,
+        login_url=login_url,
+    )
+
+    if result is None:
+        # Registration could not complete — fall back to existing-credentials prompt
+        print("\n  Automated registration did not complete.")
+        print("  If you registered manually, choose 'existing' to enter your credentials now.")
+        choice = input("  Enter credentials now (yes) or skip this source (no)? [yes/no]: ").strip().lower()
+        if choice in ("yes", "y"):
             return _prompt_user_credentials(sid, snapshot)
-        return SourceDecision(source_id=sid, decision=AccessDecisionType.skipped_declined, notes="No registration path available; alternate source will be substituted if available."), None
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="Registration could not be completed; source skipped.",
+            ),
+            None,
+        )
 
-    # 5. Real credentials required.
-    if acc.credential_ease == CredentialEase.user_must_provide_real_credentials:
-        print(f"\n  Provider:          {snapshot.name}")
-        print(f"  Why login needed:  {acc.credential_ease_notes or 'Provider requires an account to download data.'}")
-        if snapshot.registration_url:
-            print(f"  Register here:     {snapshot.registration_url}")
-        print(f"  Login here:        {snapshot.login_url or snapshot.url}")
-        print("  After registering, come back and enter your credentials below.")
-        print("  They will be saved securely and reused automatically on every future run.")
-        choice = input("  Choose: provide credentials (credentials), skip this source (skip), or search alternatives (alternatives): ").strip().lower()
-        if choice in ("credentials", "credential", "creds", "yes", "y"):
-            return _prompt_user_credentials(sid, snapshot)
-        return SourceDecision(source_id=sid, decision=AccessDecisionType.skipped_declined, notes="User declined to provide real credentials; alternate source will be substituted if available."), None
+    email, password = result
 
-    # 6. Unconfirmed -- be honest about the uncertainty, let the user decide.
-    print(f"\n  Provider:          {snapshot.name}")
-    print(f"  Access status:     Unconfirmed (Agent 3 could not determine if login is required)")
-    print(f"  Notes:             {acc.credential_ease_notes or 'Unknown access requirements.'}")
-    if snapshot.registration_url:
-        print(f"  Register here:     {snapshot.registration_url}")
-    print(f"  Login/source URL:  {snapshot.login_url or snapshot.url}")
-    choice = input("  Try self-registration as a probe (yes), provide credentials (mine), skip source (skip), or search alternatives (alternatives)? [yes/mine/skip/alternatives]: ").strip().lower()
-    if choice == "yes":
-        creds = _attempt_self_registration(snapshot)
-        if creds:
-            persist = input("  Save these credentials for next time? (yes/no): ").strip().lower() in ("yes", "y")
-            if persist:
-                save_credentials(sid, creds.username, creds.password)
-            return SourceDecision(source_id=sid, decision=AccessDecisionType.agent_self_registered, credentials_used=True, credentials_persisted=persist), creds
-        return SourceDecision(source_id=sid, decision=AccessDecisionType.skipped_unresolved, notes="Self-registration probe failed and access requirement remains unconfirmed."), None
-    if choice == "mine":
-        return _prompt_user_credentials(sid, snapshot)
-    return SourceDecision(source_id=sid, decision=AccessDecisionType.skipped_declined, notes="User skipped an unconfirmed-access source; alternate source will be substituted if available."), None
+    # Cache the new credentials immediately so they are never asked again --
+    # both in the full multi-field store (for future runs) and in the
+    # lightweight keyring/base64-fallback cache (so retries within *this*
+    # run's access-resolution loop don't need keyring to succeed either).
+    store_save_provider_credentials(
+        sid,
+        username=email,
+        password=password,
+    )
+    save_credentials(snapshot.name, email, password)
+    print(f"  Credentials for {snapshot.name} saved securely — you will not be asked again.")
+
+    new_credentials = Credentials(username=email, password=password)
+    _register_session_credentials(snapshot.name, new_credentials)
+
+    return (
+        SourceDecision(
+            source_id=sid,
+            decision=AccessDecisionType.user_provided_credentials,
+            credentials_used=True,
+            credentials_persisted=True,
+            notes="Account created via automated registration assistant; credentials cached.",
+        ),
+        new_credentials,
+    )
 
 
-def _prompt_user_credentials(source_id: str, snapshot: SourceSnapshot) -> "tuple[SourceDecision, Credentials]":
-    print("  What type of credentials does this provider use?")
+# ---------------------------------------------------------------------------
+# Credential prompt (existing account path)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# CLI helper
+# ---------------------------------------------------------------------------
+# Run directly to wipe ALL cached credentials before re-entering fresh ones:
+#   python agent4_access_resolver.py --clear-all
+
+if __name__ == "__main__":
+    import sys
+    if "--clear-all" in sys.argv:
+        clear_all_cached_credentials()
+        print("\nAll cached credentials cleared. Re-run your agent to enter fresh credentials.")
+    else:
+        print("Usage: python agent4_access_resolver.py --clear-all")
+
+
+def _prompt_user_credentials(
+    source_id: str,
+    snapshot: SourceSnapshot,
+) -> "tuple[SourceDecision, Credentials]":
+    """Prompt for credential type and values, then cache."""
+    print("\n  What type of credentials does this provider use?")
     print("    1. Username + password")
     print("    2. API key")
     print("    3. Bearer token")
     print("    4. Username + password + API key (some providers need both)")
     cred_type = input("  Choice [1/2/3/4, default 1]: ").strip() or "1"
 
-    username = ""
-    password = ""
+    username: str = ""
+    password: str = ""
     api_key: Optional[str] = None
     bearer_token: Optional[str] = None
     refresh_token: Optional[str] = None
@@ -211,9 +585,14 @@ def _prompt_user_credentials(source_id: str, snapshot: SourceSnapshot) -> "tuple
         refresh = input("  Refresh token (leave blank if none): ").strip()
         refresh_token = refresh or None
 
-    persist = input("  Save credentials for next time? (yes/no): ").strip().lower() in ("yes", "y")
+    # Always offer to cache — remind the user this means no future prompts
+    persist = input(
+        "  Save credentials securely for next time? (yes/no) "
+        "[Choosing 'yes' means you will never be asked for this provider again]: "
+    ).strip().lower() in ("yes", "y")
+
     if persist:
-        save_provider_credentials(
+        store_save_provider_credentials(
             source_id,
             username=username,
             password=password,
@@ -221,18 +600,23 @@ def _prompt_user_credentials(source_id: str, snapshot: SourceSnapshot) -> "tuple
             bearer_token=bearer_token,
             refresh_token=refresh_token,
         )
+        print(f"  Credentials saved. {snapshot.name} will authenticate automatically on future runs.")
 
     effective_token = bearer_token or refresh_token
+    manual_credentials = Credentials(
+        username=username,
+        password=password,
+        api_key=api_key,
+        token=effective_token,
+    )
+    _register_session_credentials(snapshot.name, manual_credentials)
     return (
         SourceDecision(
-            source_id=source_id, decision=AccessDecisionType.user_provided_credentials,
-            credentials_used=True, credentials_persisted=persist,
+            source_id=source_id,
+            decision=AccessDecisionType.user_provided_credentials,
+            credentials_used=True,
+            credentials_persisted=persist,
             notes="User-supplied credentials.",
         ),
-        Credentials(
-            username=username,
-            password=password,
-            api_key=api_key,
-            token=effective_token,
-        ),
+        manual_credentials,
     )

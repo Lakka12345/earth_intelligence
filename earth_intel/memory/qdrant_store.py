@@ -52,8 +52,6 @@ def _stable_point_id(*parts: str) -> str:
 # Configuration                                                        #
 # ------------------------------------------------------------------ #
 
-QDRANT_HOST = "localhost"
-QDRANT_PORT = 6333
 EMBEDDING_DIM = 384            # matches sentence-transformers all-MiniLM-L6-v2
 
 COLLECTION_DISCOVERIES = "source_discoveries"
@@ -97,10 +95,10 @@ _qdrant_client: Optional[QdrantClient] = None
 
 
 def get_client() -> QdrantClient:
-    """Returns a singleton Qdrant client."""
+    """Returns a singleton Qdrant client (in-memory, no server required)."""
     global _qdrant_client
     if _qdrant_client is None:
-        _qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+        _qdrant_client = QdrantClient(":memory:")
     return _qdrant_client
 
 
@@ -136,6 +134,17 @@ def ensure_collections_exist() -> None:
         )
         print(f"Created Qdrant collection: {COLLECTION_RELIABILITY}")
 
+    # Ensure payload index on source_id so scroll+filter lookups are O(log n)
+    # rather than a full collection scan. create_payload_index is idempotent.
+    try:
+        client.create_payload_index(
+            collection_name=COLLECTION_RELIABILITY,
+            field_name="source_id",
+            field_schema=qdrant_models.PayloadSchemaType.KEYWORD,
+        )
+    except Exception:
+        pass  # already exists or Qdrant version doesn't support it — non-fatal
+
 
 # ------------------------------------------------------------------ #
 # Search — find similar past discoveries                               #
@@ -153,28 +162,60 @@ def search_similar_discoveries(
     above the similarity threshold.
 
     Returns empty list if Qdrant is unavailable or no matches found.
+
+    CHANGED (bug fix): the previous filter used a bare `should` clause
+    (OR across dataset_type values). That excluded any point whose
+    dataset_type was stored as "unknown" — the fallback value written by
+    store_discovery_result when a source has no dataset_type. Points from
+    dynamic discovery and provider registry frequently land in "unknown",
+    so the filter was silently discarding most of what was stored.
+
+    Fix: extend the should clause to also match "unknown" so fallback
+    points are always included, AND only apply the filter when we have
+    specific types to match. This is the least-restrictive correct filter:
+    it returns points that match any of the requested types OR "unknown",
+    rather than silently returning nothing when types don't align perfectly.
     """
     try:
         client = get_client()
         query_vector = embed_text(query_goal)
 
-        results = client.search(
+        # Build filter: match any of the requested dataset_types OR "unknown"
+        # (the fallback written by store_discovery_result). Without "unknown",
+        # many stored points are silently excluded.
+        search_filter = None
+        if dataset_types:
+            type_values = list(set(dataset_types) | {"unknown"})
+            search_filter = qdrant_models.Filter(
+                min_should=qdrant_models.MinShould(
+                    conditions=[
+                        qdrant_models.FieldCondition(
+                            key="dataset_type",
+                            match=qdrant_models.MatchValue(value=dt),
+                        )
+                        for dt in type_values
+                    ],
+                    min_count=1,
+                ),
+            )
+
+        response = client.query_points(
             collection_name=COLLECTION_DISCOVERIES,
-            query_vector=query_vector,
+            query=query_vector,
             limit=top_k,
             score_threshold=SIMILARITY_THRESHOLD,
-            query_filter=qdrant_models.Filter(
-                should=[
-                    qdrant_models.FieldCondition(
-                        key="dataset_type",
-                        match=qdrant_models.MatchValue(value=dt),
-                    )
-                    for dt in dataset_types
-                ]
-            ) if dataset_types else None,
+            query_filter=search_filter,  # qdrant-client >= 1.7 uses query_filter here
+            with_payload=True,
         )
 
-        return [hit.payload for hit in results if hit.payload]
+        results = response.points
+        payloads = [hit.payload for hit in results if hit.payload]
+        print(
+            f"[Qdrant] search_similar_discoveries: {len(results)} hit(s) "
+            f"above threshold {SIMILARITY_THRESHOLD} "
+            f"for types {dataset_types or 'any'}."
+        )
+        return payloads
 
     except Exception as exc:
         print(f"[Qdrant] Search failed (non-fatal): {exc}")
@@ -185,16 +226,38 @@ def get_source_reliability_history(source_id: str) -> Optional[Dict]:
     """
     Returns historical reliability data for a specific source_id.
     Returns None if source has never been used before.
+
+    CHANGED (bug fix): the previous implementation used vector similarity
+    search with score_threshold=0.99 to locate a record by source_id.
+    That is semantically wrong — two different source IDs can produce
+    embeddings that are very close in cosine space (e.g. short alphanumeric
+    IDs), so the lookup would sometimes return the wrong source's history.
+    More importantly, a threshold of 0.99 is fragile: the same string
+    embedded twice on different model versions or hardware may not hit 0.99
+    even for an identical input.
+
+    The correct approach is a payload filter on the exact source_id field,
+    which is deterministic and O(1) with a Qdrant payload index.
+    The stable point ID from _stable_point_id() means we can also retrieve
+    by ID directly, but scroll+filter is simpler and works even if the
+    point was written before _stable_point_id was introduced.
     """
     try:
         client = get_client()
-        source_vector = embed_text(source_id)
 
-        results = client.search(
+        results, _ = client.scroll(
             collection_name=COLLECTION_RELIABILITY,
-            query_vector=source_vector,
+            scroll_filter=qdrant_models.Filter(
+                must=[
+                    qdrant_models.FieldCondition(
+                        key="source_id",
+                        match=qdrant_models.MatchValue(value=source_id),
+                    )
+                ]
+            ),
             limit=1,
-            score_threshold=0.99,    # near-exact match on source_id
+            with_payload=True,
+            with_vectors=False,
         )
 
         if results and results[0].payload:
@@ -231,7 +294,10 @@ def store_discovery_result(
 
         points = []
         for i, source in enumerate(scored_sources):
-            point_id = _stable_point_id(query_goal, str(source.get("source_id", i)))
+            # Use source_id when available; fall back to index so the key is
+            # still deterministic (not a random uuid4) when source_id is absent.
+            source_key = str(source.get("source_id") or f"idx_{i}")
+            point_id = _stable_point_id(query_goal, source_key)
 
             points.append(
                 qdrant_models.PointStruct(
@@ -250,6 +316,17 @@ def store_discovery_result(
                         "temporal_coverage": source.get("temporal_coverage"),
                         "authority_score": source.get("catalog_authority_score"),
                         "health_score": source.get("health_score", 1.0),
+                        # Access fields — required by Phase 1c to reconstruct
+                        # a valid CandidateSource. Without these, Phase 1c gets
+                        # None for access_type and raises a Pydantic validation
+                        # error that is silently swallowed, returning 0 candidates.
+                        "access_type": source.get("access_type", "free"),
+                        "requires_login": source.get("requires_login", False),
+                        "requires_payment": source.get("requires_payment", False),
+                        "price_estimate": source.get("price_estimate"),
+                        "login_url": source.get("login_url"),
+                        "api_type": source.get("api_type", "rest"),
+                        "discovery_origin": source.get("discovery_origin", "qdrant_cache"),
                         "stored_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                         "dataset_types_requested": dataset_types,
                     },
