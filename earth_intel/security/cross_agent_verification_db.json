@@ -418,6 +418,16 @@
       ]
     },
     {
+<<<<<<< HEAD
+      "verification_id": "c82c00f1-b82e-4d18-86b2-30c33d90d121",
+      "verification_timestamp": "2026-07-16T17:35:42.099004+00:00",
+      "user_query": {
+        "query_text": "Understand the sea surface temperature in Chennai during 2023",
+        "requested_task": "Understand the sea surface temperature in Chennai during 2023",
+        "required_variables": [
+          "location",
+          "sea surface temperature (sst)",
+=======
       "verification_id": "54163f68-eaa9-43a4-b812-cc8f0d5adda5",
       "verification_timestamp": "2026-07-16T12:51:07.865474+00:00",
       "user_query": {
@@ -511,6 +521,7 @@
         "required_variables": [
           "location",
           "sea surface temperature",
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
           "time"
         ]
       },
@@ -528,19 +539,20 @@
         "status": "PASS",
         "score": 1.0,
         "confidence": 1.0,
-        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'INCOIS Ocean Data Portal' at 0.50)."
+<<<<<<< HEAD
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'NASA EarthData (Earthdata Login required)' at 0.50)."
       },
       "relevance_verification": {
         "status": "WARNING",
         "score": 0.4,
         "confidence": 0.2,
-        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in Chennai during the year 2023'; relevance cannot be confidently verified."
+        "explanation": "Selected provider's trust report has no relevance_score for task 'Understand the sea surface temperature in Chennai during 2023'; relevance cannot be confidently verified."
       },
       "metadata_verification": {
         "status": "FAIL",
         "score": 0.0,
         "confidence": 1.0,
-        "explanation": "Metadata verification: missing required variable(s): ['location', 'sea surface temperature', 'time']; has_documentation=False."
+        "explanation": "Metadata verification: missing required variable(s): ['location', 'sea surface temperature (sst)', 'time']; has_documentation=False."
       },
       "availability_verification": {
         "status": "WARNING",
@@ -569,6 +581,276 @@
       "overall_verification": "NOT VERIFIED",
       "verification_score": 0.6267,
       "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'Copernicus Marine Service (CMEMS)' for task 'Understand the sea surface temperature in Chennai during 2023' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'Understand the sea surface temperature in Chennai during 2023'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['location', 'sea surface temperature (sst)', 'time']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "56c5c54b-de26-44d0-8bf0-b491e3858086",
+      "verification_timestamp": "2026-07-17T06:18:50.345881+00:00",
+      "user_query": {
+        "query_text": "To analyze and understand the floods that occurred in Mumbai during the year 2021",
+        "requested_task": "To analyze and understand the floods that occurred in Mumbai during the year 2021",
+        "required_variables": [
+          "Rainfall intensity",
+          "Storm surge",
+          "River discharge",
+          "Water level",
+          "Flood extent",
+          "Land use/land cover",
+          "Drainage infrastructure"
+        ]
+      },
+      "selected_provider": "Deltares Open Data",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "Deltares Open Data",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'Deltares Open Data' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 0.5,
+        "explanation": "No other candidate providers were supplied for comparison; trust verification is trivially satisfied."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze and understand the floods that occurred in Mumbai during the year 2021'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['rainfall intensity', 'storm surge', 'river discharge', 'water level', 'flood extent', 'land use/land cover', 'drainage infrastructure']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 0.7,
+        "confidence": 0.3,
+        "explanation": "Fewer than 3 candidate providers supplied; statistical outlier detection is not meaningful."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.5967,
+      "verification_confidence": 0.71,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'Deltares Open Data' for task 'To analyze and understand the floods that occurred in Mumbai during the year 2021' resulted in 'NOT VERIFIED' (verification_score=0.60, verification_confidence=0.71). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze and understand the floods that occurred in Mumbai during the year 2021'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['rainfall intensity', 'storm surge', 'river discharge', 'water level', 'flood extent', 'land use/land cover', 'drainage infrastructure']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "4b29e8b3-60eb-41ff-92ad-c9e702cf5214",
+      "verification_timestamp": "2026-07-17T06:36:27.376598+00:00",
+      "user_query": {
+        "query_text": "To analyze and understand the floods that occurred in Mumbai during the year 2020",
+        "requested_task": "To analyze and understand the floods that occurred in Mumbai during the year 2020",
+        "required_variables": [
+          "Rainfall intensity",
+          "River discharge",
+          "Storm surge",
+          "Urban drainage capacity",
+          "Flood extent",
+          "Water level",
+          "Soil moisture"
+        ]
+      },
+      "selected_provider": "Deltares Open Data",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "Deltares Open Data",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'Deltares Open Data' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 0.5,
+        "explanation": "No other candidate providers were supplied for comparison; trust verification is trivially satisfied."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze and understand the floods that occurred in Mumbai during the year 2020'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['rainfall intensity', 'river discharge', 'storm surge', 'urban drainage capacity', 'flood extent', 'water level', 'soil moisture']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 0.7,
+        "confidence": 0.3,
+        "explanation": "Fewer than 3 candidate providers supplied; statistical outlier detection is not meaningful."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.5967,
+      "verification_confidence": 0.71,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'Deltares Open Data' for task 'To analyze and understand the floods that occurred in Mumbai during the year 2020' resulted in 'NOT VERIFIED' (verification_score=0.60, verification_confidence=0.71). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze and understand the floods that occurred in Mumbai during the year 2020'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['rainfall intensity', 'river discharge', 'storm surge', 'urban drainage capacity', 'flood extent', 'water level', 'soil moisture']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "25168d24-64da-4b40-a771-a15e6fbeefac",
+      "verification_timestamp": "2026-07-17T07:10:57.413293+00:00",
+      "user_query": {
+        "query_text": "To analyze the sea surface temperature in Chennai during the year 2023",
+        "requested_task": "To analyze the sea surface temperature in Chennai during the year 2023",
+        "required_variables": [
+          "Sea Surface Temperature",
+          "Location",
+          "Time"
+        ]
+      },
+      "selected_provider": "NOAA CoastWatch ERDDAP",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "NOAA CoastWatch ERDDAP",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'NOAA CoastWatch ERDDAP' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'NOAA IOOS ERDDAP' at 0.50)."
+=======
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'INCOIS Ocean Data Portal' at 0.50)."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in Chennai during the year 2023'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+<<<<<<< HEAD
+        "explanation": "Metadata verification: missing required variable(s): ['sea surface temperature', 'location', 'time']; has_documentation=False."
+=======
+        "explanation": "Metadata verification: missing required variable(s): ['location', 'sea surface temperature', 'time']; has_documentation=False."
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+<<<<<<< HEAD
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'NOAA CoastWatch ERDDAP' for task 'To analyze the sea surface temperature in Chennai during the year 2023' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in Chennai during the year 2023'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['sea surface temperature', 'location', 'time']; has_documentation=False.",
+=======
       "verification_summary": "Cross-agent verification of Agent 3's selection of 'Copernicus Marine Service (CMEMS)' for task 'To analyze the sea surface temperature in Chennai during the year 2023' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
       "warnings": [
         "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in Chennai during the year 2023'; relevance cannot be confidently verified.",
@@ -1084,6 +1366,7 @@
       "warnings": [
         "[relevance] Selected provider's trust report has no relevance_score for task 'To understand the causes and impacts of the 2013 floods in Chennai'; relevance cannot be confidently verified.",
         "[metadata] Metadata verification: missing required variable(s): ['flood extent', 'rainfall intensity', 'river discharge', 'soil moisture', 'water level']; has_documentation=False.",
+>>>>>>> 6d66ff8e0f2a73a43481b8d464aa8a17152fa407
         "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
         "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
         "[explanation] Agent 3 supplied no justification for its provider selection."

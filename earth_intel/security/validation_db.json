@@ -361,6 +361,249 @@
       ]
     },
     {
+      "validation_id": "df59d1cc-ebdb-4ef5-bc37-8ffc2ff9d4f4",
+      "dataset_id": "erdHadISST",
+      "dataset_name": "NOAA CoastWatch ERDDAP",
+      "provider": "NOAA CoastWatch ERDDAP",
+      "validation_timestamp": "2026-07-16T17:35:42.026352+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat, size: 485,245,472 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "3/3 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Coastal Area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Coastal Area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: aeeadf37fc43b50d..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "0e0ee386-7d9e-4cb4-93a8-859b08079c18",
+      "dataset_id": "erdlasFnOscursLL",
+      "dataset_name": "NOAA CoastWatch ERDDAP",
+      "provider": "NOAA CoastWatch ERDDAP",
+      "validation_timestamp": "2026-07-17T07:10:48.963791+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat, size: 136,512 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 14226609f106c2b6..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "791e59dc-a5e4-4ad2-8358-8061160a49cb",
+      "dataset_id": "erdlasFnOscursLL",
+      "dataset_name": "SST, Aqua MODIS, NPP, 0.0125°, West US, Day time (11 microns), 2002-present (3 Day Composite)",
+      "provider": "SST, Aqua MODIS, NPP, 0.0125°, West US, Day time (11 microns), 2002-present (3 Day Composite)",
+      "validation_timestamp": "2026-07-17T07:10:57.330910+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: SST__Aqua_MODIS__NPP__0.0125___West_US__Day_time__11_microns___2002-present__3_D_erddap_erdMWsstd3day.dat, size: 136,512 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Unknown', 'study_boundary_type': 'Unknown', 'coordinate_requirements': 'Unknown', 'spatial_resolution_requirements': 'Unknown', 'spatial_context': 'Unknown', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 14226609f106c2b6..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
       "validation_id": "7b19de9d-fa00-40b4-a578-0c0ad71d3943",
       "dataset_id": "GISTEMP-v4",
       "dataset_name": "NASA EarthData (Earthdata Login required)",

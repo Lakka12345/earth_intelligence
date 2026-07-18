@@ -56,7 +56,7 @@ class DatasetDescriptor(BaseModel):
     source_url: Optional[str] = None
     metadata_unavailable_reason: str = ""
 
-    def to_metadata(self, source_id: str) -> DatasetMetadata:
+    def to_metadata(self, source_id: str) -> "DatasetMetadata":
         return DatasetMetadata(
             source_id=source_id,
             dataset_id=self.dataset_id,
@@ -121,10 +121,10 @@ class DownloadLocationMode(str, Enum):
 
 
 class FetchMethod(str, Enum):
-    server_side_subset = "server_side_subset"          # best case: exact slice from the source
-    full_download_then_trimmed = "full_download_then_trimmed"  # fallback: full file, trimmed locally, raw deleted
-    full_download_untrimmed = "full_download_untrimmed"        # no subsetting or trimming support at all
-    manual_user_download = "manual_user_download"               # paid/manual sources
+    server_side_subset = "server_side_subset"                      # best case: exact slice from the source
+    full_download_then_trimmed = "full_download_then_trimmed"      # fallback: full file, trimmed locally
+    full_download_untrimmed = "full_download_untrimmed"            # no subsetting or trimming support at all
+    manual_user_download = "manual_user_download"                  # paid/manual sources
 
 
 class DownloadManifestEntry(BaseModel):
@@ -149,17 +149,51 @@ class DownloadManifestEntry(BaseModel):
     validation_notes: List[str] = Field(default_factory=list)
 
 
+class RetrievedDataset(BaseModel):
+    """
+    Single successfully-downloaded dataset handed off to Agent 5.
+
+    Built by build_retrieved_datasets() in agent4_download_manager.py
+    from the DownloadManifestEntry records whose success=True.
+
+    Keyed on the *manifest* (what actually succeeded), not the original
+    coverage-plan decisions — this is what fixes the variable-coverage
+    tracking bug where NOAA's successful download was invisible because
+    CMEMS was the planned source.
+    """
+    source_id: str
+    source_name: Optional[str] = None
+    local_path: Optional[str] = None
+    variables: List[str] = Field(default_factory=list)
+    file_format: Optional[str] = None                 # "nc", "nc4", "grib2", "tiff", …
+    size_bytes: Optional[float] = None
+    provider: Optional[str] = None
+    connector_used: Optional[str] = None
+    protocol_used: Optional[str] = None
+    fetch_method: Optional[FetchMethod] = None
+    validation_status: Optional[str] = None           # "passed" / "failed" / "not_checked"
+    checksum_status: Optional[str] = None             # "verified" / "unavailable" / "not_checked"
+    download_time_seconds: Optional[float] = None
+    dataset_metadata: Optional[DatasetMetadata] = None
+    temporal_coverage: Optional[str] = None
+    spatial_coverage: Optional[str] = None
+
+
 class Agent4Output(BaseModel):
     plan_source_ids: List[str] = Field(default_factory=list)
     source_decisions: List[SourceDecision] = Field(default_factory=list)
     manifest: List[DownloadManifestEntry] = Field(default_factory=list)
+    # Structured list consumed by Agent 5.  Populated from the manifest
+    # (not from coverage-plan decisions) so fallback-source successes are
+    # always included.  See build_retrieved_datasets() in download manager.
+    retrieved_datasets: List[RetrievedDataset] = Field(default_factory=list)
     total_size_bytes: float = 0.0
     actual_downloaded_bytes: float = 0.0
     covers_full_query: bool = False
     uncovered_variables: List[str] = Field(default_factory=list)
     retrieved_variables: List[str] = Field(default_factory=list)
     coverage_percent: float = 0.0
-    coverage_table: List[Dict[str, str]] = Field(default_factory=list)
+    coverage_table: List[Dict[str, Any]] = Field(default_factory=list)
     download_location: Optional[str] = None
     send_to_agent5: bool = False
     notes: List[str] = Field(default_factory=list)
