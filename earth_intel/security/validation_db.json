@@ -766,6 +766,752 @@
         "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
         "[scientific_validation] No resolution information declared."
       ]
+    },
+    {
+      "validation_id": "d4675ee3-456a-4a4a-a1e2-ae6f284c5c62",
+      "dataset_id": "gdacs-eq-tc-fl-vo-wf-dr",
+      "dataset_name": "Argo Float Data (global, all GDACs)",
+      "provider": "Argo Float Data (global, all GDACs)",
+      "validation_timestamp": "2026-07-17T06:08:34.347512+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat, size: 146,551 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.575,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [
+          "Field 'variables' is present but empty."
+        ],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "No specific variables required — stage skipped."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'india', 'geographic_extent': 'india', 'study_boundary_type': 'Oceanic', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Oceanic', 'resolved_bounding_box': (67.9544415, 6.5531169, 97.3950905, 35.6729307)}' found in coverage '{'location': 'india', 'geographic_extent': 'india', 'study_boundary_type': 'Oceanic', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Oceanic', 'resolved_bounding_box': (67.9544415, 6.5531169, 97.3950905, 35.6729307)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.0,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No variable descriptions found.",
+          "No resolution information declared."
+        ],
+        "details": "0/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 10436230b07b26fd..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7663,
+      "confidence_score": 0.5,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.77, Confidence: 0.50.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[metadata_validation] Field 'variables' is present but empty.",
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No variable descriptions found.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "848afdc8-2bf0-4b4c-aa99-75d6a55ae7e0",
+      "dataset_id": "gdacs-eq-tc-fl-vo-wf-dr",
+      "dataset_name": "Argo Float Data (global, all GDACs)",
+      "provider": "Argo Float Data (global, all GDACs)",
+      "validation_timestamp": "2026-07-17T06:20:58.119970+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat, size: 329 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "3/3 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'india', 'geographic_extent': 'india', 'study_boundary_type': 'Oceanic boundary', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Oceanic context', 'resolved_bounding_box': (67.9544415, 6.5531169, 97.3950905, 35.6729307)}' found in coverage '{'location': 'india', 'geographic_extent': 'india', 'study_boundary_type': 'Oceanic boundary', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Oceanic context', 'resolved_bounding_box': (67.9544415, 6.5531169, 97.3950905, 35.6729307)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 0decdf4ec8431a08..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "d79b070c-636a-46fc-9393-1af458654785",
+      "dataset_id": "gdacs-fl",
+      "dataset_name": "GDACS (Global Disaster Alerts)",
+      "provider": "GDACS (Global Disaster Alerts)",
+      "validation_timestamp": "2026-07-17T06:43:13.227837+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: GDACS__Global_Disaster_Alerts__gdacs.dat, size: 299 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Urban area', 'study_boundary_type': 'City limits', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Urban area', 'study_boundary_type': 'City limits', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 68d64ed02caeef11..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "bcd61d99-0511-42ce-b230-e2cdb497b606",
+      "dataset_id": "gfs-0p25",
+      "dataset_name": "NOAA GFS via NOMADS",
+      "provider": "NOAA GFS via NOMADS",
+      "validation_timestamp": "2026-07-17T06:52:29.140150+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat, size: 505,285,056 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.575,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [
+          "Field 'variables' is present but empty."
+        ],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "No specific variables required — stage skipped."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'Urban area', 'study_boundary_type': 'City limits', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'Urban area', 'study_boundary_type': 'City limits', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.0,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No variable descriptions found.",
+          "No resolution information declared."
+        ],
+        "details": "0/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: dab3df3658b6401d..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7663,
+      "confidence_score": 0.5,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.77, Confidence: 0.50.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[metadata_validation] Field 'variables' is present but empty.",
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No variable descriptions found.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "4e0ee675-4df3-4ec3-ae76-2b35d6f9d14a",
+      "dataset_id": "gdacs-tc",
+      "dataset_name": "Argo Float Data (global, all GDACs)",
+      "provider": "Argo Float Data (global, all GDACs)",
+      "validation_timestamp": "2026-07-17T07:22:02.428822+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat, size: 300 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "3/3 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Hyderabad', 'geographic_extent': 'City', 'study_boundary_type': 'Administrative', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban', 'resolved_bounding_box': (78.2387067, 17.2916377, 78.6223912, 17.5608321)}' found in coverage '{'location': 'Hyderabad', 'geographic_extent': 'City', 'study_boundary_type': 'Administrative', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban', 'resolved_bounding_box': (78.2387067, 17.2916377, 78.6223912, 17.5608321)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: a5934f391fe82ffa..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "e8c3dd55-7d12-4747-a362-1e729fd4a650",
+      "dataset_id": "gfs-0p25",
+      "dataset_name": "NOAA/NCEP Global Forecast System (GFS) Atmospheric Model",
+      "provider": "NOAA/NCEP Global Forecast System (GFS) Atmospheric Model",
+      "validation_timestamp": "2026-07-17T07:35:14.655658+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_NCEP_Global_Forecast_System__GFS__Atmospheric_Model_erddap_NCEP_Global_Best.dat, size: 505,285,056 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.575,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [
+          "Field 'variables' is present but empty."
+        ],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "No specific variables required — stage skipped."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Hyderabad', 'geographic_extent': 'City', 'study_boundary_type': 'Administrative', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban', 'resolved_bounding_box': (78.2387067, 17.2916377, 78.6223912, 17.5608321)}' found in coverage '{'location': 'Hyderabad', 'geographic_extent': 'City', 'study_boundary_type': 'Administrative', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Urban', 'resolved_bounding_box': (78.2387067, 17.2916377, 78.6223912, 17.5608321)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.0,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No variable descriptions found.",
+          "No resolution information declared."
+        ],
+        "details": "0/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: dab3df3658b6401d..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7663,
+      "confidence_score": 0.5,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.77, Confidence: 0.50.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[metadata_validation] Field 'variables' is present but empty.",
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No variable descriptions found.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "b9cae6e0-51b0-423b-a3ba-6e765ddf315b",
+      "dataset_id": "gdacs-fl",
+      "dataset_name": "GDACS (Global Disaster Alerts)",
+      "provider": "GDACS (Global Disaster Alerts)",
+      "validation_timestamp": "2026-07-17T08:26:58.943062+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: GDACS__Global_Disaster_Alerts__gdacs.dat, size: 299 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates of the affected area', 'spatial_resolution_requirements': 'High-resolution spatial data (e.g., 1-10 meters)', 'spatial_context': 'Urban area with surrounding water bodies and drainage systems', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates of the affected area', 'spatial_resolution_requirements': 'High-resolution spatial data (e.g., 1-10 meters)', 'spatial_context': 'Urban area with surrounding water bodies and drainage systems', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: df9a1ddd8172b32e..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "e1e0236a-64c8-4693-888a-740aa5124b6a",
+      "dataset_id": "gdacs-fl",
+      "dataset_name": "GDACS (Global Disaster Alerts)",
+      "provider": "GDACS (Global Disaster Alerts)",
+      "validation_timestamp": "2026-07-18T06:07:26.304914+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: GDACS__Global_Disaster_Alerts__gdacs.dat, size: 299 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates of the study area', 'spatial_resolution_requirements': 'High-resolution spatial data (e.g. 1-10 meters)', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates of the study area', 'spatial_resolution_requirements': 'High-resolution spatial data (e.g. 1-10 meters)', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 295714f65a5e326f..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "34d886c8-d11c-4e45-8d8b-231910598120",
+      "dataset_id": "Indian_ARGO_Floats",
+      "dataset_name": "INCOIS Ocean Data Portal",
+      "provider": "INCOIS Ocean Data Portal",
+      "validation_timestamp": "2026-07-18T06:18:53.272083+00:00",
+      "file_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "File: incois_20260718T061842Z.nc, size: 1,537,376,616 bytes, format: .nc."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.575,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [
+          "Field 'variables' is present but empty."
+        ],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "No specific variables required — stage skipped."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates of the study area', 'spatial_resolution_requirements': 'High-resolution spatial data (e.g. 1-10 meters)', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates of the study area', 'spatial_resolution_requirements': 'High-resolution spatial data (e.g. 1-10 meters)', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.0,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No variable descriptions found.",
+          "No resolution information declared."
+        ],
+        "details": "0/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 1cb0b4725e567143..."
+      },
+      "overall_validation": true,
+      "validation_score": 0.8363,
+      "confidence_score": 0.5,
+      "validation_summary": "PASSED — all 6 required stages succeeded. Score: 0.84, Confidence: 0.50.",
+      "validation_errors": [
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[metadata_validation] Field 'variables' is present but empty.",
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No variable descriptions found.",
+        "[scientific_validation] No resolution information declared."
+      ]
     }
   ]
 }

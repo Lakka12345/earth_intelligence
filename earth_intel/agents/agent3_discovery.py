@@ -181,7 +181,19 @@ _CATALOG_ENDPOINT_OVERRIDES: Dict[str, str] = {
     "openaq":        "https://api.openaq.org/v2/",
     "noaa_ncei":     "https://www.ncei.noaa.gov/access/services/data/v1/",
     "nasa_earthdata":"https://cmr.earthdata.nasa.gov/search/",
-    "copernicus":    "https://cds.climate.copernicus.eu/api/v2/",
+    # CHANGED: a single "copernicus" key matched every Copernicus-branded
+    # source by substring (Data Space, Land Monitoring, CDS all contain
+    # "copernicus" in their name), silently rewriting all of them to the
+    # same CDS endpoint whenever any of them tripped the bare-domain
+    # check. Each Copernicus service is a distinct product with its own
+    # API base -- these must never collapse into one key. Order matters:
+    # more specific keys are checked first (see loop below).
+    "copernicus climate data store": "https://cds.climate.copernicus.eu/api/",
+    "copernicus cds":                "https://cds.climate.copernicus.eu/api/",
+    "copernicus data space":         "https://catalogue.dataspace.copernicus.eu/resto/",
+    "copernicus land":               "https://land.copernicus.eu/api/",
+    "copernicus marine":             "https://data.marine.copernicus.eu/api/",
+    "copernicus atmosphere":         "https://ads.atmosphere.copernicus.eu/api/",
     "usgs":          "https://waterservices.usgs.gov/nwis/",
     "ecmwf":         "https://api.ecmwf.int/v1/",
     "imd":           "https://internal.imd.gov.in/section/nhac/dynamic/",
@@ -445,7 +457,11 @@ def _resolve_catalog_endpoint(candidate: CandidateSource) -> Optional[str]:
     sid   = _normalise(candidate.source_id)
     name  = _normalise(candidate.name)
 
-    for key, endpoint in _CATALOG_ENDPOINT_OVERRIDES.items():
+    # Sort by key length descending so a more specific key (e.g.
+    # "copernicus land") is always checked before a shorter, broader one
+    # that might also appear as a substring -- prevents any future
+    # re-introduction of the same collision bug.
+    for key, endpoint in sorted(_CATALOG_ENDPOINT_OVERRIDES.items(), key=lambda kv: -len(kv[0])):
         norm_key = _normalise(key)
         if norm_key in sid or norm_key in name:
             return endpoint

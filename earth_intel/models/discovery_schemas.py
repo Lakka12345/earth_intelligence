@@ -30,6 +30,7 @@ class DownloadFormat(str, Enum):
     hdf5 = "HDF5"
     grib = "GRIB"
     shapefile = "Shapefile"
+    geojson = "GeoJSON"
     unknown = "Unknown"
 
 

@@ -1095,6 +1095,430 @@
         "Resolve the listed security policy violation(s) before this selection can be trusted.",
         "Request a clearer, more complete justification from Agent 3 for this selection."
       ]
+    },
+    {
+      "verification_id": "fa311f53-447c-4e17-94e5-8622d478b181",
+      "verification_timestamp": "2026-07-17T06:20:58.146463+00:00",
+      "user_query": {
+        "query_text": "To analyze the Argo float data in the Bay of Bengal during 2013",
+        "requested_task": "To analyze the Argo float data in the Bay of Bengal during 2013",
+        "required_variables": [
+          "ocean currents",
+          "salinity",
+          "sea surface temperature"
+        ]
+      },
+      "selected_provider": "Argo Float Data (global, all GDACs)",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "Argo Float Data (global, all GDACs)",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'Argo Float Data (global, all GDACs)' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'Copernicus Marine Service (CMEMS)' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze the Argo float data in the Bay of Bengal during 2013'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['ocean currents', 'salinity', 'sea surface temperature']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'Argo Float Data (global, all GDACs)' for task 'To analyze the Argo float data in the Bay of Bengal during 2013' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze the Argo float data in the Bay of Bengal during 2013'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['ocean currents', 'salinity', 'sea surface temperature']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "ed0bab7c-7ec7-4e9a-ab19-8a8fc3bba1cc",
+      "verification_timestamp": "2026-07-17T06:52:47.580848+00:00",
+      "user_query": {
+        "query_text": "Understand the causes and impacts of the 2015 floods in Chennai",
+        "requested_task": "Understand the causes and impacts of the 2015 floods in Chennai",
+        "required_variables": [
+          "flood extent",
+          "land use/land cover",
+          "rainfall intensity",
+          "river discharge",
+          "soil moisture",
+          "water level"
+        ]
+      },
+      "selected_provider": "GDACS (Global Disaster Alerts)",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "GDACS (Global Disaster Alerts)",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'GDACS (Global Disaster Alerts)' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'NOAA GFS via NOMADS' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'Understand the causes and impacts of the 2015 floods in Chennai'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['flood extent', 'land use/land cover', 'rainfall intensity', 'river discharge', 'soil moisture', 'water level']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'GDACS (Global Disaster Alerts)' for task 'Understand the causes and impacts of the 2015 floods in Chennai' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'Understand the causes and impacts of the 2015 floods in Chennai'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['flood extent', 'land use/land cover', 'rainfall intensity', 'river discharge', 'soil moisture', 'water level']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "b20be929-691f-448d-94fd-cff94cd7d51c",
+      "verification_timestamp": "2026-07-17T08:13:35.120823+00:00",
+      "user_query": {
+        "query_text": "To understand the rainfall patterns and trends in Hyderabad during the year 2024",
+        "requested_task": "To understand the rainfall patterns and trends in Hyderabad during the year 2024",
+        "required_variables": [
+          "humidity",
+          "rainfall",
+          "temperature",
+          "wind speed"
+        ]
+      },
+      "selected_provider": "NOAA GFS via NOMADS",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "NOAA GFS via NOMADS",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'NOAA GFS via NOMADS' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'Copernicus Climate Data Store (ERA5)' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To understand the rainfall patterns and trends in Hyderabad during the year 2024'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['humidity', 'rainfall', 'temperature', 'wind speed']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'NOAA GFS via NOMADS' for task 'To understand the rainfall patterns and trends in Hyderabad during the year 2024' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To understand the rainfall patterns and trends in Hyderabad during the year 2024'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['humidity', 'rainfall', 'temperature', 'wind speed']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "f57c86fc-0703-429b-ba8b-a27dab55c914",
+      "verification_timestamp": "2026-07-17T08:27:32.540361+00:00",
+      "user_query": {
+        "query_text": "To understand the causes and impacts of the 2013 November floods in Chennai",
+        "requested_task": "To understand the causes and impacts of the 2013 November floods in Chennai",
+        "required_variables": [
+          "flood extent",
+          "land use/land cover",
+          "rainfall",
+          "river discharge",
+          "soil moisture",
+          "water level"
+        ]
+      },
+      "selected_provider": "NOAA GFS via NOMADS",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "NOAA GFS via NOMADS",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'NOAA GFS via NOMADS' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'GDACS (Global Disaster Alerts)' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To understand the causes and impacts of the 2013 November floods in Chennai'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['flood extent', 'land use/land cover', 'rainfall', 'river discharge', 'soil moisture', 'water level']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'NOAA GFS via NOMADS' for task 'To understand the causes and impacts of the 2013 November floods in Chennai' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To understand the causes and impacts of the 2013 November floods in Chennai'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['flood extent', 'land use/land cover', 'rainfall', 'river discharge', 'soil moisture', 'water level']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
+    },
+    {
+      "verification_id": "0e456d47-aac6-4242-8eeb-8042df7300bd",
+      "verification_timestamp": "2026-07-18T06:18:53.390772+00:00",
+      "user_query": {
+        "query_text": "To understand the causes and impacts of the 2013 floods in Chennai",
+        "requested_task": "To understand the causes and impacts of the 2013 floods in Chennai",
+        "required_variables": [
+          "flood extent",
+          "rainfall",
+          "river discharge",
+          "soil moisture",
+          "water level"
+        ]
+      },
+      "selected_provider": "NOAA GFS via NOMADS",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "NOAA GFS via NOMADS",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'NOAA GFS via NOMADS' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'GDACS (Global Disaster Alerts)' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To understand the causes and impacts of the 2013 floods in Chennai'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['flood extent', 'rainfall', 'river discharge', 'soil moisture', 'water level']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'NOAA GFS via NOMADS' for task 'To understand the causes and impacts of the 2013 floods in Chennai' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To understand the causes and impacts of the 2013 floods in Chennai'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['flood extent', 'rainfall', 'river discharge', 'soil moisture', 'water level']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
     }
   ]
 }

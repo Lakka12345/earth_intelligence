@@ -39,7 +39,7 @@ PIPELINE (mirrors the system prompt's 8 steps):
 """
 
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -47,8 +47,8 @@ import xarray as xr
 from groq import Groq
 
 import agent5_config as config
+from models.agent4_schemas import Agent4Output
 from models.agent5_schemas import (
-    Agent4Output,
     Agent5Output,
     Agent5Status,
     AnalysisResult,
@@ -60,6 +60,7 @@ from models.agent5_schemas import (
     PreprocessingStepName,
     ProcessingLogEntry,
     QualityAssessment,
+    RetrievalStatus,
     RetrievedDataset,
     ValidationIssue,
     ValidationSeverity,
@@ -132,6 +133,25 @@ def _load_as_xarray(dataset: RetrievedDataset) -> Optional[xr.Dataset]:
         if fmt == DownloadFormat.json:
             frames = [pd.read_json(p) for p in paths]
             df = pd.concat(frames, ignore_index=True) if len(frames) > 1 else frames[0]
+            return df.to_xarray()
+
+        if fmt == DownloadFormat.geojson:
+            # GeoJSON (e.g. GDACS event feeds) is vector/point data, not a
+            # grid -- forcing it into an xarray Dataset via a raw .to_xarray()
+            # call is the wrong shape for it. Flatten properties + geometry
+            # into a table instead, then hand that to xarray as a simple
+            # 1-D "feature"-indexed dataset so downstream profiling/validation
+            # can still inspect it like any other loaded dataset.
+            import geopandas as gpd
+            frames = [gpd.read_file(p) for p in paths]
+            gdf = pd.concat(frames, ignore_index=True) if len(frames) > 1 else frames[0]
+            # Split geometry into plain columns so to_xarray() doesn't choke
+            # on shapely geometry objects, which have no native xarray dtype.
+            gdf = gdf.copy()
+            gdf["longitude"] = gdf.geometry.x if not gdf.geometry.empty else None
+            gdf["latitude"] = gdf.geometry.y if not gdf.geometry.empty else None
+            df = pd.DataFrame(gdf.drop(columns="geometry"))
+            df.index.name = "feature"
             return df.to_xarray()
 
         return None  # Shapefile / Unknown -- not handled by this build yet.
@@ -700,6 +720,90 @@ def phase7_assess_quality(
 # Main runner                                                          #
 # ------------------------------------------------------------------ #
 
+def _build_retrieved_datasets(agent4_output: Agent4Output) -> List[RetrievedDataset]:
+    """
+    Adapter: Agent 4's real output (models.agent4_schemas.Agent4Output) has
+    no `retrieved_datasets` field -- the actual per-file results live in
+    `manifest` (List[DownloadManifestEntry]). This builds the
+    RetrievedDataset list Agent 5's pipeline expects, from that manifest,
+    so Agent 5 never needs Agent 4 to change its own schema.
+
+    Only manifest entries that actually succeeded and have a local path
+    are included -- failed downloads have nothing on disk for Agent 5 to
+    profile, and are already reported separately in Agent 4's own
+    retrieval report.
+    """
+    datasets: List[RetrievedDataset] = []
+
+    for entry in agent4_output.manifest:
+        if not entry.success or not entry.local_path:
+            continue
+
+        # BUG FIX: entry.format is agent4_schemas.DownloadFormat, which
+        # represents the USER'S REQUESTED OUTPUT FORMAT from Agent 4's
+        # "native/csv/netcdf/parquet/geotiff" download-format prompt --
+        # it is almost always "native" and has nothing to do with what
+        # format the downloaded file actually is. Trying to look that
+        # value up in discovery_schemas.DownloadFormat (whose members are
+        # "NetCDF", "CSV", "GRIB", "GeoJSON", etc.) always raised
+        # ValueError and silently fell back to `unknown` for every single
+        # dataset -- which is why profiling failed even for datasets
+        # (like INCOIS's real .nc file) that downloaded successfully.
+        #
+        # The actual detected format string (e.g. "NetCDF", "GRIB2",
+        # "GeoJSON") lives on entry.dataset_metadata.file_format instead
+        # -- that's what connectors set from real provider metadata (see
+        # the "format=..." lines Agent 4 prints during retrieval). Map
+        # from there, tolerating the format variants connectors actually
+        # emit (e.g. "GRIB2" alongside the enum's "GRIB").
+        _FILE_FORMAT_ALIASES = {
+            "netcdf": DownloadFormat.netcdf,
+            "netcdf4": DownloadFormat.netcdf,
+            "geotiff": DownloadFormat.geotiff,
+            "tiff": DownloadFormat.geotiff,
+            "csv": DownloadFormat.csv,
+            "json": DownloadFormat.json,
+            "geojson": DownloadFormat.geojson,
+            "hdf5": DownloadFormat.hdf5,
+            "hdf": DownloadFormat.hdf5,
+            "grib": DownloadFormat.grib,
+            "grib2": DownloadFormat.grib,
+            "shapefile": DownloadFormat.shapefile,
+        }
+        raw_format = ""
+        if entry.dataset_metadata is not None and entry.dataset_metadata.file_format:
+            # file_format can be a comma-separated list (e.g. "GRIB, NetCDF")
+            # when it came from DatasetDescriptor.to_metadata() -- take the
+            # first listed format as the primary one.
+            raw_format = entry.dataset_metadata.file_format.split(",")[0].strip()
+        file_format = _FILE_FORMAT_ALIASES.get(raw_format.lower(), DownloadFormat.unknown)
+        if file_format == DownloadFormat.unknown and raw_format:
+            print(
+                f"  [Agent 5] Note: unrecognised file_format '{raw_format}' for "
+                f"{entry.source_name} -- treating as unknown; add it to "
+                f"_FILE_FORMAT_ALIASES if this is a real, loadable format."
+            )
+
+        provider_metadata: Dict[str, Any] = {}
+        if entry.dataset_metadata is not None:
+            provider_metadata = entry.dataset_metadata.model_dump()
+
+        datasets.append(RetrievedDataset(
+            source_id=entry.source_id,
+            name=entry.source_name,
+            provider_url=entry.provider or "",
+            local_file_paths=[entry.local_path],
+            file_format=file_format,
+            variables_requested=list(entry.variables_included),
+            variables_retrieved=list(entry.variables_included),
+            retrieval_status=RetrievalStatus.success,
+            retrieval_notes="; ".join(entry.validation_notes) if entry.validation_notes else "",
+            provider_metadata=provider_metadata,
+        ))
+
+    return datasets
+
+
 def run_agent5(
     request: RetrievalRequest,
     agent4_output: Agent4Output,
@@ -710,15 +814,17 @@ def run_agent5(
 
     log: List[ProcessingLogEntry] = []
 
+    retrieved_datasets = _build_retrieved_datasets(agent4_output)
+
     # STEP 1
-    profiles, loaded = phase1_profile_datasets(agent4_output.retrieved_datasets)
+    profiles, loaded = phase1_profile_datasets(retrieved_datasets)
     log.append(ProcessingLogEntry(
         stage="profiling",
         detail=f"Profiled {len(profiles)} dataset(s); {len(loaded)} opened successfully.",
     ))
 
     # STEP 2
-    validations = phase2_validate_datasets(request, agent4_output.retrieved_datasets, profiles)
+    validations = phase2_validate_datasets(request, retrieved_datasets, profiles)
     log.append(ProcessingLogEntry(
         stage="validation",
         detail=f"Validated {len(validations)} dataset(s) against the scientific request.",

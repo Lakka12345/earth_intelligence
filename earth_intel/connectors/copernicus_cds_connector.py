@@ -507,7 +507,19 @@ class CopernicusCDSConnector(StaticDatasetConnector):
             client_kwargs["url"] = creds.get("url", _CDS_API_BASE)
             client_kwargs["key"] = creds["key"]
         c = cdsapi.Client(**client_kwargs)
-        c.retrieve(dataset_id, req, dest)
+        try:
+            c.retrieve(dataset_id, req, dest)
+        except Exception as exc:
+            if "401" in str(exc) or "not allowed" in str(exc).lower():
+                raise RuntimeError(
+                    f"CDS cdsapi retrieve failed for '{dataset_id}': {exc}\n"
+                    "This is almost always NOT an invalid key -- it means the CDS "
+                    "account behind this token has not accepted the dataset's "
+                    "'Terms of Use' on the CDS website. Log in at "
+                    f"https://cds.climate.copernicus.eu, open the '{dataset_id}' "
+                    "dataset page, and click 'Accept terms' -- then retry."
+                ) from exc
+            raise
         self.validate_download(dest)
         return dest
 
@@ -546,6 +558,17 @@ class CopernicusCDSConnector(StaticDatasetConnector):
             verify=False,
         )
         if not r.ok:
+            if r.status_code == 401:
+                raise RuntimeError(
+                    f"CDS REST submit failed: 401 {r.text[:200]}\n"
+                    "This is almost always NOT an invalid key -- it means the CDS "
+                    "account behind this token has not accepted the dataset's "
+                    "'Terms of Use' on the CDS website. This is a one-time manual "
+                    "step per dataset: log in at https://cds.climate.copernicus.eu, "
+                    f"open the '{dataset_id}' dataset page, and click 'Accept terms' "
+                    "-- then retry. If you HAVE accepted the terms, re-check that the "
+                    "personal access token (not the old UID:key) is saved correctly."
+                )
             raise RuntimeError(
                 f"CDS REST submit failed: {r.status_code} {r.text[:300]}"
             )

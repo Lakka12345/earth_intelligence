@@ -153,18 +153,51 @@ def _resolve_and_approve_plan(
         
         # If there are no newly planned sources, but we STILL have uncovered variables,
         # it means the current optimal plan failed to cover everything. 
-        # FIX 3: Force exploration of remaining next-ranked websites to capture missing variables.
+        # FIX 3 (original): force exploration of remaining next-ranked websites to capture missing variables.
+        # FIX 3b (this change): the original version force-added the next
+        # ranked-but-unplanned source UNCONDITIONALLY, without checking
+        # whether it covers anything still missing. That's how a source
+        # like INCOIS Ocean Data Portal (ranked for its own ocean-data
+        # reasons, with variables_hint like sea_surface_temperature/
+        # salinity/wave_height) got downloaded for a query asking about
+        # rainfall/river discharge/soil moisture/water level -- none of
+        # which it has. build_coverage_plan() itself already refuses to
+        # select zero-coverage sources; this fallback must respect the
+        # same rule instead of bypassing it. We now walk the remaining
+        # ranked-but-unplanned sources IN ORDER and only force-add the
+        # first one that genuinely covers at least one still-uncovered
+        # variable. If none of them do, we stop here and report the gap
+        # honestly instead of downloading something irrelevant.
         if not newly_needed and plan.uncovered_variables:
+            from agents.agent4_coverage_optimizer import _source_variables, _matches_requested_variable
+
             unplanned_available = [
-                sid for sid in ranked_source_ids 
+                sid for sid in ranked_source_ids
                 if sid not in excluded and sid not in approved
             ]
-            if unplanned_available:
-                # Force-add the next highest ranked available site to check its parameters
-                next_alternative = unplanned_available[0]
+            next_alternative = None
+            for candidate_sid in unplanned_available:
+                candidate_vars = _source_variables(candidate_sid, website_analyses, source_snapshots)
+                if any(
+                    _matches_requested_variable(missing_var, candidate_var)
+                    for missing_var in plan.uncovered_variables
+                    for candidate_var in candidate_vars
+                ):
+                    next_alternative = candidate_sid
+                    break
+
+            if next_alternative is not None:
                 newly_needed = [next_alternative]
             else:
-                # Absolutely no more websites left to explore
+                # No remaining ranked source -- covered or not-yet-tried --
+                # actually covers anything still missing. Stop forcing
+                # unrelated downloads and report the real gap.
+                if unplanned_available:
+                    print(
+                        f"  No remaining ranked source covers the still-missing "
+                        f"variable(s) ({', '.join(sorted(plan.uncovered_variables))}); "
+                        f"not force-adding an unrelated source just to fill the slot."
+                    )
                 return approved, approved_credentials, running_total, plan.uncovered_variables
         elif not newly_needed and not plan.uncovered_variables:
             # 100% coverage achieved and all selected sources are processed

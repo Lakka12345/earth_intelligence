@@ -175,7 +175,10 @@ def _live_dataset_list() -> List[Dict[str, Any]]:
         return _ERDDAP_DATASET_CACHE
 
     datasets: List[Dict[str, Any]] = []
-    for endpoint in (f"{ERDDAP_GRIDDAP}/index.json", f"{ERDDAP_TABLEDAP}/index.json"):
+    for endpoint, ds_type in (
+        (f"{ERDDAP_GRIDDAP}/index.json", "griddap"),
+        (f"{ERDDAP_TABLEDAP}/index.json", "tabledap"),
+    ):
         try:
             resp = requests.get(endpoint, timeout=20, verify=False,
                                 headers={"Accept": "application/json"})
@@ -187,6 +190,14 @@ def _live_dataset_list() -> List[Dict[str, Any]]:
             for row in rows:
                 record = dict(zip(cols, row))
                 if record.get("Dataset ID"):
+                    # CHANGED: tag which endpoint this dataset actually lives
+                    # under. griddap and tabledap were previously merged into
+                    # one flat list with no way to tell them apart, so a
+                    # point/profile dataset (e.g. Argo floats -- always
+                    # tabledap, never griddap) resolved correctly by ID but
+                    # then had a griddap download URL built for it anyway,
+                    # producing a 404 for a dataset that actually exists.
+                    record["_erddap_type"] = ds_type
                     datasets.append(record)
         except Exception as exc:
             logger.debug("incois _live_dataset_list: catalogue fetch failed for %s — %s", endpoint, exc)
@@ -216,6 +227,19 @@ def _score_dataset_match(record: Dict[str, Any], variables: List[str]) -> int:
             if token in haystack:
                 score += 1
     return score
+
+
+def _dataset_type_for_id(dataset_id: str) -> str:
+    """
+    Looks up whether a dataset_id lives under griddap or tabledap, using
+    the cached catalogue. Defaults to 'griddap' (the historical assumption)
+    only when the ID isn't found in the catalogue at all -- e.g. a static
+    _KNOWN_DATASETS guess, which are all griddap by construction.
+    """
+    for record in _live_dataset_list():
+        if str(record.get("Dataset ID", "")) == dataset_id:
+            return record.get("_erddap_type", "griddap")
+    return "griddap"
 
 
 def _resolve_live_dataset_id(variables: List[str], requested_id: Optional[str] = None) -> str:
@@ -319,14 +343,22 @@ def _head(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Respons
 def _build_erddap_url(dataset_id: str, fmt: str = "nc",
                       lat_min=None, lat_max=None,
                       lon_min=None, lon_max=None,
-                      start_date=None, end_date=None) -> str:
+                      start_date=None, end_date=None,
+                      dataset_type: Optional[str] = None) -> str:
     """
-    Build an ERDDAP griddap download URL with optional spatial/temporal constraints.
+    Build an ERDDAP download URL with optional spatial/temporal constraints.
 
-    ERDDAP griddap URL format:
-      {base}/griddap/{dataset_id}.{format}?[variable][time_range][lat_range][lon_range]
+    CHANGED: dataset_type now selects griddap vs tabledap base path.
+    Previously this always built a griddap/ URL regardless of which
+    endpoint the dataset actually lives under -- point/profile datasets
+    (e.g. Argo floats, buoy time series) live under tabledap, never
+    griddap, so a griddap URL for them 404s even though the dataset
+    genuinely exists. If dataset_type isn't passed explicitly, it's
+    looked up from the cached catalogue.
     """
-    base_url = f"{ERDDAP_GRIDDAP}/{dataset_id}.{fmt}"
+    resolved_type = dataset_type or _dataset_type_for_id(dataset_id)
+    erddap_base = ERDDAP_TABLEDAP if resolved_type == "tabledap" else ERDDAP_GRIDDAP
+    base_url = f"{erddap_base}/{dataset_id}.{fmt}"
     # When no constraints given, return the base URL (ERDDAP will use defaults)
     constraints: List[str] = []
     if start_date:

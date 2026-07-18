@@ -21,7 +21,13 @@ from typing import Optional
 
 import xarray as xr
 
-from agent5_config import OUTPUT_STORE_DIR
+try:
+    from agent5_config import OUTPUT_STORE_DIR
+except ImportError:
+    # Fallback when imported as storage.zarr_store from the project root
+    import importlib, sys
+    _cfg = importlib.import_module("agent5_config")
+    OUTPUT_STORE_DIR = _cfg.OUTPUT_STORE_DIR
 
 
 def _ensure_output_dir() -> None:

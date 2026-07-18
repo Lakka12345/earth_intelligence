@@ -595,12 +595,27 @@ class NOAAConnector(StaticDatasetConnector):
             )
         rich = {k: v for k, v in rich.items() if v not in (None, "", [], {})}
 
+        # CHANGED: dataset.download_endpoint for gfs-0p25 is the bare NOMADS
+        # directory listing (_NOMADS_GFS), which is an HTML index page, not
+        # a data file. Falling back to it when the live scrape fails meant
+        # Agent 4 would silently attempt to download an HTML page as GRIB2
+        # and burn retries before failing -- exactly the "HTTP content type
+        # indicates HTML" error seen in practice. GFS must never use that
+        # generic fallback: if the live resolve fails, this is genuinely
+        # unavailable right now (NOMADS layout changed, or a transient
+        # scrape failure) and callers should move to the next source
+        # immediately rather than retry a URL that was never going to work.
+        if dataset.dataset_id == "gfs-0p25":
+            resolved_download_endpoint = url  # None if the live scrape failed -- do not fall back
+        else:
+            resolved_download_endpoint = url or dataset.download_endpoint
+
         return DatasetMetadata(
             source_id=snapshot.source_id,
             dataset_id=dataset.dataset_id,
             collection=dataset.collection_name,
             product=dataset.dataset_name,
-            download_endpoint=url or dataset.download_endpoint,
+            download_endpoint=resolved_download_endpoint,
             api_endpoint=dataset.api_endpoint,
             metadata_endpoint=dataset.metadata_endpoint,
             file_size_bytes=size,
@@ -611,7 +626,17 @@ class NOAAConnector(StaticDatasetConnector):
             content_type="application/x-netcdf" if "NetCDF" in dataset.supported_formats else "application/octet-stream",
             license="NOAA open data (public domain)",
             retrieval_method="NOAA directory listing / ERDDAP info / CDO API / NOMADS",
-            unavailable_reason="" if url else "Could not resolve download URL. CDO token may be required.",
+            unavailable_reason=(
+                "" if resolved_download_endpoint
+                else (
+                    "Could not resolve the current GFS forecast run/file from NOMADS "
+                    "(the directory listing may have changed layout, or the scrape "
+                    "timed out). Not falling back to the bare directory URL since "
+                    "that returns an HTML index page, not GRIB2 data."
+                    if dataset.dataset_id == "gfs-0p25"
+                    else "Could not resolve download URL. CDO token may be required."
+                )
+            ),
             authentication_required=dataset.authentication_required,
             **rich,
         )

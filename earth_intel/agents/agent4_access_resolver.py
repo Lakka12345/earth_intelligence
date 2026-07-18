@@ -291,19 +291,49 @@ def resolve_access(
             stored.bearer_token, stored.refresh_token,
         ])
         if has_content:
-            print(f"  Using previously saved credentials for {snapshot.name} (no login needed this run).")
-            print(f"  [Tip] If this source fails with a 401 error, re-run with cleared credentials.")
-            _register_session_credentials(snapshot.name, reused_credentials)
-            return (
-                SourceDecision(
-                    source_id=sid,
-                    decision=AccessDecisionType.user_provided_credentials,
-                    credentials_used=True,
-                    credentials_persisted=True,
-                    notes="Reused credentials saved from an earlier run.",
-                ),
-                reused_credentials,
-            )
+            print(f"\n  Saved credentials were found for {snapshot.name}.")
+            print("  What would you like to do?")
+            print("    1. Use the saved credentials")
+            print("    2. Enter new/different credentials")
+            print("    3. Skip this source")
+            print("    4. Search alternative sources instead")
+            while True:
+                saved_choice = input("  Your choice [1/2/3/4]: ").strip()
+                if saved_choice == "1":
+                    print(f"  Using previously saved credentials for {snapshot.name}.")
+                    print("  [Tip] If this source fails with a 401 error, choose option 2 next time to re-enter credentials.")
+                    _register_session_credentials(snapshot.name, reused_credentials)
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.user_provided_credentials,
+                            credentials_used=True,
+                            credentials_persisted=True,
+                            notes="Reused credentials saved from an earlier run (user confirmed).",
+                        ),
+                        reused_credentials,
+                    )
+                if saved_choice == "2":
+                    return _prompt_user_credentials(sid, snapshot)
+                if saved_choice == "3":
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.skipped_declined,
+                            notes="User skipped this source despite saved credentials being available.",
+                        ),
+                        None,
+                    )
+                if saved_choice == "4":
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.skipped_declined,
+                            notes="User requested alternative sources despite saved credentials being available.",
+                        ),
+                        None,
+                    )
+                print("  Please enter 1, 2, 3, or 4.")
         else:
             # Stored record is empty/blank — delete it and fall through to prompt.
             print(
