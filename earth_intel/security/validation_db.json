@@ -1755,6 +1755,87 @@
         "[scientific_validation] No variable descriptions found.",
         "[scientific_validation] No resolution information declared."
       ]
+    },
+    {
+      "validation_id": "4b9a09d6-b730-41e1-9919-84905e1d6ba3",
+      "dataset_id": "gdacs-fl",
+      "dataset_name": "GDACS (Global Disaster Alerts)",
+      "provider": "GDACS (Global Disaster Alerts)",
+      "validation_timestamp": "2026-07-18T14:04:25.673102+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: GDACS__Global_Disaster_Alerts__gdacs.dat, size: 299 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}' found in coverage '{'location': 'Chennai', 'geographic_extent': 'The city of Chennai and its surrounding areas', 'study_boundary_type': 'Urban area', 'coordinate_requirements': 'Latitude and longitude coordinates', 'spatial_resolution_requirements': 'High-resolution spatial data', 'spatial_context': 'Urban area', 'resolved_bounding_box': (80.1401875, 12.8519771, 80.3328982, 13.235158)}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 295714f65a5e326f..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
     }
   ]
 }
