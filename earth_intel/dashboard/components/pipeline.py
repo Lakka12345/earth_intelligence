@@ -19,11 +19,13 @@ _STAGE_MAP = {
     "idle":       [None,        None,        None,        None,        None,        None],
     "running_a1": ["running",   None,        None,        None,        None,        None],
     "running_a2": ["completed", "running",   None,        None,        None,        None],
-    "clarifying": ["completed", "running",   None,        None,        None,        None],
+    "clarifying":     ["completed", "running",   None,        None,        None,        None],
+    "confirm_understanding": ["completed", "running", None,   None,        None,        None],
     "running_a3": ["completed", "completed", "running",   None,        None,        None],
+    "agent3_ranking": ["completed", "completed", "running", None,       None,        None],
     "running_a4": ["completed", "completed", "completed", "running",   None,        None],
     "running_a5": ["completed", "completed", "completed", "completed", "running",   None],
-    "done":       ["completed", "completed", "completed", "completed", "waiting",   "completed"],
+    "done":       ["completed", "completed", "completed", "completed", "completed", "completed"],
     "error":      ["failed",    None,        None,        None,        None,        None],
 }
 

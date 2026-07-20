@@ -214,7 +214,7 @@ def _resolve_and_approve_plan(
                 any_declined_this_pass = True
                 continue
 
-            decision, credentials = resolve_access(snapshot, analysis, pre_collected_credentials)
+            decision, credentials = resolve_access(snapshot, analysis, pre_collected_credentials, ui_choices=ui_choices)
             decision.variables_expected = list(plan.per_source_new_coverage.get(sid, []))
 
             # If the user skips or it fails access evaluation, immediately search next ranks

@@ -224,6 +224,7 @@ def resolve_access(
     snapshot: SourceSnapshot,
     analysis: WebsiteAnalysisResult,
     pre_collected_credentials: Optional[Dict[str, dict]] = None,
+    ui_choices: Optional[dict] = None,
 ) -> "tuple[SourceDecision, Optional[Credentials]]":
     """
     Returns (decision, credentials).
@@ -235,6 +236,17 @@ def resolve_access(
       3. Payment required → user chooses skip or payment redirect.
       4. Login required → 4-option menu (existing / new / skip / alternatives).
       5. Unconfirmed access → same 4-option menu.
+
+    `ui_choices` (dashboard mode): when not None, every branch below that
+    would otherwise call input()/getpass() instead makes a safe,
+    non-blocking decision using ui_choices["credential_choices"].get(sid),
+    a dict the dashboard builds from a Streamlit form:
+        {"username": str, "password": str, "api_key": str, "token": str,
+         "skip": bool, "persist": bool}
+    If no entry exists for a source that needs fresh credentials, the
+    source is skipped (never blocks). Automated new-account registration
+    (Playwright) is CLI-only and is never attempted in dashboard mode —
+    it falls back to the same "skip if no credentials provided" behavior.
     """
     acc = analysis.accessibility
     sid = snapshot.source_id
@@ -269,6 +281,9 @@ def resolve_access(
                            notes="No login required."),
             None,
         )
+
+    if ui_choices is not None:
+        return _resolve_access_dashboard(sid, snapshot, acc, ui_choices)
 
     # 2. Stored credentials from a previous run — validate before reusing.
     stored = store_load_credentials(sid)
@@ -373,6 +388,129 @@ def resolve_access(
 
     # 4 & 5. Login required (confirmed or unconfirmed).
     return _login_required_menu(sid, snapshot, acc)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard mode — non-interactive credential resolution (no input()/getpass())
+# ---------------------------------------------------------------------------
+
+def _resolve_access_dashboard(
+    sid: str,
+    snapshot: SourceSnapshot,
+    acc,
+    ui_choices: dict,
+) -> "tuple[SourceDecision, Optional[Credentials]]":
+    choice = ((ui_choices.get("credential_choices") or {}).get(sid)) or {}
+
+    # 2. Stored credentials from a previous run — reuse automatically unless
+    #    the dashboard form explicitly asked to skip or provided fresh values.
+    stored = store_load_credentials(sid)
+    if stored and not choice.get("skip") and not any(
+        [choice.get("username"), choice.get("password"), choice.get("api_key"), choice.get("token")]
+    ):
+        effective_token = stored.bearer_token or stored.refresh_token or stored.token
+        has_content = any([
+            stored.username, stored.password, stored.api_key,
+            stored.token, stored.session_token,
+            stored.bearer_token, stored.refresh_token,
+        ])
+        if has_content:
+            print(f"  Saved credentials found for {snapshot.name} — reusing automatically (dashboard mode).")
+            reused_credentials = Credentials(
+                username=stored.username,
+                password=stored.password,
+                api_key=stored.api_key,
+                token=effective_token or stored.session_token,
+                session_token=stored.session_token,
+            )
+            _register_session_credentials(snapshot.name, reused_credentials)
+            return (
+                SourceDecision(
+                    source_id=sid,
+                    decision=AccessDecisionType.user_provided_credentials,
+                    credentials_used=True,
+                    credentials_persisted=True,
+                    notes="Reused credentials saved from an earlier run (dashboard auto-reuse).",
+                ),
+                reused_credentials,
+            )
+
+    # 3. Payment required — never automated; skip unless the dashboard form
+    #    explicitly opted into the payment-redirect path.
+    if acc.payment_required:
+        if choice.get("accept_payment_redirect"):
+            print(f"  Payment required for {snapshot.name} — user opted for payment redirect (dashboard mode).")
+            return (
+                SourceDecision(
+                    source_id=sid,
+                    decision=AccessDecisionType.payment_redirect,
+                    notes=f"Waiting for user payment at {snapshot.url}.",
+                ),
+                None,
+            )
+        print(f"  Payment required for {snapshot.name} — auto-skipping (dashboard mode).")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="Payment required; auto-declined in dashboard mode. Alternate source will be substituted if available.",
+            ),
+            None,
+        )
+
+    # 4 & 5. Login required (confirmed or unconfirmed) — use credentials the
+    #    dashboard form collected, if any; otherwise skip (never blocks).
+    if choice.get("skip"):
+        print(f"  User chose to skip {snapshot.name} (dashboard mode).")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="User skipped this source via the dashboard credential form.",
+            ),
+            None,
+        )
+
+    has_fresh = any([choice.get("username"), choice.get("password"), choice.get("api_key"), choice.get("token")])
+    if not has_fresh:
+        print(f"  No credentials provided for {snapshot.name} — auto-skipping (dashboard mode).")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="Source requires login and no credentials were provided via the dashboard; skipped.",
+            ),
+            None,
+        )
+
+    manual_credentials = Credentials(
+        username=choice.get("username", ""),
+        password=choice.get("password", ""),
+        api_key=choice.get("api_key") or None,
+        token=choice.get("token") or None,
+    )
+
+    if choice.get("persist"):
+        store_save_provider_credentials(
+            sid,
+            username=choice.get("username", ""),
+            password=choice.get("password", ""),
+            api_key=choice.get("api_key") or None,
+            bearer_token=choice.get("token") or None,
+        )
+        print(f"  Credentials for {snapshot.name} saved securely (dashboard mode).")
+
+    _register_session_credentials(snapshot.name, manual_credentials)
+    return (
+        SourceDecision(
+            source_id=sid,
+            decision=AccessDecisionType.user_provided_credentials,
+            credentials_used=True,
+            credentials_persisted=bool(choice.get("persist")),
+            notes="User-supplied credentials via dashboard form.",
+        ),
+        manual_credentials,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -105,7 +105,11 @@ def render_sidebar() -> tuple[str, bool]:
             "running_a1": "Running Planner",
             "running_a2": "Clarifying",
             "clarifying": "Waiting for Input",
+            "confirm_understanding": "Confirm Understanding",
             "running_a3": "Discovering Datasets",
+            "agent3_ranking": "Ranking & Reviewing Sources",
+            "running_a4": "Downloading Data",
+            "running_a5": "Preprocessing Data",
             "done": "Complete",
             "error": "Error",
         }

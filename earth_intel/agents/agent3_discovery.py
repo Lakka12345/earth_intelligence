@@ -524,6 +524,7 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
 
     for c in candidates:
         origin = getattr(c, "discovery_origin", "") or ""
+        was_rescued_by_override = False
 
         # ── Stage 1: bare-domain check (ALL origins) ─────────────────
         if _is_bare_domain_url(c.url):
@@ -531,6 +532,7 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
             if replacement:
                 rescued.append(f"{c.name}  ({c.url} → {replacement})")
                 c.url = replacement
+                was_rescued_by_override = True
                 # fall through to Stage 2 with the corrected URL
             else:
                 dropped.append(c)
@@ -549,7 +551,7 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
         # to rescue the real endpoint before giving up on the source —
         # this is the main fix for HTML pages ending up in Qdrant instead
         # of the actual download/API endpoint.
-        if _is_landing_page_url(c.url):
+        if not was_rescued_by_override and _is_landing_page_url(c.url):
             resolved = _resolve_landing_page_to_data_endpoint(c.url)
             if resolved:
                 rescued.append(f"{c.name}  ({c.url} → {resolved})")
@@ -565,7 +567,20 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
         # LLM/catalog labelled them as a trusted origin. Curated origins
         # are still trusted for *authority scoring* elsewhere, but the
         # URL itself must still look like a real data endpoint.
-        if not _is_api_url(c.url):
+        #
+        # CHANGED AGAIN: a URL that was just rescued via
+        # _CATALOG_ENDPOINT_OVERRIDES is a hand-curated, manually verified
+        # real API endpoint (that's the entire purpose of maintaining that
+        # dict) -- re-vetoing it with the generic _is_api_url() marker
+        # list (which only recognises a fixed set of path segments like
+        # "/api/", "/erddap/", "/dods/") was dropping genuinely correct,
+        # rescued endpoints like IMD's "/section/nhac/dynamic/",
+        # Copernicus Data Space's "/resto/", ReliefWeb's "/v1/", NASA
+        # Earthdata's "/search/", and USGS's "/nwis/" immediately after
+        # rescuing them -- silently undoing the rescue for every provider
+        # whose real path shape doesn't happen to match that narrow list.
+        # Trust the override; skip the generic heuristic for these.
+        if not was_rescued_by_override and not _is_api_url(c.url):
             dropped.append(c)
             continue
 

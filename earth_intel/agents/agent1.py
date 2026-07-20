@@ -300,11 +300,14 @@ def run_agent1(query: str, skip_clarification: bool = False) -> ScientificIntent
         api_key=os.getenv("GROQ_API_KEY")
     )
 
-    # Clarification check before running the full pipeline
-    if not skip_clarification:
-        questions = check_clarification_needed(query, client)
-        if questions:
-            raise ClarificationNeeded(questions)
+    # NOTE: Agent 1 no longer performs its own clarification check.
+    # Per the intended architecture, Agent 1's job is scientific
+    # understanding + identifying gaps/variables; Agent 2 (run_agent2)
+    # is the sole owner of deciding whether clarification is needed and
+    # generating the actual questions, using Agent 1's plan as input.
+    # `skip_clarification` and `ClarificationNeeded` are kept below only
+    # for backward compatibility with any external callers that still
+    # reference them — they are no longer invoked from this function.
 
     prompt = f"""
 {build_system_prompt()}

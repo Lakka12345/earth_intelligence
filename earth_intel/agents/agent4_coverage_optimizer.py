@@ -23,6 +23,23 @@ VARIABLE_ALIASES = {
     "greenhouse gas emissions": {"greenhouse gas", "greenhouse gases", "ghg", "co2", "carbon dioxide", "methane", "ch4", "emissions"},
     "land use change": {"land use", "land cover", "land_use_land_cover", "lulc", "worldcover", "landcover"},
     "temperature anomaly": {"temperature anomaly", "temp anomaly", "temperature anomalies", "anomaly"},
+    # CHANGED: strict substring matching means real synonyms never matched
+    # each other (e.g. a request for "rainfall intensity" vs. a provider's
+    # "precipitation" hint) unless one string was literally a substring of
+    # the other. This silently excluded genuinely relevant sources (e.g.
+    # Open-Meteo, which lists "precipitation" but not "rainfall") from the
+    # coverage plan and force-explore step alike. Aliasing them here fixes
+    # both call sites at once since they share this lookup. Keys must match
+    # the full variable-name strings this pipeline actually uses (as seen
+    # in Agent 2's output, e.g. "rainfall intensity" not just "rainfall") --
+    # a mismatched key means the alias set is never looked up at all.
+    "rainfall": {"precipitation", "rainfall intensity", "rain", "precip"},
+    "rainfall intensity": {"precipitation", "rainfall", "rain", "precip"},
+    "river discharge": {"streamflow", "discharge", "river flow", "flow rate"},
+    "water level": {"river stage", "gauge height", "stage height", "reservoir level", "sea level"},
+    "soil moisture": {"volumetric soil moisture", "soil water content"},
+    "flood extent": {"flood extent", "inundation extent", "flood mapping"},
+    "land use/land cover": {"land use", "land cover", "lulc", "landcover", "worldcover"},
 }
 
 

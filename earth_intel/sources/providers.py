@@ -921,6 +921,49 @@ TIER1_FREE: List[ProviderDefinition] = [
     # ── India-specific (public) ─────────────────────────────────────────
 
     ProviderDefinition(
+        source_id="india_wris",
+        name="India-WRIS (Water Resources Information System)",
+        base_url="https://indiawris.gov.in",
+        access_type=AccessType.free,
+        discoverer_type="rest",
+        description=(
+            "India's national water resources data platform (Ministry of Jal Shakti / "
+            "CWC). River discharge/streamflow, reservoir levels, groundwater levels, "
+            "and basin-wise hydrology for Indian rivers -- the actual source for "
+            "river discharge and water level data that INCOIS (an ocean-data portal) "
+            "does not provide."
+        ),
+        dataset_types=["hydrology", "water", "climate"],
+        variables_hint=["river_discharge", "streamflow", "water_level", "reservoir_level",
+                        "groundwater_level", "gauge_height", "basin_hydrology"],
+        api_docs_url="https://indiawris.gov.in/wris/",
+        authority_score=0.94,
+        scientific_acceptance=0.92,
+        historical_reliability=0.90,
+        regions=["India"],
+    ),
+
+    ProviderDefinition(
+        source_id="cwc_flood_forecast",
+        name="CWC Flood Forecasting (Central Water Commission)",
+        base_url="https://cwc.gov.in",
+        access_type=AccessType.free,
+        discoverer_type="rest",
+        description=(
+            "Central Water Commission real-time flood forecasting network -- river "
+            "gauge/stage (water level) readings and flood forecasts at monitored "
+            "stations across India."
+        ),
+        dataset_types=["hydrology", "disaster", "water"],
+        variables_hint=["water_level", "river_stage", "flood_forecast", "river_discharge"],
+        api_docs_url="https://ffs.tniti.res.in/",
+        authority_score=0.93,
+        scientific_acceptance=0.91,
+        historical_reliability=0.89,
+        regions=["India"],
+    ),
+
+    ProviderDefinition(
         source_id="imd",
         name="IMD (India Meteorological Department)",
         base_url="https://mausam.imd.gov.in",
@@ -1215,7 +1258,7 @@ TIER2_REGISTRATION: List[ProviderDefinition] = [
         ),
         dataset_types=["climate", "weather", "atmosphere"],
         variables_hint=["temperature", "wind_speed", "precipitation", "humidity",
-                        "pressure", "sea_surface_temperature", "wave"],
+                        "pressure", "sea_surface_temperature", "wave", "soil_moisture"],
         login_url="https://cds.climate.copernicus.eu/user/register",
         api_docs_url="https://cds.climate.copernicus.eu/api-how-to",
         requires_login=True,
