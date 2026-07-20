@@ -1167,16 +1167,19 @@ def main():
     # SECURITY INTEGRATION — BLOCK gate: if the final assessment is BLOCK,
     # stop the pipeline here with a clear explanation rather than handing
     # off to Agent 5 or writing files.  WARN and below continue normally.
+    _security_blocked = False
     if risk_report.recommended_action == RecommendedAction.BLOCK:
         print(
-            "\n[SECURITY] Pipeline halted by Security Risk Assessment.\n"
+            "\n[SECURITY] Security Risk Assessment recommends BLOCK.\n"
             f"  Reason: {risk_report.risk_reasoning[:200]}\n"
-            "  No data has been written to disk and no handoff to Agent 5 will occur.\n"
+            "  Agent 5 handoff and file writes are suppressed.\n"
+            "  Downloaded raw files (if any) are still available at: "
+            f"{agent4_result.download_location or '(see Agent 4 report above)'}\n"
             "  Please review the active flags and recommendations above, then retry."
         )
-        return
+        _security_blocked = True
 
-    if agent4_result.send_to_agent5:
+    if not _security_blocked and agent4_result.send_to_agent5:
         if _AGENT5_AVAILABLE:
             print("\nHanding downloaded data to Agent 5 for preprocessing...")
             try:
@@ -1204,7 +1207,7 @@ def main():
                 f"Downloaded files are at: {agent4_result.download_location}"
             )
             print("Upload your Agent 5 files and they will be called automatically on the next run.")
-    else:
+    elif not _security_blocked:
         print(
             f"\nDone. {agent4_result.successful_download_count} validated file(s) written to: "
             f"{agent4_result.download_location}"

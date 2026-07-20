@@ -64,13 +64,35 @@ def _build_context(entries: List[AdaptiveRankingEntry], requested_variables: Lis
     return website_analyses, source_snapshots
 
 
+def _ensure_mandatory_variables(variables: List[str]) -> List[str]:
+    """
+    ADDED: 'location' and 'time' must always be present in the variable list
+    sent to Agent 4.  They are structural retrieval anchors — without them,
+    Agent 4 marks them Missing and coverage stays below 50 % regardless of
+    how many scientific variables were successfully retrieved.
+
+    This function is a safety net for callers that build requested_variables
+    without going through _enrich_requested_variables() in the interactive
+    runner (e.g. direct calls to ask_override_and_build_payload in tests
+    or non-interactive pipelines).
+    """
+    result = list(variables)
+    seen = {v.lower() for v in result}
+    for mandatory in ("location", "time"):
+        if mandatory not in seen:
+            result.append(mandatory)
+    return result
+
+
 def ask_override_and_build_payload(
     entries: List[AdaptiveRankingEntry],
     preference: RankingPreference,
     requested_variables: List[str] = None,
     pre_collected_credentials: Dict[str, Dict] = None,
 ) -> Agent3ToAgent4Payload:
-    requested_variables = requested_variables or []
+    # CHANGED: always ensure location + time are in the variable list so
+    # Agent 4 never marks them as "no source contributed this variable".
+    requested_variables = _ensure_mandatory_variables(requested_variables or [])
     pre_collected_credentials = pre_collected_credentials or {}
     real_cred, paid, unconfirmed = _credential_buckets(entries)
     website_analyses, source_snapshots = _build_context(entries, requested_variables)
@@ -103,6 +125,11 @@ def ask_override_and_build_payload(
                 notes=[
                     f"User overrode the ranked recommendations in favor of: {website}.",
                     "Ranked list, including credential-ease breakdown, is still included for Agent 4's reference.",
+                    "MANDATORY VARIABLES: 'location' and 'time' are considered "
+                    "RETRIEVED for any source whose spatial_coverage and "
+                    "temporal_coverage fields are non-empty.  Do NOT mark them "
+                    "Missing unless a source has literally no spatial or temporal "
+                    "metadata at all.",
                 ],
             )
         elif raw in ("2", "no", "n"):
@@ -126,6 +153,16 @@ def ask_override_and_build_payload(
                     f"{len(paid)} require payment; "
                     f"{len(unconfirmed)} require login but registration ease is unconfirmed -- "
                     f"Agent 4 should prompt the user for credentials directly.",
+                    # CHANGED: explicit guidance so Agent 4 never marks
+                    # location/time as 'Missing' for a source that has spatial
+                    # or temporal coverage metadata — they are implicitly provided
+                    # by every geospatial dataset even when not listed by name
+                    # in variables_available.
+                    "MANDATORY VARIABLES: 'location' and 'time' are considered "
+                    "RETRIEVED for any source whose spatial_coverage and "
+                    "temporal_coverage fields are non-empty.  Do NOT mark them "
+                    "Missing unless a source has literally no spatial or temporal "
+                    "metadata at all.",
                 ],
             )
         else:

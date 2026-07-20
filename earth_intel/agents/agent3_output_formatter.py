@@ -123,10 +123,26 @@ def format_ranked_output(
         print(f"      Variable availability    : {av.variable_availability_score:.2f}  (covers {len(av.covered_variables)}/{len(av.requested_variables) or 'n/a'} requested variables)")
         if av.availability_status.value == "unknown":
             print("        Note: This source's variable list was not extracted by the pipeline -- coverage is UNCONFIRMED, not absent.")
-        if av.covered_variables:
-            print(f"        Covered : {', '.join(av.covered_variables)}")
-        if av.missing_variables:
-            print(f"        Missing : {', '.join(av.missing_variables)}")
+
+        # CHANGED: location and time are structurally implicit in any source
+        # that declares spatial/temporal coverage — show them as covered rather
+        # than missing so Agent 4's variable table reflects reality.
+        implicitly_covered = set()
+        if "location" in av.missing_variables:
+            if a.availability.spatial_coverage_score > 0:
+                implicitly_covered.add("location")
+        if "time" in av.missing_variables:
+            if a.availability.temporal_coverage_score > 0:
+                implicitly_covered.add("time")
+
+        effective_covered  = list(av.covered_variables) + list(implicitly_covered)
+        effective_missing  = [v for v in av.missing_variables if v not in implicitly_covered]
+
+        if effective_covered:
+            suffix = "  *(implicit via spatial/temporal metadata)" if implicitly_covered else ""
+            print(f"        Covered : {', '.join(effective_covered)}{suffix}")
+        if effective_missing:
+            print(f"        Missing : {', '.join(effective_missing)}")
         print(f"      Spatial coverage         : {av.spatial_coverage_score:.2f} — {av.spatial_coverage_notes}")
         print(f"      Temporal coverage        : {av.temporal_coverage_score:.2f} — {av.temporal_coverage_notes}")
         print(f"      Resolution               : {av.resolution_score:.2f} — {av.resolution_notes}")

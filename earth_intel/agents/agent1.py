@@ -137,6 +137,130 @@ def _build_abbreviation_map(scientific_variables: list[dict]) -> dict[str, str]:
     return abbr_map
 
 
+def strip_non_scientific_variables(parsed: dict) -> dict:
+    """
+    Remove any entries from scientific_variables (and their matching
+    variable_priorities / variable_dependencies) where the variable name
+    is clearly a geographic place name or a time expression rather than
+    an actual scientific variable.
+
+    This is a safety net for cases where the LLM ignores the prompt
+    instruction and places tokens like "Chennai", "2023", or
+    "January-March 2023" into scientific_variables instead of into
+    spatial_context / temporal_context.
+
+    Detection heuristics (all case-insensitive):
+      1. Pure 4-digit year: "2023", "1998", etc.
+      2. Year range: "2020-2023", "2020–2023"
+      3. Month/season + year: "January 2023", "Summer 2023", etc.
+      4. Temporal prepositions: starts with "during ", "in ", "from ",
+         "between ", "for ", "before ", "after "
+      5. Known geographic keywords: contains "coast", "basin", "region",
+         "district", "city", "bay", "gulf", "sea", "ocean", "river",
+         "lake", "state", "country", "zone", "area", "island", "delta",
+         "estuary", "port", "harbour", "harbor"
+
+    Named place detection is intentionally conservative — we only remove
+    entries that are UNAMBIGUOUSLY non-scientific (pure years, temporal
+    phrases, or entries containing explicit geographic keywords).
+    Scientific terms like "Sea Surface Temperature" are NOT removed even
+    though they contain "sea", because the geographic-keyword check
+    requires the keyword to be a standalone word token, not a substring
+    of a longer scientific term.
+    """
+    import re
+
+    sci_vars = parsed.get("scientific_variables")
+    if not sci_vars or not isinstance(sci_vars, list):
+        return parsed
+
+    _MONTHS = {
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+        "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct",
+        "nov", "dec",
+    }
+    _SEASONS = {"summer", "winter", "monsoon", "pre-monsoon", "post-monsoon",
+                "spring", "autumn", "fall", "rabi", "kharif"}
+    _TEMPORAL_PREFIXES = (
+        "during ", "in ", "from ", "between ", "for ",
+        "before ", "after ", "over ", "throughout ",
+    )
+    # Geographic keywords — must appear as a whole word so "sea surface
+    # temperature" does NOT match on "sea".
+    _GEO_KEYWORDS = re.compile(
+        r"(coast(?:al|line)?|basin|region|district|city|bay|gulf|"
+        r"ocean|river|lake|state|country|zone|island|delta|estuary|"
+        r"port|harbour|harbor|peninsula|strait|channel|province|"
+        r"prefecture|municipality|township|village|town|ward)",
+        re.IGNORECASE,
+    )
+
+    def _is_non_scientific(name: str) -> bool:
+        n = name.strip()
+        nl = n.lower()
+
+        # Pure 4-digit year
+        if re.fullmatch(r"\d{4}", n):
+            return True
+
+        # Year range  e.g. "2020-2023" or "2020–2023"
+        if re.fullmatch(r"\d{4}[\-–]\d{4}", n):
+            return True
+
+        # Starts with a temporal preposition
+        if any(nl.startswith(pfx) for pfx in _TEMPORAL_PREFIXES):
+            return True
+
+        # Contains a month or season token (possibly with a year)
+        tokens = set(re.split(r"[\s,\-–/]+", nl))
+        if tokens & _MONTHS or tokens & _SEASONS:
+            return True
+
+        # Contains an explicit geographic keyword as a whole word
+        if _GEO_KEYWORDS.search(n):
+            return True
+
+        return False
+
+    removed = set()
+    filtered_vars = []
+    for entry in sci_vars:
+        if isinstance(entry, dict):
+            vname = entry.get("variable", "")
+            if _is_non_scientific(vname):
+                print(
+                    f"[Agent 1] Removing non-scientific variable: '{vname}'"
+                )
+                removed.add(vname.lower().strip())
+                continue
+        filtered_vars.append(entry)
+
+    parsed["scientific_variables"] = filtered_vars
+
+    if removed:
+        # Purge matching entries from variable_priorities
+        parsed["variable_priorities"] = [
+            vp for vp in parsed.get("variable_priorities", [])
+            if isinstance(vp, dict)
+            and vp.get("variable", "").lower().strip() not in removed
+        ]
+        # Purge from variable_dependencies
+        parsed["variable_dependencies"] = [
+            vd for vd in parsed.get("variable_dependencies", [])
+            if isinstance(vd, dict)
+            and vd.get("variable", "").lower().strip() not in removed
+        ]
+        # Purge from measurements
+        parsed["measurements"] = [
+            m for m in parsed.get("measurements", [])
+            if isinstance(m, dict)
+            and m.get("variable_measured", "").lower().strip() not in removed
+        ]
+
+    return parsed
+
+
 def normalize_measurement_references(parsed: dict) -> dict:
     """
     Rewrite measurement.variable_measured to use the canonical variable name
@@ -371,6 +495,7 @@ User query:
             # measurements even when scientific_variables uses the full canonical
             # form. This rewrites abbreviated references to the canonical name so
             # the schema validator's cross-reference check always passes.
+            parsed = strip_non_scientific_variables(parsed)
             parsed = normalize_measurement_references(parsed)
             parsed = normalize_domain_references(parsed)
 

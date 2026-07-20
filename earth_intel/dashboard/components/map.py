@@ -144,13 +144,27 @@ def _score_color(final_score: float, alpha: int = 120) -> list[int]:
     return [r, g, 50, alpha]
 
 
-def render_map(result) -> None:
-    """Render a PyDeck map of accepted dataset coverage areas if coords exist."""
+def render_map(result, agent4_result=None) -> None:
+    """Render a PyDeck map of accepted dataset coverage areas if coords exist.
+
+    When agent4_result carries a resolved_bounding_box (the geocoded query
+    region — e.g. the bounding box for "Chennai"), that box is drawn as a
+    distinct highlight layer and used to centre/zoom the map.  Dataset
+    coverage polygons are rendered as faint context behind it.  Without
+    agent4_result the old behaviour is preserved.
+    """
     try:
         import pydeck as pdk
     except ImportError:
         st.caption("Install pydeck to enable the coverage map: `pip install pydeck`")
         return
+
+    # ── Resolved query bounding box from Agent 4 (the actual place asked about) ──
+    query_bbox: tuple[float, float, float, float] | None = (
+        agent4_result.resolved_bounding_box
+        if agent4_result and getattr(agent4_result, "resolved_bounding_box", None)
+        else None
+    )
 
     all_sources = result.ranked_sources + getattr(result, "auth_required_sources", [])
 
@@ -181,53 +195,93 @@ def render_map(result) -> None:
             "_score": src.final_score,
         }))
 
-    if not raw_polygons:
+    if not raw_polygons and query_bbox is None:
         st.caption(
             "No parseable spatial bounds found — map not displayed. "
             f"Datasets without recognised bounds: {', '.join(skipped) or 'none'}."
         )
         return
 
-    # ── Alpha-fade polygons by relative size ────────────────────────────
-    # Smallest (most specific) polygon → alpha 160 (solid).
-    # Largest (global/ocean background) → alpha 20 (ghost outline).
-    # This keeps Indian Ocean etc. visible as context without drowning
-    # out the actual query region (e.g. Chennai, Chicago).
-    min_area = min(a for a, _ in raw_polygons)
-    max_area = max(a for a, _ in raw_polygons)
+    # ── Alpha-fade dataset polygons by relative size ─────────────────────
+    # When a query_bbox is present the dataset polygons are background
+    # context only, so cap their alpha lower (max 60) to keep them ghosted.
+    # Without a query_bbox use the original range (max 160).
+    bg_alpha_max = 60 if query_bbox else 160
+
+    min_area = min((a for a, _ in raw_polygons), default=1.0)
+    max_area = max((a for a, _ in raw_polygons), default=1.0)
     area_range = max(max_area - min_area, 1.0)
 
     polygons: list[tuple[float, dict]] = []
     for area, p in raw_polygons:
         relative_size = (area - min_area) / area_range
-        alpha = int(160 - relative_size * 135)
-        alpha = max(20, min(160, alpha))
+        alpha = int(bg_alpha_max - relative_size * (bg_alpha_max - 15))
+        alpha = max(15, min(bg_alpha_max, alpha))
         p["fill_color"] = _score_color(p["_score"], alpha=alpha)
         p.pop("_bbox", None)
         p.pop("_score", None)
         polygons.append((area, p))
 
-    # ── Center and zoom on the smallest (most query-relevant) polygon ────
-    focus_area, focus_poly = min(polygons, key=lambda x: x[0])
-    focus_coords = focus_poly["coordinates"][0]
-    focus_lons = [pt[0] for pt in focus_coords]
-    focus_lats = [pt[1] for pt in focus_coords]
-    centre_lon = (min(focus_lons) + max(focus_lons)) / 2
-    centre_lat = (min(focus_lats) + max(focus_lats)) / 2
-    zoom = _zoom_for_bbox(min(focus_lons), min(focus_lats), max(focus_lons), max(focus_lats))
-
     final_polygons = [p for _, p in polygons]
 
-    layer = pdk.Layer(
-        "PolygonLayer",
-        data=final_polygons,
-        get_polygon="coordinates",
-        get_fill_color="fill_color",
-        get_line_color=[59, 130, 246, 200],
-        line_width_min_pixels=1,
-        pickable=True,
-        auto_highlight=True,
-    )
+    # ── Centre / zoom ────────────────────────────────────────────────────
+    # Priority: query_bbox > smallest dataset polygon.
+    if query_bbox:
+        q_min_lon, q_min_lat, q_max_lon, q_max_lat = query_bbox
+        centre_lon = (q_min_lon + q_max_lon) / 2
+        centre_lat = (q_min_lat + q_max_lat) / 2
+        zoom = _zoom_for_bbox(q_min_lon, q_min_lat, q_max_lon, q_max_lat)
+    elif polygons:
+        focus_area, focus_poly = min(polygons, key=lambda x: x[0])
+        focus_coords = focus_poly["coordinates"][0]
+        focus_lons = [pt[0] for pt in focus_coords]
+        focus_lats = [pt[1] for pt in focus_coords]
+        centre_lon = (min(focus_lons) + max(focus_lons)) / 2
+        centre_lat = (min(focus_lats) + max(focus_lats)) / 2
+        zoom = _zoom_for_bbox(min(focus_lons), min(focus_lats), max(focus_lons), max(focus_lats))
+    else:
+        centre_lon, centre_lat, zoom = 0.0, 0.0, 2
+
+    # ── Layers ───────────────────────────────────────────────────────────
+    layers: list = []
+
+    # Background: faint dataset coverage polygons
+    if final_polygons:
+        layers.append(pdk.Layer(
+            "PolygonLayer",
+            data=final_polygons,
+            get_polygon="coordinates",
+            get_fill_color="fill_color",
+            get_line_color=[59, 130, 246, 80],
+            line_width_min_pixels=1,
+            pickable=True,
+            auto_highlight=True,
+        ))
+
+    # Foreground: the actual resolved query region (solid green highlight)
+    if query_bbox:
+        q_min_lon, q_min_lat, q_max_lon, q_max_lat = query_bbox
+        query_polygon = [{
+            "name": "Query region",
+            "coordinates": [[
+                [q_min_lon, q_min_lat],
+                [q_max_lon, q_min_lat],
+                [q_max_lon, q_max_lat],
+                [q_min_lon, q_max_lat],
+                [q_min_lon, q_min_lat],
+            ]],
+            "fill_color": [34, 139, 34, 160],   # forest green, clearly visible
+        }]
+        layers.append(pdk.Layer(
+            "PolygonLayer",
+            data=query_polygon,
+            get_polygon="coordinates",
+            get_fill_color="fill_color",
+            get_line_color=[0, 80, 0, 255],
+            line_width_min_pixels=2,
+            pickable=True,
+            auto_highlight=True,
+        ))
 
     view = pdk.ViewState(
         longitude=centre_lon,
@@ -245,7 +299,7 @@ def render_map(result) -> None:
 
     st.pydeck_chart(
         pdk.Deck(
-            layers=[layer],
+            layers=layers,
             initial_view_state=view,
             tooltip={"text": "{name}\nScore: {score}%\nCoverage: {spatial_coverage}"},
             map_style=map_style,
@@ -253,6 +307,8 @@ def render_map(result) -> None:
     )
 
     caption = f"Showing coverage for {len(final_polygons)} dataset(s). Colour: green = high score, red = low score."
+    if query_bbox:
+        caption += " Dark green box = resolved query region."
     if skipped:
         caption += f" ({len(skipped)} dataset(s) with unrecognised bounds not shown.)"
     st.caption(caption)

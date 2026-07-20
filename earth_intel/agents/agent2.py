@@ -160,6 +160,36 @@ def normalize_user_responses(user_responses) -> list[dict]:
     return normalized
 
 
+def _sanitize_questions_asked(questions_asked) -> list:
+    """
+    Ensures every entry in a questions_asked list has the required
+    Agent2ClarificationQuestion fields ('reason' and 'priority') before
+    Pydantic validation runs.
+
+    WHY THIS IS NEEDED:
+    dashboard_app.py builds ClarificationRound history dicts in two
+    places. The clarification-answers path previously only copied the
+    'question' key, leaving 'reason' and 'priority' missing. Even after
+    that dashboard fix, the LLM may echo back history entries (from the
+    prompt's clarification_history block) with the same truncated shape,
+    so we need a defensive layer here too.
+
+    Only supplies defaults for genuinely missing keys -- existing values
+    are never overwritten.
+    """
+    if not isinstance(questions_asked, list):
+        return questions_asked if questions_asked is not None else []
+
+    sanitized = []
+    for q in questions_asked:
+        if isinstance(q, dict):
+            q.setdefault("reason", "User clarification")
+            q.setdefault("priority", "important")
+        sanitized.append(q)
+
+    return sanitized
+
+
 def normalize_clarification_history(clarification_history) -> list[dict]:
     """
     Accepts None, a list of dicts, or a list of ClarificationRound
@@ -178,6 +208,18 @@ def normalize_clarification_history(clarification_history) -> list[dict]:
             normalized.append(item.model_dump())
 
         elif isinstance(item, dict):
+            # Sanitize questions_asked before validation so that history
+            # entries built with only a 'question' key (e.g. from an older
+            # version of dashboard_app.py, or echoed back by the LLM with
+            # truncated fields) don't cause a Pydantic 'field required'
+            # ValidationError on 'reason' or 'priority'.
+            if "questions_asked" in item:
+                item = {
+                    **item,
+                    "questions_asked": _sanitize_questions_asked(
+                        item["questions_asked"]
+                    ),
+                }
             normalized.append(
                 ClarificationRound.model_validate(item).model_dump()
             )
@@ -878,7 +920,7 @@ def _ensure_retrieval_preferences_question_present(
             "(e.g. NetCDF, GeoTIFF, CSV) or spatial resolution."
         ),
         "priority": "low",
-        "rationale": (
+        "reason": (
             "Location and time period are already known from your query. "
             "This question confirms variable scope and format preferences "
             "before retrieval begins."
@@ -1157,7 +1199,7 @@ def _filter_redundant_questions_from_known_state(
             filtered.append({
                 "question": gap_description,
                 "priority": "low",
-                "rationale": f"Non-critical gap surfaced by filter backstop: {gap_name}",
+                "reason": f"Non-critical gap surfaced by filter backstop: {gap_name}",
                 "resolves_gaps": [gap_name],
                 "is_scope_question": False,
             })

@@ -140,6 +140,31 @@ Breadth must stay grounded — every variable needs a real `relevance`
 justification tied back to the research goal, not a generic filler sentence.
 
 -----------------------------------------------------------
+CRITICAL: WHAT MUST NEVER APPEAR IN scientific_variables
+-----------------------------------------------------------
+
+Geographic names (cities, regions, countries, water bodies, coastlines,
+basins, etc.) and time expressions (years, months, date ranges, seasons)
+are NOT scientific variables. They are retrieval parameters and must ONLY
+appear in the structured fields that exist for them:
+
+  - Location names  ->  spatial_context.location  and
+                        spatial_context.geographic_extent
+  - Time periods    ->  temporal_context.date_range  and
+                        temporal_context.event_window
+
+EXAMPLES OF FORBIDDEN scientific_variables entries:
+  X  "Chennai"
+  X  "Bay of Bengal"
+  X  "Tamil Nadu coast"
+  X  "2023"
+  X  "January-March 2023"
+  X  "During 2023"
+
+These tokens must flow into spatial_context / temporal_context ONLY.
+If they appear anywhere in scientific_variables your output is INVALID.
+
+-----------------------------------------------------------
 STEP 2 (EXPANDED): SCIENTIFIC OBJECTIVES
 -----------------------------------------------------------
 

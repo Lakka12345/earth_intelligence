@@ -203,6 +203,14 @@ class Agent4Output(BaseModel):
     # Security Risk Assessment gate. Must be a declared field -- passing it
     # as an undeclared constructor kwarg is silently ignored by pydantic.
     security_reports: Optional[Dict[str, Any]] = None
+    # MAP FIX — the geocoded query bounding box and resolved time range, set
+    # by run_agent4() from agent4_query_geoparser / agent4_query_dateparser.
+    # Passed to the dashboard map so it draws the actual query region (e.g.
+    # Chennai) instead of each dataset's full spatial extent (e.g. "global").
+    # Tuple order: (min_lon, min_lat, max_lon, max_lat).  None when geocoding
+    # could not resolve the query location to a specific bounding box.
+    resolved_bounding_box: Optional[tuple] = None
+    resolved_time_range: Optional[List[str]] = None
 
     @property
     def successful_download_count(self) -> int:

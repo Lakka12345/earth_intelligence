@@ -682,6 +682,7 @@ def inject_styles() -> None:
             letter-spacing: 0.08em;
             text-transform: uppercase;
             margin-bottom: 10px;
+        }
 
         /* ── Clean Streamlit alert / error boxes ───────────────── */
         div[data-testid="stAlert"] {

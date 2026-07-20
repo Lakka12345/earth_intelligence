@@ -3,6 +3,7 @@ dashboard_app.py
 ================
 Streamlit entry point for the Design and Development of Multi Agent AI
 Framework for Data Discovery and Retrieval dashboard.
+Streamlit entry point for the Agentic AI System for Automated Discovery and Analysis of Datasets dashboard.
 
 Integrates the original multi-agent dashboard (Agents 1-3) with the new
 Voice / Chat interface that connects to the FastAPI backend
@@ -30,6 +31,8 @@ import streamlit as st
 st.set_page_config(
     page_title="Design and Development of Multi Agent AI Framework for Data Discovery and Retrieval",
     page_icon="🤖",
+    page_title="Agentic AI System for Automated Discovery and Analysis of Datasets",
+    page_icon="🌊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -74,8 +77,12 @@ try:
     from models.plan_reconciliation import reconcile_agent1_plan
     from models.retrieval_request import build_retrieval_request
     AGENTS_AVAILABLE = True
-except ImportError:
+except Exception as _import_err:
+    import traceback as _tb
     AGENTS_AVAILABLE = False
+    _AGENTS_IMPORT_ERROR = f"{type(_import_err).__name__}: {_import_err}\n\n{''.join(_tb.format_tb(_import_err.__traceback__))}"
+else:
+    _AGENTS_IMPORT_ERROR = None
 
 
 # ══════════════════════════════════════════════════════════════════════════ #
@@ -140,10 +147,33 @@ def _build_agent4_payload(a3_result, retrieval_request):
     paid: list = []
     unconfirmed: list = []
 
-    requested_variables = (
-        [v.variable for v in retrieval_request.variables]
-        if retrieval_request else []
-    )
+    # CHANGED: mirror the fix in agent3_interactive_runner.py and
+    # website_analyzer.py — 'location' and 'time' are mandatory structural
+    # variables that must always be present in the payload sent to Agent 4.
+    # The old code only read retrieval_request.variables and never looked at
+    # spatial_requirements / temporal_requirements, so Agent 4 always marked
+    # Location and Time as Missing, dragging coverage to 33%.
+    if retrieval_request:
+        requested_variables = [v.variable for v in retrieval_request.variables]
+        _seen = {v.lower() for v in requested_variables}
+
+        for mandatory in ("location", "time"):
+            if mandatory not in _seen:
+                requested_variables.append(mandatory)
+                _seen.add(mandatory)
+
+        spatial_reqs = getattr(retrieval_request, "spatial_requirements", None) or {}
+        location_val = (spatial_reqs.get("location", "") or "").strip()
+        if location_val and location_val.lower() not in ("unknown", "unspecified", "")                 and location_val.lower() not in _seen:
+            requested_variables.append(location_val)
+            _seen.add(location_val.lower())
+
+        temporal_reqs = getattr(retrieval_request, "temporal_requirements", None) or {}
+        time_val = (temporal_reqs.get("date_range", "") or "").strip()
+        if time_val and time_val.lower() not in ("unknown", "unspecified", "")                 and time_val.lower() not in _seen:
+            requested_variables.append(time_val)
+    else:
+        requested_variables = ["location", "time"]
 
     for scored in all_scored:
         c = scored.candidate
@@ -197,10 +227,28 @@ def _build_agent4_payload(a3_result, retrieval_request):
                 relevance_score=scored.final_score,
                 completeness_score=scored.score_card.completeness.score,
                 requested_variables=requested_variables,
-                covered_variables=list(c.variables_available),
+                # CHANGED: satisfy 'location' and 'time' implicitly from
+                # the candidate's spatial/temporal coverage metadata rather
+                # than requiring them to appear literally in variables_available
+                # (they never do, which previously made them always Missing).
+                covered_variables=(
+                    list(c.variables_available)
+                    + (["location"] if (getattr(c, "spatial_coverage", "") or "").strip()
+                       and (getattr(c, "spatial_coverage", "") or "").strip().lower() not in ("unknown", "")
+                       else [])
+                    + (["time"] if (getattr(c, "temporal_coverage", "") or "").strip()
+                       and (getattr(c, "temporal_coverage", "") or "").strip().lower() not in ("unknown", "")
+                       else [])
+                ),
                 missing_variables=[
                     v for v in requested_variables
                     if v.lower() not in [x.lower() for x in c.variables_available]
+                    and not (v.lower() == "location"
+                             and (getattr(c, "spatial_coverage", "") or "").strip()
+                             and (getattr(c, "spatial_coverage", "") or "").strip().lower() not in ("unknown", ""))
+                    and not (v.lower() == "time"
+                             and (getattr(c, "temporal_coverage", "") or "").strip()
+                             and (getattr(c, "temporal_coverage", "") or "").strip().lower() not in ("unknown", ""))
                 ],
                 variable_availability_score=scored.score_card.completeness.score,
                 spatial_coverage_score=scored.score_card.geographic_match.score,
@@ -242,11 +290,9 @@ def _run_pipeline(query: str) -> None:
     import time
 
     if not AGENTS_AVAILABLE:
-        st.error(
-            "Agent modules not found. Make sure `agents/`, `models/`, and `security/` "
-            "are on the Python path. The dashboard UI is fully functional — "
-            "connect your agents to enable pipeline execution."
-        )
+        st.error("Agent import failed — pipeline cannot run.")
+        if _AGENTS_IMPORT_ERROR:
+            st.code(_AGENTS_IMPORT_ERROR, language="python")
         return
 
     st.session_state.pipeline_stage = "running_a1"
@@ -344,7 +390,16 @@ if AGENTS_AVAILABLE:
                     history   = st.session_state.get("clarification_history", [])
                     history.append({
                         "round_number":       round_num,
-                        "questions_asked":    [{"question": getattr(q, "question", str(q))} for q in questions],
+                        "questions_asked":    [
+                            {
+                                "question":      getattr(q, "question",      str(q)),
+                                "reason":        getattr(q, "reason",        "User clarification"),
+                                "priority":      getattr(q, "priority",      "important"),
+                                "resolves_gaps": getattr(q, "resolves_gaps", []),
+                                "options":       getattr(q, "options",       []),
+                            }
+                            for q in questions
+                        ],
                         "responses_received": user_responses,
                     })
                     st.session_state.clarification_history = history
@@ -760,6 +815,12 @@ if AGENTS_AVAILABLE:
                     f"Agent 4 complete — {a4.coverage_percent:.1f}% variable coverage, "
                     f"{len([m for m in a4.manifest if m.success])} download(s) succeeded."
                 )
+                # Route to Agent 5 if the user requested preprocessing
+                if a4.send_to_agent5:
+                    st.session_state.pipeline_stage = "running_a5"
+                else:
+                    st.session_state.pipeline_stage = "done"
+                    save_completed_analysis()
                 if getattr(a4, "send_to_agent5", False):
                     st.session_state.pipeline_stage = "running_a5"
                     st.rerun()
@@ -768,7 +829,47 @@ if AGENTS_AVAILABLE:
                     save_completed_analysis()
             except Exception as exc:
                 st.session_state.pipeline_stage = "error"
-                append_log(f"Agent 4 error: {exc}")
+                append_log(f"Agent 5 error: {exc}")
+
+    elif st.session_state.pipeline_stage == "running_a5":
+        with st.spinner("⚙️ Agent 5 — Preprocessing and analysing data…"):
+            t0 = time.time()
+            try:
+                from agents.agent5 import run_agent5
+                a4 = st.session_state.agent4_result
+                retrieval_request = st.session_state.get("last_retrieval_request")
+                a5 = run_agent5(retrieval_request, a4)
+                st.session_state.agent5_result = a5
+                st.session_state.timings["agent5"] = round(time.time() - t0, 2)
+                append_log(
+                    f"Agent 5 complete — {len(getattr(a5, 'processed_datasets', []))} "
+                    f"dataset(s) preprocessed."
+                )
+            except Exception as exc:
+                append_log(f"Agent 5 error: {exc}")
+            finally:
+                st.session_state.pipeline_stage = "done"
+                save_completed_analysis()
+
+    elif st.session_state.pipeline_stage == "running_a5":
+        with st.spinner("⚙️ Agent 5 — Preprocessing and analysing data…"):
+            t0 = time.time()
+            try:
+                from agents.agent5 import run_agent5
+                a4 = st.session_state.agent4_result
+                retrieval_request = st.session_state.get("last_retrieval_request")
+                a5 = run_agent5(retrieval_request, a4)
+                st.session_state.agent5_result = a5
+                st.session_state.timings["agent5"] = round(time.time() - t0, 2)
+                append_log(
+                    f"Agent 5 complete — {len(getattr(a5, 'processed_datasets', []))} "
+                    f"dataset(s) preprocessed."
+                )
+            except Exception as exc:
+                append_log(f"Agent 5 error: {exc}")
+            finally:
+                st.session_state.pipeline_stage = "done"
+                save_completed_analysis()
 
     elif st.session_state.pipeline_stage == "running_a5":
         with st.spinner("⚙️ Agent 5 — Pre-processing downloaded datasets…"):
@@ -793,6 +894,8 @@ if AGENTS_AVAILABLE:
 
 def _render_dashboard() -> None:
     """Main dashboard view."""
+    st.session_state.setdefault("agent5_result", None)
+    st.markdown("## 🌊 Agentic AI System for Automated Discovery and Analysis of Datasets")
     from dashboard.components.auth import PLATFORM_NAME
     st.markdown(f"## 🤖 {PLATFORM_NAME}")
     st.caption("Multi-agent scientific dataset discovery system")
@@ -814,11 +917,36 @@ def _render_dashboard() -> None:
         render_dataset_detail(st.session_state.agent3_result)
 
         with st.expander("🗺 Spatial Coverage Map", expanded=False):
-            render_map(st.session_state.agent3_result)
+            render_map(
+                st.session_state.agent3_result,
+                agent4_result=st.session_state.get("agent4_result"),
+            )
 
     if st.session_state.get("agent4_result"):
         st.divider()
         render_agent4_panel(st.session_state.agent4_result)
+
+    if st.session_state.get("agent5_result"):
+        st.divider()
+        st.markdown("### ⚙️ Agent 5 — Preprocessing & Analysis")
+        a5 = st.session_state.agent5_result
+        processed = getattr(a5, "processed_datasets", [])
+        analyses  = getattr(a5, "analyses", [])
+        if processed:
+            st.success(f"{len(processed)} dataset(s) preprocessed successfully.")
+            for ds in processed:
+                name = getattr(ds, "source_id", str(ds))
+                fmt  = getattr(ds, "output_format", "")
+                path = getattr(ds, "output_path", "")
+                st.markdown(f"- **{name}** — `{fmt}` → `{path}`")
+        if analyses:
+            for analysis in analyses:
+                atype = getattr(analysis, "analysis_type", "Analysis")
+                with st.expander(f"📈 {atype}", expanded=False):
+                    st.json(analysis.model_dump() if hasattr(analysis, "model_dump") else str(analysis))
+        notes = getattr(a5, "notes", [])
+        for note in notes:
+            st.info(note)
 
     if st.session_state.get("agent5_result"):
         st.divider()

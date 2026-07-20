@@ -1,5 +1,49 @@
 [
   {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA NCEI",
+    "provider": "NOAA NCEI",
+    "filename": "NOAA_NCEI_noaa_ncei.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\NOAA_NCEI_noaa_ncei.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "6d93f0aa89218004dddd7fbfae5475a22045d4f3b382b144cda41debe9027914",
+    "timestamp": "2026-07-16T07:15:22.542388+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch ERDDAP",
+    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
+    "timestamp": "2026-07-16T12:27:52.196126+00:00"
+  },
+  {
+    "dataset_id": "nesdisBLENDEDsstDNDaily",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": "NOAA GFS via NOMADS",
+    "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
+    "timestamp": "2026-07-16T12:33:18.230168+00:00"
+  },
+  {
+    "dataset_id": "gfs-0p25",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": "NOAA GFS via NOMADS",
+    "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 500302007,
+    "algorithm": "SHA-256",
+    "checksum": "eab835b80d7a22402a4deb4121de77c399eb475c6941b7e5df9f8770906423cf",
+    "timestamp": "2026-07-18T14:00:54.780480+00:00"
+  },
+  {
     "dataset_id": "gdacs-fl",
     "dataset_name": "GDACS (Global Disaster Alerts)",
     "provider": "GDACS (Global Disaster Alerts)",
@@ -9,6 +53,28 @@
     "algorithm": "SHA-256",
     "checksum": "295714f65a5e326f3e5062a61ed28e1187fa61ecfe30fed14bb64c43afa69493",
     "timestamp": "2026-07-18T14:04:25.662239+00:00"
+  },
+  {
+    "dataset_id": "gdacs-eq-tc-fl-vo-wf-dr",
+    "dataset_name": "Argo Float Data (global, all GDACs)",
+    "provider": "Argo Float Data (global, all GDACs)",
+    "filename": "Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat",
+    "file_size": 329,
+    "algorithm": "SHA-256",
+    "checksum": "06570a0ffdeb3d0d0d842123a13660e2c1dd4087bd579a60b97563b78a4160a8",
+    "timestamp": "2026-07-18T17:46:52.320403+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA NCEI",
+    "provider": "NOAA NCEI",
+    "filename": "NOAA_NCEI_noaa_ncei.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 503596826,
+    "algorithm": "SHA-256",
+    "checksum": "d951434dce72d146a7deab3f87b056534154c421d1343468812453cb6bfe6f63",
+    "timestamp": "2026-07-18T18:32:00.740863+00:00"
   },
   {
     "dataset_id": "gdacs-fl",
@@ -110,41 +176,36 @@
     "timestamp": "2026-07-20T09:16:53.356638+00:00"
   },
   {
-    "dataset_id": "erdlasFnOscursLL",
-    "dataset_name": "NOAA NCEI",
-    "provider": "NOAA NCEI",
-    "filename": "NOAA_NCEI_noaa_ncei.dat",
-    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\NOAA_NCEI_noaa_ncei.dat",
-    "file_size": 136512,
+    "dataset_id": "GISTEMP-v4",
+    "dataset_name": "NASA Earthdata / PO.DAAC / OceanColor",
+    "provider": "NASA Earthdata / PO.DAAC / OceanColor",
+    "filename": "NASA_Earthdata___PO.DAAC___OceanColor_nasa_earthdata.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NASA_Earthdata___PO.DAAC___OceanColor_nasa_earthdata.dat",
+    "file_size": 12881,
     "algorithm": "SHA-256",
-<<<<<<< HEAD
-    "checksum": "6d93f0aa89218004dddd7fbfae5475a22045d4f3b382b144cda41debe9027914",
-    "timestamp": "2026-07-16T07:15:22.542388+00:00"
+    "checksum": "99d659d8c955c6599e93be3691467ff56eff80ee4b066c5cacfaaa6f7332ca9f",
+    "timestamp": "2026-07-24T04:32:15.896689+00:00"
   },
   {
-    "dataset_id": "erdlasFnOscursLL",
-    "dataset_name": "NOAA CoastWatch ERDDAP",
-    "provider": "NOAA CoastWatch ERDDAP",
-    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
-    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
-    "file_size": 136512,
-    "algorithm": "SHA-256",
-    "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
-    "timestamp": "2026-07-16T12:27:52.196126+00:00"
-  },
-  {
-    "dataset_id": "nesdisBLENDEDsstDNDaily",
+    "dataset_id": "gfs-0p25",
     "dataset_name": "NOAA GFS via NOMADS",
     "provider": "NOAA GFS via NOMADS",
     "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
-    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
-    "file_size": 136512,
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 514251059,
     "algorithm": "SHA-256",
-    "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
-    "timestamp": "2026-07-16T12:33:18.230168+00:00"
-=======
-    "checksum": "ff320416f2ab84a7f2eee1a9ae8a213dfee05749562e1d745773d9e74e6be194",
-    "timestamp": "2026-07-20T15:37:15.222359+00:00"
->>>>>>> cc1656dfae7aa0dc2853064d73058ceec1cec18a
+    "checksum": "181e9c4f3b22fabb2f5237268d9b9216a645bec288480b149a9ac07d074dda0a",
+    "timestamp": "2026-07-24T05:11:25.597285+00:00"
+  },
+  {
+    "dataset_id": "gdacs-eq-tc-fl-vo-wf-dr",
+    "dataset_name": "Argo Float Data (global, all GDACs)",
+    "provider": "Argo Float Data (global, all GDACs)",
+    "filename": "Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat",
+    "file_size": 146576,
+    "algorithm": "SHA-256",
+    "checksum": "36bdb15a30895df095909e465341ca8069258876f3179221a13ce7c7ed3aba33",
+    "timestamp": "2026-07-24T07:39:20.652390+00:00"
   }
 ]

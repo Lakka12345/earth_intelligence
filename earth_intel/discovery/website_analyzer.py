@@ -284,7 +284,29 @@ def _build_accessibility(candidate, score_card) -> AccessibilityProfile:
 # --------------------------------------------------------------------- #
 
 def _requested_variables(request: RetrievalRequest) -> List[str]:
+    """
+    Build the full list of variables this request requires.
+
+    CHANGED: 'location' and 'time' are now always injected as mandatory
+    structural variables, even though they live in spatial_requirements /
+    temporal_requirements rather than in request.variables or
+    request.measurements.
+
+    Why this matters:
+      _build_availability() calls this to compute covered_variables and
+      missing_variables for every candidate source.  When 'location' and
+      'time' were absent from this list, Agent 4 always showed them as
+      "Missing — no ranked Agent 3 source contributed this variable",
+      which dragged coverage to 33 % even when the primary scientific
+      variable (e.g. SST) was retrieved perfectly.
+
+    The concrete location string (e.g. "bay of bengal") and date-range
+    string are also injected when present so Agent 4 can pass them
+    through to its download queries rather than relying on generic tokens.
+    """
     variables = set()
+
+    # User-declared variables and measurements (unchanged)
     for var in getattr(request, "variables", []) or []:
         v = getattr(var, "variable", None)
         if v:
@@ -293,6 +315,24 @@ def _requested_variables(request: RetrievalRequest) -> List[str]:
         v = getattr(meas, "variable_measured", None)
         if v:
             variables.add(v.lower().strip())
+
+    # ── Mandatory structural variables ──────────────────────────────────
+    # Generic anchors — always present so coverage checks always find them.
+    variables.add("location")
+    variables.add("time")
+
+    # Concrete location string (e.g. "bay of bengal", "chennai coast")
+    spatial_reqs = getattr(request, "spatial_requirements", None) or {}
+    location_val = (spatial_reqs.get("location", "") or "").strip().lower()
+    if location_val and location_val not in ("unknown", "unspecified", ""):
+        variables.add(location_val)
+
+    # Concrete date-range string (e.g. "2024-01-01 to 2024-03-31")
+    temporal_reqs = getattr(request, "temporal_requirements", None) or {}
+    time_val = (temporal_reqs.get("date_range", "") or "").strip().lower()
+    if time_val and time_val not in ("unknown", "unspecified", ""):
+        variables.add(time_val)
+
     return sorted(variables)
 
 
@@ -348,6 +388,32 @@ def _variable_matches(requested: str, candidate_var: str) -> bool:
     return False
 
 
+def _looks_like_location_or_date(s: str) -> bool:
+    """
+    Returns True for concrete location strings (e.g. 'bay of bengal',
+    'chennai coast') and date-range strings (e.g. '2024-01-01 to 2024-03-31')
+    that _requested_variables() injects into the variable list as retrieval
+    anchors.  These should NOT count toward the scored variable set because
+    no source lists them in variables_available — they would always be Missing
+    and drag var_score down for every source.
+
+    Heuristics (deliberately permissive to avoid false-negatives):
+      - Contains a 4-digit year → date string
+      - Is longer than 25 chars → likely a place name phrase or date range
+      - Contains " to " → date range
+    """
+    if not s:
+        return False
+    import re
+    if re.search(r'\b(19|20)\d{2}\b', s):
+        return True
+    if " to " in s:
+        return True
+    if len(s) > 25:
+        return True
+    return False
+
+
 def _build_availability(candidate, score_card, request: RetrievalRequest) -> AvailabilityProfile:
     requested_vars = _requested_variables(request)
     raw_candidate_vars = [v.lower().strip() for v in (getattr(candidate, "variables_available", None) or []) if v]
@@ -359,14 +425,50 @@ def _build_availability(candidate, score_card, request: RetrievalRequest) -> Ava
     # 3 enrichment simply didn't populate variables_available for it.
     variables_extracted = bool(raw_candidate_vars)
 
+    # CHANGED: 'location' and 'time' are mandatory structural variables that
+    # virtually every geospatial source implicitly provides — they almost never
+    # appear literally in variables_available, so checking them against that list
+    # always produced Missing for every source, even excellent ones.
+    # Satisfy them implicitly: 'location' is covered if spatial_coverage is
+    # non-empty; 'time' is covered if temporal_coverage is non-empty.
+    # Concrete location/date-range strings injected by _requested_variables
+    # (e.g. "bay of bengal") are excluded from scoring so they don't dilute
+    # var_score for sources that don't list place names in variables_available.
+    _IMPLICIT_MANDATORY = {"location", "time"}
+
+    # Split requested vars into: implicit-mandatory, concrete-strings (skip from score), scientific
+    scientific_vars  = [rv for rv in requested_vars
+                        if rv not in _IMPLICIT_MANDATORY and not _looks_like_location_or_date(rv)]
+    mandatory_in_req = [rv for rv in requested_vars if rv in _IMPLICIT_MANDATORY]
+
+    # Implicit satisfaction via coverage metadata
+    implicitly_covered: set = set()
+    spatial_cov  = (getattr(candidate, "spatial_coverage",  "") or "").strip().lower()
+    temporal_cov = (getattr(candidate, "temporal_coverage", "") or "").strip().lower()
+    if "location" in mandatory_in_req and spatial_cov  and spatial_cov  not in ("unknown", ""):
+        implicitly_covered.add("location")
+    if "time"     in mandatory_in_req and temporal_cov and temporal_cov not in ("unknown", ""):
+        implicitly_covered.add("time")
+
     if variables_extracted:
-        covered = [rv for rv in requested_vars if any(_variable_matches(rv, cv) for cv in raw_candidate_vars)]
-        missing = [rv for rv in requested_vars if rv not in covered]
-        var_score = (len(covered) / len(requested_vars)) if requested_vars else 1.0
+        sci_covered = [rv for rv in scientific_vars
+                       if any(_variable_matches(rv, cv) for cv in raw_candidate_vars)]
+        sci_missing = [rv for rv in scientific_vars if rv not in sci_covered]
     else:
-        covered, missing = [], []
-        # Neutral, not zero: unextracted metadata is not evidence of absence.
-        var_score = 0.5 if requested_vars else 1.0
+        sci_covered, sci_missing = [], []
+
+    covered = sci_covered + list(implicitly_covered)
+    missing = (sci_missing
+               + [rv for rv in mandatory_in_req if rv not in implicitly_covered])
+
+    # Score over scientific vars + mandatory anchors only (not concrete strings)
+    scored_vars = scientific_vars + mandatory_in_req
+    if not scored_vars:
+        var_score = 1.0
+    elif not variables_extracted and not implicitly_covered:
+        var_score = 0.5   # neutral — unextracted metadata ≠ evidence of absence
+    else:
+        var_score = (len(sci_covered) + len(implicitly_covered)) / len(scored_vars)
 
     spatial_score = score_card.geographic_match.score if score_card else 0.5
     temporal_score = score_card.temporal_match.score if score_card else 0.5
@@ -500,7 +602,14 @@ def suggest_complementary_combination(
     if not requested_variables:
         return []
 
-    remaining = set(v.lower().strip() for v in requested_variables)
+    # CHANGED: 'location' and 'time' are implicitly covered by every source
+    # with spatial/temporal metadata — excluding them from the greedy-set
+    # calculation prevents the algorithm from endlessly seeking a source
+    # that "covers location" and picking sub-optimal combinations as a result.
+    _IMPLICIT = {"location", "time"}
+    remaining = set(v.lower().strip() for v in requested_variables
+                    if v.lower().strip() not in _IMPLICIT
+                    and not _looks_like_location_or_date(v.lower().strip()))
     candidates = list(analyses.values())
     chosen: List[str] = []
 

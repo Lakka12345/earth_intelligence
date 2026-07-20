@@ -992,6 +992,11 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | 
         ],
         # FIX 4 — security_reports passed via constructor, not as a dynamic attribute.
         security_reports=_security_reports,
+        # MAP FIX — expose the resolved query bounding box and time range so the
+        # dashboard draws the actual query region, not the raw dataset extents.
+        # These are Optional fields on Agent4Output (None when geocoding failed).
+        resolved_bounding_box=bounding_box,
+        resolved_time_range=list(time_range) if time_range else None,
     )
 
     _print_retrieval_report(output, source_snapshots)

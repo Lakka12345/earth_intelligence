@@ -238,6 +238,8 @@ def _render_single_card(source, bucket_label: str, dbs: dict | None = None) -> N
         else f"<span style='color:#64748b;font-size:12px;'>{bucket_label}</span>"
     )
 
+    status_label = source.status.value if hasattr(source.status, "value") else bucket_label
+    header = f"#{rank}  {name} — Score: {pct}% | {status_label}"
     header = (
         f"**#{rank}  {name}**  "
         f"— {pct}%  "
@@ -245,6 +247,7 @@ def _render_single_card(source, bucket_label: str, dbs: dict | None = None) -> N
     )
 
     with st.expander(header, expanded=False):
+        st.markdown(_status_chip(status_label), unsafe_allow_html=True)
 
         # Trust badges row (only when security data confirms them)
         if dbs:

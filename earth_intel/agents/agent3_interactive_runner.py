@@ -10,6 +10,55 @@ from models.retrieval_request import RetrievalRequest
 from models.website_analysis_schemas import Agent3ToAgent4Mode, Agent3ToAgent4Payload
 
 
+def _enrich_requested_variables(
+    raw_vars: list,
+    request: RetrievalRequest,
+) -> list:
+    """
+    ADDED: Guarantees that 'location' and 'time' are always present in the
+    requested_variables list passed to Agent 4, even when get_requested_variables()
+    (from website_analyzer.py) doesn't extract them.
+
+    These two structural variables are mandatory for every retrieval task:
+      - 'location' anchors the spatial query (bounding box / place name)
+      - 'time'     anchors the temporal query (date range / timestamp)
+
+    Without them, Agent 4's variable-coverage table always shows them as
+    "Missing / no ranked Agent 3 source contributed this variable", which
+    drags coverage below 50 % even for a perfectly executed retrieval.
+
+    Also injects the concrete location string and date_range string (if
+    present in the request) so Agent 4 can use them in its download queries
+    rather than relying on generic tokens alone.
+    """
+    enriched = list(raw_vars)
+    seen = {v.lower() for v in enriched}
+
+    # Generic mandatory anchors
+    for mandatory in ("location", "time"):
+        if mandatory not in seen:
+            enriched.append(mandatory)
+            seen.add(mandatory)
+
+    # Concrete location string (e.g. "bay of bengal")
+    location_val = (
+        request.spatial_requirements.get("location", "") or ""
+    ).strip().lower()
+    if location_val and location_val not in ("unknown", "unspecified", "") and location_val not in seen:
+        enriched.append(location_val)
+        seen.add(location_val)
+
+    # Concrete date range string
+    time_val = (
+        request.temporal_requirements.get("date_range", "") or ""
+    ).strip().lower()
+    if time_val and time_val not in ("unknown", "unspecified", "") and time_val not in seen:
+        enriched.append(time_val)
+        seen.add(time_val)
+
+    return enriched
+
+
 def run_agent3_interactive(
     request: RetrievalRequest,
     discovery_output,  # DiscoveryOutput, as returned by the existing, unmodified run_agent3()
@@ -42,6 +91,11 @@ def run_agent3_interactive(
         selected_criteria=preference.selected_criteria,
     )
 
-    requested_vars = get_requested_variables(request)
+    # CHANGED: enrich the variable list so 'location' and 'time' are always
+    # present — get_requested_variables() only reads request.variables and
+    # request.measurements, and misses the structural spatial/temporal fields.
+    raw_requested_vars = get_requested_variables(request)
+    requested_vars = _enrich_requested_variables(raw_requested_vars, request)
+
     pre_collected_credentials = dict(getattr(discovery_output, "retrieval_credentials", {}) or {})
     return ask_override_and_build_payload(entries, preference, requested_vars, pre_collected_credentials)
