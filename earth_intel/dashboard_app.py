@@ -1,7 +1,8 @@
 """
 dashboard_app.py
 ================
-Streamlit entry point for the Earth Intelligence Platform dashboard.
+Streamlit entry point for the Design and Development of Multi Agent AI
+Framework for Data Discovery and Retrieval dashboard.
 
 Integrates the original multi-agent dashboard (Agents 1-3) with the new
 Voice / Chat interface that connects to the FastAPI backend
@@ -27,8 +28,8 @@ import streamlit as st
 
 # ── Streamlit page config (must be first st call) ─────────────────────────
 st.set_page_config(
-    page_title="Earth Intelligence Platform",
-    page_icon="🌊",
+    page_title="Design and Development of Multi Agent AI Framework for Data Discovery and Retrieval",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -290,8 +291,8 @@ if AGENTS_AVAILABLE:
                     append_log("Agent 2 complete — awaiting user answers.")
                     st.session_state.pipeline_stage = "clarifying"
                 else:
-                    append_log("Agent 2 complete — no questions needed, proceeding.")
-                    st.session_state.pipeline_stage = "running_a3"
+                    append_log("Agent 2 complete — no questions needed, proceeding to understanding confirmation.")
+                    st.session_state.pipeline_stage = "confirm_understanding"
             except Exception as exc:
                 st.session_state.pipeline_stage = "error"
                 append_log(f"Agent 2 error: {exc}")
@@ -334,9 +335,8 @@ if AGENTS_AVAILABLE:
                 else:
                     user_responses = [
                         {
-                            "question_id": getattr(q, "question_id", f"q_{i}"),
-                            "question":    getattr(q, "question", str(q)),
-                            "answer":      responses[i].strip(),
+                            "field_name":  getattr(q, "question_id", f"q_{i}"),
+                            "user_answer": responses[i].strip(),
                         }
                         for i, q in enumerate(questions)
                     ]
@@ -436,9 +436,8 @@ if AGENTS_AVAILABLE:
                     st.session_state.show_modify_form = False
 
                     user_responses = [{
-                        "question_id": f"revision_{new_round}_modification",
-                        "question": "User-requested modification",
-                        "answer": change_request.strip(),
+                        "field_name": f"revision_{new_round}_modification",
+                        "user_answer": change_request.strip(),
                     }]
                     history = st.session_state.get("clarification_history", [])
                     history.append({
@@ -794,7 +793,8 @@ if AGENTS_AVAILABLE:
 
 def _render_dashboard() -> None:
     """Main dashboard view."""
-    st.markdown("## 🌊 Earth Intelligence Platform")
+    from dashboard.components.auth import PLATFORM_NAME
+    st.markdown(f"## 🤖 {PLATFORM_NAME}")
     st.caption("Multi-agent scientific dataset discovery system")
 
     render_metrics()

@@ -108,5 +108,16 @@
     "algorithm": "SHA-256",
     "checksum": "68d64ed02caeef11ffbb43be5ba7973b68c20735c291c3c34bd17060149d0429",
     "timestamp": "2026-07-20T09:16:53.356638+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA NCEI",
+    "provider": "NOAA NCEI",
+    "filename": "NOAA_NCEI_noaa_ncei.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\NOAA_NCEI_noaa_ncei.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "ff320416f2ab84a7f2eee1a9ae8a213dfee05749562e1d745773d9e74e6be194",
+    "timestamp": "2026-07-20T15:37:15.222359+00:00"
   }
 ]

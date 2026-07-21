@@ -36,6 +36,75 @@ def inject_styles() -> None:
             color: #64748b;
         }
 
+        /* ── Buttons: force a visible light style everywhere (fixes
+           dark-theme buttons rendering dark text on dark background) ── */
+        div[data-testid="stButton"] button,
+        div[data-testid="stFormSubmitButton"] button {
+            background:#ffffff !important;
+            color:#0f172a !important;
+            border:1px solid #cbd5e1 !important;
+            font-weight:600 !important;
+            box-shadow:0 6px 16px rgba(15,23,42,0.06);
+        }
+        div[data-testid="stButton"] button p,
+        div[data-testid="stFormSubmitButton"] button p,
+        div[data-testid="stButton"] button span,
+        div[data-testid="stFormSubmitButton"] button span {
+            color:#0f172a !important;
+        }
+        div[data-testid="stButton"] button:hover,
+        div[data-testid="stFormSubmitButton"] button:hover {
+            border-color:#94a3b8 !important;
+            background:#f8fafc !important;
+        }
+        /* Primary buttons (Login / Create Account) stay red + white text */
+        div[data-testid="stFormSubmitButton"] button[kind="primary"],
+        div[data-testid="stButton"] button[kind="primary"] {
+            background:#f43f5e !important;
+            border-color:#f43f5e !important;
+            color:#ffffff !important;
+        }
+        div[data-testid="stFormSubmitButton"] button[kind="primary"] p,
+        div[data-testid="stButton"] button[kind="primary"] p,
+        div[data-testid="stFormSubmitButton"] button[kind="primary"] span,
+        div[data-testid="stButton"] button[kind="primary"] span {
+            color:#ffffff !important;
+        }
+        div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
+        div[data-testid="stButton"] button[kind="primary"]:hover {
+            background:#e11d48 !important;
+            border-color:#e11d48 !important;
+        }
+
+        /* ── Hide orphan/bare checkboxes Streamlit injects on login ── */
+        /* These appear as floating empty squares between input fields.
+           We target the specific empty-label pattern Streamlit emits. */
+        div[data-testid="stForm"] div[data-testid="stCheckbox"] {
+            display: none !important;
+        }
+        /* Real checkboxes (if used elsewhere) stay visible */
+        div[data-testid="stCheckbox"] label p,
+        div[data-testid="stCheckbox"] label span {
+            color:#0f172a !important;
+            opacity:1 !important;
+            font-size:14px !important;
+        }
+        div[data-testid="stCheckbox"] [data-baseweb="checkbox"] span {
+            background:#ffffff !important;
+            border-color:#94a3b8 !important;
+        }
+
+        /* ── Text inputs: force visible typed text + placeholder ────── */
+        div[data-testid="stTextInput"] input {
+            color:#0f172a !important;
+            background:#ffffff !important;
+            -webkit-text-fill-color:#0f172a !important;
+        }
+        div[data-testid="stTextInput"] input::placeholder {
+            color:#94a3b8 !important;
+            opacity:1 !important;
+        }
+
         /* ── Page base ─────────────────────────────────────────── */
         html, body, [data-testid="stAppViewContainer"] {
             font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -74,43 +143,79 @@ def inject_styles() -> None:
         .login-brand {
             position:absolute;
             left:7vw;
-            top:17vh;
-            width:min(520px, 42vw);
+            top:14vh;
+            width:min(560px, 40vw);
             color:#e2e8f0;
+            /* frosted backdrop so text is always legible over the map image */
+            background: rgba(2,6,23,0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(148,163,184,0.12);
+            border-radius: 20px;
+            padding: 28px 32px 24px;
         }
         .login-mark, .login-card-logo, .platform-mark, .sidebar-logo {
             display:grid;
             place-items:center;
-            background: linear-gradient(135deg,#14b8a6,#2563eb);
-            color:#ffffff;
+            background: linear-gradient(135deg,#0f172a,#2563eb);
+            color:#ffffff !important;
             font-weight:900;
-            letter-spacing:0;
+            letter-spacing:0.02em;
+            line-height:1;
+            text-shadow:0 1px 2px rgba(0,0,0,0.35);
         }
         .login-mark {
             width:76px;
             height:76px;
             border-radius:22px;
-            font-size:24px;
+            font-size:22px;
             box-shadow:0 22px 80px rgba(20,184,166,0.35);
             margin-bottom:24px;
         }
+        .login-card-logo {
+            font-size:15px;
+        }
+        .platform-mark {
+            font-size:16px;
+        }
+        .sidebar-logo {
+            font-size:13px;
+        }
         .login-kicker {
-            color:#67e8f9;
+            color:#67e8f9 !important;
+            -webkit-text-fill-color:#67e8f9 !important;
             font-size:12px;
             font-weight:800;
             letter-spacing:0.12em;
             text-transform:uppercase;
         }
+        /* Force ALL text inside brand panel to light — the global rule
+           at the top targets every h1/p/span in stAppViewContainer with
+           #0f172a and would otherwise make this invisible on dark bg. */
+        .login-brand, .login-brand h1, .login-brand h2, .login-brand h3,
+        .login-brand p, .login-brand span, .login-brand label,
+        .login-brand strong, .login-brand em,
+        [data-testid="stAppViewContainer"] .login-brand h1,
+        [data-testid="stAppViewContainer"] .login-brand p,
+        [data-testid="stAppViewContainer"] .login-brand span,
+        [data-testid="stMarkdownContainer"] .login-brand h1,
+        [data-testid="stMarkdownContainer"] .login-brand p {
+            color: #f1f5f9 !important;
+            -webkit-text-fill-color: #f1f5f9 !important;
+        }
         .login-brand h1 {
             margin:8px 0;
-            font-size:48px;
-            line-height:1.03;
+            font-size:30px;
+            line-height:1.22;
             letter-spacing:0;
+            word-wrap:break-word;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
         }
         .login-brand p {
-            color:#cbd5e1;
             font-size:17px;
             line-height:1.7;
+            opacity:0.88;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.7);
         }
         .login-chips {
             display:flex;
@@ -120,7 +225,8 @@ def inject_styles() -> None:
         }
         .login-chips span {
             border:1px solid rgba(226,232,240,0.24);
-            color:#e2e8f0;
+            color:#e2e8f0 !important;
+            -webkit-text-fill-color:#e2e8f0 !important;
             border-radius:999px;
             padding:8px 12px;
             font-size:12px;
@@ -168,6 +274,20 @@ def inject_styles() -> None:
             border-radius:0 0 18px 18px;
             padding:10px 24px 22px;
             box-shadow:0 24px 70px rgba(15,23,42,0.18);
+        }
+
+        .login-signup-row {
+            position:relative;
+            z-index:1;
+            margin-top:14px;
+            text-align:center;
+            background:rgba(255,255,255,0.94);
+            border:1px solid rgba(226,232,240,0.8);
+            border-radius:14px;
+            padding:14px 16px;
+            box-shadow:0 14px 40px rgba(15,23,42,0.12);
+            color:#334155;
+            font-size:13px;
         }
 
         /* Header and profile */
@@ -475,6 +595,29 @@ def inject_styles() -> None:
         .auth-yes { color:#b45309; background:#fef3c7; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:600; }
         .auth-no  { color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:600; }
 
+        /* ── Clean Streamlit alert / error boxes ───────────────── */
+        div[data-testid="stAlert"] {
+            border-radius: 12px !important;
+            border: none !important;
+            font-size: 13px !important;
+            padding: 10px 14px !important;
+            background: rgba(254,226,226,0.88) !important;
+            backdrop-filter: blur(6px);
+        }
+        div[data-testid="stAlert"] p,
+        div[data-testid="stAlert"] span,
+        div[data-testid="stAlert"] div {
+            color: #991b1b !important;
+            font-size: 13px !important;
+        }
+
+        /* ── Hide "Press Enter to submit" tooltip ───────────────── */
+        [data-testid="InputInstructions"],
+        div[data-testid="stForm"] .st-emotion-cache-ue6h4q,
+        div[data-testid="stForm"] small {
+            display: none !important;
+        }
+
         /* ── Hide Streamlit branding ────────────────────────────── */
         #MainMenu { visibility: hidden; }
         footer     { visibility: hidden; }
@@ -506,7 +649,7 @@ def inject_styles() -> None:
                 width:auto;
                 padding:34px 24px 0;
             }
-            .login-brand h1 { font-size:34px; }
+            .login-brand h1 { font-size:24px; }
             .login-card-title { margin-top:20px; }
             .platform-header h1 { font-size:22px; }
             .profile-pill { justify-content:flex-start; }
