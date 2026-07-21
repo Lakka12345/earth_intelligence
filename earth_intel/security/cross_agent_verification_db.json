@@ -416,6 +416,89 @@
         "Resolve the listed security policy violation(s) before this selection can be trusted.",
         "Request a clearer, more complete justification from Agent 3 for this selection."
       ]
+    },
+    {
+      "verification_id": "16725c00-a277-42be-8248-7ba91a92dada",
+      "verification_timestamp": "2026-07-16T12:33:18.392951+00:00",
+      "user_query": {
+        "query_text": "To analyze the sea surface temperature in the Bay of Bengal near Visakhapatnam during June 2025.",
+        "requested_task": "To analyze the sea surface temperature in the Bay of Bengal near Visakhapatnam during June 2025.",
+        "required_variables": [
+          "location",
+          "sea surface temperature",
+          "time"
+        ]
+      },
+      "selected_provider": "INCOIS THREDDS \u2014 romssst",
+      "selected_provider_score": 0.5,
+      "highest_ranked_provider": "INCOIS THREDDS \u2014 romssst",
+      "highest_ranked_score": 0.5,
+      "ranking_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider 'INCOIS THREDDS \u2014 romssst' was Agent 3's own rank #1 candidate."
+      },
+      "trust_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "Selected provider trust score (0.50) is at or above every other candidate's (highest other: 'INCOIS THREDDS \u2014 godassst' at 0.50)."
+      },
+      "relevance_verification": {
+        "status": "WARNING",
+        "score": 0.4,
+        "confidence": 0.2,
+        "explanation": "Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in the Bay of Bengal near Visakhapatnam during June 2025.'; relevance cannot be confidently verified."
+      },
+      "metadata_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Metadata verification: missing required variable(s): ['location', 'sea surface temperature', 'time']; has_documentation=False."
+      },
+      "availability_verification": {
+        "status": "WARNING",
+        "score": 0.6667,
+        "confidence": 1.0,
+        "explanation": "Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present."
+      },
+      "scientific_consistency_verification": {
+        "status": "PASS",
+        "score": 1.0,
+        "confidence": 1.0,
+        "explanation": "All candidate providers share an identical trust score; no outlier possible."
+      },
+      "policy_verification": {
+        "status": "FAIL",
+        "score": 0.3333,
+        "confidence": 1.0,
+        "explanation": "Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation']."
+      },
+      "explanation_verification": {
+        "status": "FAIL",
+        "score": 0.0,
+        "confidence": 1.0,
+        "explanation": "Agent 3 supplied no justification for its provider selection."
+      },
+      "overall_verification": "NOT VERIFIED",
+      "verification_score": 0.6267,
+      "verification_confidence": 0.88,
+      "verification_summary": "Cross-agent verification of Agent 3's selection of 'INCOIS THREDDS \u2014 romssst' for task 'To analyze the sea surface temperature in the Bay of Bengal near Visakhapatnam during June 2025.' resulted in 'NOT VERIFIED' (verification_score=0.63, verification_confidence=0.88). 5 stage(s) raised a warning, flag, or failure.",
+      "warnings": [
+        "[relevance] Selected provider's trust report has no relevance_score for task 'To analyze the sea surface temperature in the Bay of Bengal near Visakhapatnam during June 2025.'; relevance cannot be confidently verified.",
+        "[metadata] Metadata verification: missing required variable(s): ['location', 'sea surface temperature', 'time']; has_documentation=False.",
+        "[availability] Dataset availability checks: dataset_exists=True, availability_reported=None, download_endpoint=present.",
+        "[policy] Policy violation(s): trust score 0.50 is below the minimum policy threshold of 0.55; missing required metadata field(s): ['variables_provided', 'has_documentation'].",
+        "[explanation] Agent 3 supplied no justification for its provider selection."
+      ],
+      "recommendations": [
+        "Select a provider whose data domains better match the requested scientific task.",
+        "Obtain the missing required variables, documentation, or metadata before proceeding.",
+        "Confirm dataset existence, availability, and a working download endpoint before proceeding.",
+        "Resolve the listed security policy violation(s) before this selection can be trusted.",
+        "Request a clearer, more complete justification from Agent 3 for this selection."
+      ]
     }
   ]
 }

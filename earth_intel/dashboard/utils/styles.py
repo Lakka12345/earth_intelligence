@@ -475,6 +475,95 @@ def inject_styles() -> None:
         .auth-yes { color:#b45309; background:#fef3c7; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:600; }
         .auth-no  { color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:600; }
 
+        /* ── Dataset trust badges ───────────────────────────────── */
+        /* Shown inside dataset cards ONLY when security DBs confirm status.
+           .ds-trust-badges wraps the pills; .ds-trust-badge is each pill.
+           To restyle all badges at once, edit this block only. */
+        .ds-trust-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0 12px;
+        }
+        .ds-trust-badge {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        /* ── Security Reports page — dark card variant ──────────── */
+        /* These styles scope the dark aesthetic used in pages.py
+           security section cards. They do NOT affect any other page.
+           Class .sec-card is applied exclusively inside render_security_reports(). */
+        .sec-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 6px;
+        }
+        /* Override the global text-color rule for dark-card children only */
+        .sec-card p,
+        .sec-card span:not(.ds-trust-badge),
+        .sec-card label {
+            color: #cbd5e1;
+        }
+
+        /* ── Pipeline page improvements ─────────────────────────── */
+        /* Augments the existing .pipeline-node classes with richer state
+           feedback. Existing class rules in .pipeline-node.* are preserved;
+           these only add what was previously missing. */
+        .pipeline-node.running {
+            animation: nodePulse 2s ease-in-out infinite;
+        }
+        @keyframes nodePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+            50%       { box-shadow: 0 0 0 6px rgba(59,130,246,0.0); }
+        }
+        .pipeline-node.completed {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+        .pipeline-node.failed {
+            animation: nodeShake 0.4s ease;
+        }
+        @keyframes nodeShake {
+            0%, 100% { transform: translateX(0); }
+            25%       { transform: translateX(-3px); }
+            75%       { transform: translateX(3px); }
+        }
+
+        /* ── Metric cards — accent top border support ───────────── */
+        /* metrics.py uses inline border-top per card; this ensures the
+           base card still picks up the shared radius and shadow. */
+        .metric-card {
+            transition: box-shadow 0.15s;
+        }
+        .metric-card:hover {
+            box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+        }
+
+        /* ── Score breakdown panel inside dataset cards ─────────── */
+        .score-breakdown-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .score-breakdown-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
         /* ── Hide Streamlit branding ────────────────────────────── */
         #MainMenu { visibility: hidden; }
         footer     { visibility: hidden; }

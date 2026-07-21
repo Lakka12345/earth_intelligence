@@ -31,5 +31,27 @@
     "algorithm": "SHA-256",
     "checksum": "6d93f0aa89218004dddd7fbfae5475a22045d4f3b382b144cda41debe9027914",
     "timestamp": "2026-07-16T07:15:22.542388+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch ERDDAP",
+    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
+    "timestamp": "2026-07-16T12:27:52.196126+00:00"
+  },
+  {
+    "dataset_id": "nesdisBLENDEDsstDNDaily",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": "NOAA GFS via NOMADS",
+    "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
+    "timestamp": "2026-07-16T12:33:18.230168+00:00"
   }
 ]

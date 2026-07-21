@@ -359,6 +359,168 @@
         "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
         "[scientific_validation] No resolution information declared."
       ]
+    },
+    {
+      "validation_id": "598979cb-4abe-48e4-813a-8b9643a65ce6",
+      "dataset_id": "erdlasFnOscursLL",
+      "dataset_name": "NOAA CoastWatch ERDDAP",
+      "provider": "NOAA CoastWatch ERDDAP",
+      "validation_timestamp": "2026-07-16T12:27:52.225144+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat, size: 136,512 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "1/1 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'The entire Bay of Bengal near Visakhapatnam', 'geographic_extent': 'The entire Bay of Bengal near Visakhapatnam', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Coastal Zone'}' found in coverage '{'location': 'The entire Bay of Bengal near Visakhapatnam', 'geographic_extent': 'The entire Bay of Bengal near Visakhapatnam', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Coastal Zone'}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 4642a743293980d1..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
+    },
+    {
+      "validation_id": "9647343a-c6b6-4054-b4e1-7cd701bd5dc8",
+      "dataset_id": "nesdisBLENDEDsstDNDaily",
+      "dataset_name": "NOAA GFS via NOMADS",
+      "provider": "NOAA GFS via NOMADS",
+      "validation_timestamp": "2026-07-16T12:33:18.237468+00:00",
+      "file_validation": {
+        "passed": false,
+        "score": 0.3,
+        "errors": [
+          "Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip."
+        ],
+        "warnings": [],
+        "details": "File: NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat, size: 136,512 bytes, format: .dat."
+      },
+      "metadata_validation": {
+        "passed": false,
+        "score": 0.625,
+        "errors": [
+          "Required metadata field missing: 'version'.",
+          "Required metadata field missing: 'resolution'.",
+          "Required metadata field missing: 'license'."
+        ],
+        "warnings": [],
+        "details": "5/8 required fields present."
+      },
+      "variable_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "2/2 required variables found."
+      },
+      "spatial_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Requested region '{'location': 'The entire Bay of Bengal near Visakhapatnam', 'geographic_extent': 'The entire Bay of Bengal near Visakhapatnam', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Coastal Zone'}' found in coverage '{'location': 'The entire Bay of Bengal near Visakhapatnam', 'geographic_extent': 'The entire Bay of Bengal near Visakhapatnam', 'study_boundary_type': 'Coastal', 'coordinate_requirements': 'Latitude and longitude', 'spatial_resolution_requirements': 'High resolution', 'spatial_context': 'Coastal Zone'}'."
+      },
+      "temporal_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Dataset (20, 20) fully contains requested period (20, 20)."
+      },
+      "scientific_validation": {
+        "passed": true,
+        "score": 0.25,
+        "errors": [],
+        "warnings": [
+          "No units declared — cannot verify measurement standard.",
+          "No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+          "No resolution information declared."
+        ],
+        "details": "1/4 scientific metadata fields present."
+      },
+      "integrity_validation": {
+        "passed": true,
+        "score": 1.0,
+        "errors": [],
+        "warnings": [],
+        "details": "Integrity verified. Algorithm: SHA-256. Checksum: 4642a743293980d1..."
+      },
+      "overall_validation": false,
+      "validation_score": 0.7988,
+      "confidence_score": 0.66,
+      "validation_summary": "FAILED — 2 stage(s) failed: file validation, metadata validation. Score: 0.80, Confidence: 0.66.",
+      "validation_errors": [
+        "[file_validation] Unsupported file format: '.dat'. Supported: .csv, .geojson, .grb2, .grib, .h5, .hdf5, .json, .nc, .nc4, .tif, .tiff, .tsv, .txt, .zarr, .zip.",
+        "[metadata_validation] Required metadata field missing: 'version'.",
+        "[metadata_validation] Required metadata field missing: 'resolution'.",
+        "[metadata_validation] Required metadata field missing: 'license'."
+      ],
+      "validation_warnings": [
+        "[scientific_validation] No units declared — cannot verify measurement standard.",
+        "[scientific_validation] No coordinate reference system (CRS) declared — cannot verify geospatial projection.",
+        "[scientific_validation] No resolution information declared."
+      ]
     }
   ]
 }
