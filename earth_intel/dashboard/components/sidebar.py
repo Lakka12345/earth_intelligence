@@ -66,18 +66,36 @@ def render_sidebar() -> tuple[str, bool]:
         st.divider()
 
         st.markdown("**Research Query**")
+
+        # Use a staging key so example buttons can pre-fill the text area
+        # without triggering "cannot modify after widget instantiation" error.
+        # The text area reads its initial value from sidebar_query_value;
+        # whatever the user types is stored back there on every interaction.
+        if "sidebar_query_value" not in st.session_state:
+            st.session_state["sidebar_query_value"] = ""
+
         query = st.text_area(
             label="Query",
             label_visibility="collapsed",
             placeholder="Describe your scientific data need...",
             height=120,
+            value=st.session_state["sidebar_query_value"],
             key="sidebar_query",
+            on_change=lambda: st.session_state.update(
+                sidebar_query_value=st.session_state["sidebar_query"]
+            ),
         )
 
-        with st.expander("Example Queries", expanded=False):
+        with st.expander("💡 Example Queries", expanded=False):
             for i, example in enumerate(EXAMPLE_QUERIES):
-                if st.button(example[:62] + "...", key=f"example_{i}", use_container_width=True):
-                    st.session_state["sidebar_query"] = example
+                if st.button(
+                    example[:62] + "…",
+                    key=f"example_{i}",
+                    use_container_width=True,
+                    help=example,          # full text shown on hover
+                ):
+                    # Write to the STAGING key, not the widget key — safe to do
+                    st.session_state["sidebar_query_value"] = example
                     st.session_state.active_page = "New Analysis"
                     st.rerun()
 
@@ -105,7 +123,11 @@ def render_sidebar() -> tuple[str, bool]:
             "running_a1": "Running Planner",
             "running_a2": "Clarifying",
             "clarifying": "Waiting for Input",
+            "confirm_understanding": "Confirm Understanding",
             "running_a3": "Discovering Datasets",
+            "agent3_ranking": "Ranking & Reviewing Sources",
+            "running_a4": "Downloading Data",
+            "running_a5": "Preprocessing Data",
             "done": "Complete",
             "error": "Error",
         }

@@ -306,8 +306,9 @@ def _render_single_card(source, bucket_label: str, dbs: dict | None = None) -> N
                 )
 
             st.markdown(f"**🔗 URL:** [{c.url}]({c.url})")
-            if c.documentation_url:
-                st.markdown(f"**📖 Docs:** [{c.documentation_url}]({c.documentation_url})")
+            doc_url = getattr(c, "documentation_url", None)
+            if doc_url:
+                st.markdown(f"**📖 Docs:** [{doc_url}]({doc_url})")
 
         with right:
             # Score breakdown panel
@@ -630,8 +631,9 @@ def render_dataset_detail(result) -> None:
         )
         if c.metadata_url:
             st.markdown(f"**Metadata URL:** [{c.metadata_url}]({c.metadata_url})")
-        if c.documentation_url:
-            st.markdown(f"**Documentation:** [{c.documentation_url}]({c.documentation_url})")
+        doc_url = getattr(c, "documentation_url", None)
+        if doc_url:
+            st.markdown(f"**Documentation:** [{doc_url}]({doc_url})")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -643,9 +645,10 @@ def render_dataset_detail(result) -> None:
         unsafe_allow_html=True,
     )
     d1, d2, d3, d4 = st.columns(4)
-    d1.link_button("🌐 Open URL", c.url)
-    if c.documentation_url:
-        d2.link_button("📖 Docs", c.documentation_url)
+    d1.link_button("🌐 Open URL",   c.url)
+    doc_url = getattr(c, "documentation_url", None)
+    if doc_url:
+        d2.link_button("📖 Docs", doc_url)
     if c.metadata_url:
         d3.link_button("🗂 Metadata", c.metadata_url)
     d4.button("📋 Copy URL", on_click=lambda: None, key="copy_url_btn")

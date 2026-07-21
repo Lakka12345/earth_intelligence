@@ -124,16 +124,16 @@ def _resolve_and_approve_plan(
     time_range=None,
     pre_collected_credentials=None,
     initial_excluded_source_ids=None,
+    ui_choices: dict | None = None,
 ) -> tuple:
     """
-    Runs the coverage -> access -> size loop, rebuilding the plan each
-    time a source is declined, until either every remaining variable is
-    covered by APPROVED sources or no more ranked alternatives are left.
-
-    Returns (approved_decisions: Dict[source_id, SourceDecision],
-             approved_credentials: Dict[source_id, Optional[Credentials]] -- IN-MEMORY ONLY, never serialized,
-             running_total_bytes: float,
-             final_uncovered_variables: set)
+    Runs the coverage -> access -> size loop. 
+    
+    CRITICAL FIX 2 & 3: Instead of just building a single optimal plan and giving up
+    if something is uncovered, we exhaustively cycle through ranked_source_ids to find
+    alternative combinations covering ALL variables. We only stop expanding the plan 
+    when 100% of variables are covered or when we have literally exhausted every 
+    available ranked website.
     """
     excluded: set = set(initial_excluded_source_ids or set())
     approved: Dict[str, SourceDecision] = {}
@@ -141,6 +141,7 @@ def _resolve_and_approve_plan(
     running_total = 0.0
 
     while True:
+        # Build our potential plan based on non-excluded sources
         plan = build_coverage_plan(
             ranked_source_ids,
             website_analyses,
@@ -149,9 +150,58 @@ def _resolve_and_approve_plan(
             source_snapshots=source_snapshots,
         )
 
-        # Only resolve sources not already approved in a previous iteration.
         newly_needed = [sid for sid in plan.selected_source_ids if sid not in approved]
-        if not newly_needed:
+        
+        # If there are no newly planned sources, but we STILL have uncovered variables,
+        # it means the current optimal plan failed to cover everything. 
+        # FIX 3 (original): force exploration of remaining next-ranked websites to capture missing variables.
+        # FIX 3b (this change): the original version force-added the next
+        # ranked-but-unplanned source UNCONDITIONALLY, without checking
+        # whether it covers anything still missing. That's how a source
+        # like INCOIS Ocean Data Portal (ranked for its own ocean-data
+        # reasons, with variables_hint like sea_surface_temperature/
+        # salinity/wave_height) got downloaded for a query asking about
+        # rainfall/river discharge/soil moisture/water level -- none of
+        # which it has. build_coverage_plan() itself already refuses to
+        # select zero-coverage sources; this fallback must respect the
+        # same rule instead of bypassing it. We now walk the remaining
+        # ranked-but-unplanned sources IN ORDER and only force-add the
+        # first one that genuinely covers at least one still-uncovered
+        # variable. If none of them do, we stop here and report the gap
+        # honestly instead of downloading something irrelevant.
+        if not newly_needed and plan.uncovered_variables:
+            from agents.agent4_coverage_optimizer import _source_variables, _matches_requested_variable
+
+            unplanned_available = [
+                sid for sid in ranked_source_ids
+                if sid not in excluded and sid not in approved
+            ]
+            next_alternative = None
+            for candidate_sid in unplanned_available:
+                candidate_vars = _source_variables(candidate_sid, website_analyses, source_snapshots)
+                if any(
+                    _matches_requested_variable(missing_var, candidate_var)
+                    for missing_var in plan.uncovered_variables
+                    for candidate_var in candidate_vars
+                ):
+                    next_alternative = candidate_sid
+                    break
+
+            if next_alternative is not None:
+                newly_needed = [next_alternative]
+            else:
+                # No remaining ranked source -- covered or not-yet-tried --
+                # actually covers anything still missing. Stop forcing
+                # unrelated downloads and report the real gap.
+                if unplanned_available:
+                    print(
+                        f"  No remaining ranked source covers the still-missing "
+                        f"variable(s) ({', '.join(sorted(plan.uncovered_variables))}); "
+                        f"not force-adding an unrelated source just to fill the slot."
+                    )
+                return approved, approved_credentials, running_total, plan.uncovered_variables
+        elif not newly_needed and not plan.uncovered_variables:
+            # 100% coverage achieved and all selected sources are processed
             return approved, approved_credentials, running_total, plan.uncovered_variables
 
         any_declined_this_pass = False
@@ -164,46 +214,57 @@ def _resolve_and_approve_plan(
                 any_declined_this_pass = True
                 continue
 
-            decision, credentials = resolve_access(snapshot, analysis, pre_collected_credentials)
-
+            decision, credentials = resolve_access(snapshot, analysis, pre_collected_credentials, ui_choices=ui_choices)
             decision.variables_expected = list(plan.per_source_new_coverage.get(sid, []))
 
+            # If the user skips or it fails access evaluation, immediately search next ranks
             if decision.decision in (AccessDecisionType.skipped_declined, AccessDecisionType.skipped_unresolved):
                 approved[sid] = decision
                 excluded.add(sid)
                 any_declined_this_pass = True
+                print(f"  [Auto-Alt] Skipping {snapshot.name}. Searching next-ranked alternative websites automatically...")
                 continue
 
             if decision.decision == AccessDecisionType.payment_redirect:
                 approved[sid] = decision
                 excluded.add(sid)
                 any_declined_this_pass = True
-                print("  Payment is pending. Agent 4 will continue with remaining ranked alternatives.")
+                print(f"  [Auto-Alt] Payment pending for {snapshot.name}. Searching next-ranked alternative websites automatically...")
                 continue
 
-            dataset_candidates = discover_source_datasets(snapshot, requested_variables, bounding_box, time_range)
-            if dataset_candidates:
-                best_dataset = dataset_candidates[0]
-                print(
-                    "  Dataset selected: "
-                    f"{best_dataset.dataset_name} ({best_dataset.dataset_id})"
-                )
-            else:
-                print("  Dataset discovery: no structured dataset descriptor available; using connector metadata probe.")
+            try:
+                dataset_candidates = discover_source_datasets(snapshot, requested_variables, bounding_box, time_range)
+                if dataset_candidates:
+                    best_dataset = dataset_candidates[0]
+                    print(f"  Dataset selected: {best_dataset.dataset_name} ({best_dataset.dataset_id})")
+                else:
+                    print("  Dataset discovery: no structured dataset descriptor available; using connector metadata probe.")
 
-            dataset_metadata = probe_dataset_metadata(snapshot, requested_variables, bounding_box, time_range)
-            decision.dataset_metadata = dataset_metadata
-            if dataset_metadata.unavailable_reason:
-                print(f"  Metadata: unavailable ({dataset_metadata.unavailable_reason})")
-            else:
-                print(
-                    "  Metadata: "
-                    f"dataset={dataset_metadata.dataset_id or 'unknown'}, "
-                    f"format={dataset_metadata.file_format or dataset_metadata.content_type or 'unknown'}, "
-                    f"size={format_bytes(dataset_metadata.file_size_bytes)}"
-                )
+                dataset_metadata = probe_dataset_metadata(snapshot, requested_variables, bounding_box, time_range)
+                decision.dataset_metadata = dataset_metadata
+                if dataset_metadata.unavailable_reason:
+                    print(f"  Metadata: unavailable ({dataset_metadata.unavailable_reason})")
+                else:
+                    print(
+                        "  Metadata: "
+                        f"dataset={dataset_metadata.dataset_id or 'unknown'}, "
+                        f"format={dataset_metadata.file_format or dataset_metadata.content_type or 'unknown'}, "
+                        f"size={format_bytes(dataset_metadata.file_size_bytes)}"
+                    )
 
-            size_estimate = estimate_size(snapshot, requested_variables, bounding_box, time_range)
+                size_estimate = estimate_size(snapshot, requested_variables, bounding_box, time_range)
+            except Exception as exc:
+                print(
+                    f"  Metadata/size probe failed for {snapshot.name} ({exc.__class__.__name__}) — "
+                    f"URL might be a landing page. Skipping and searching next-ranked alternatives..."
+                )
+                decision.decision = AccessDecisionType.skipped_declined
+                decision.notes = f"Metadata/size probe raised {exc.__class__.__name__}."
+                approved[sid] = decision
+                excluded.add(sid)
+                any_declined_this_pass = True
+                continue
+                
             if size_estimate.estimated_bytes is None and dataset_metadata.file_size_bytes is not None:
                 size_estimate.estimated_bytes = dataset_metadata.file_size_bytes
                 size_estimate.is_exact = True
@@ -211,7 +272,21 @@ def _resolve_and_approve_plan(
                 size_estimate.human_readable = format_bytes(dataset_metadata.file_size_bytes)
             decision.approved_size = size_estimate
 
-            if not ask_size_approval(snapshot.name, size_estimate, running_total):
+            if ui_choices is not None:
+                # Dashboard mode: auto-approve if under the configured size limit,
+                # otherwise auto-approve with a warning (never block on input).
+                size_limit_mb = ui_choices.get("size_limit_mb")
+                est_mb = (size_estimate.estimated_bytes or 0) / (1024 * 1024)
+                if size_limit_mb is not None and est_mb > size_limit_mb:
+                    print(f"  Auto-declining {snapshot.name}: {est_mb:.1f} MB exceeds limit of {size_limit_mb} MB.")
+                    size_approved = False
+                else:
+                    print(f"  Auto-approving {snapshot.name}: {format_bytes(size_estimate.estimated_bytes)} (dashboard mode).")
+                    size_approved = True
+            else:
+                size_approved = ask_size_approval(snapshot.name, size_estimate, running_total)
+
+            if not size_approved:
                 decision.decision = AccessDecisionType.skipped_declined
                 decision.notes = "User declined this source because of estimated download size."
                 approved[sid] = decision
@@ -219,25 +294,12 @@ def _resolve_and_approve_plan(
                 any_declined_this_pass = True
                 continue
 
+            # Target variable coverage confirmation
             approved[sid] = decision
             approved_credentials[sid] = credentials
             running_total += size_estimate.estimated_bytes or 0.0
 
-        if not any_declined_this_pass:
-            # Everyone in this pass was approved -- re-check coverage
-            # once more in case the plan is now already complete.
-            plan = build_coverage_plan(
-                ranked_source_ids,
-                website_analyses,
-                requested_variables,
-                excluded_source_ids=excluded,
-                source_snapshots=source_snapshots,
-            )
-            if not plan.uncovered_variables or all(sid in approved for sid in plan.selected_source_ids):
-                return approved, approved_credentials, running_total, plan.uncovered_variables
-        # else: loop again -- build_coverage_plan will try the next-ranked alternative(s)
-
-
+        # Loop back to evaluate if our newly aggregated plan achieves complete parameter coverage
 def _source_access_label(decision: SourceDecision) -> str:
     mapping = {
         AccessDecisionType.free_access: "Public",
@@ -334,7 +396,7 @@ def _print_retrieval_report(output: Agent4Output, source_snapshots: Dict[str, So
         )
 
 
-def _confirm_incomplete_coverage(uncovered_variables) -> bool:
+def _confirm_incomplete_coverage(uncovered_variables, ui_choices: dict | None = None) -> bool:
     missing = sorted(uncovered_variables or [])
     if not missing:
         return True
@@ -343,6 +405,15 @@ def _confirm_incomplete_coverage(uncovered_variables) -> bool:
     print("INCOMPLETE COVERAGE")
     print("=" * 70)
     print(f"Coverage is incomplete. Missing variables: {', '.join(missing)}")
+
+    # In dashboard mode, ui_choices["confirm_partial"] provides the answer
+    # non-interactively so the pipeline never blocks on input().
+    if ui_choices is not None:
+        choice = ui_choices.get("confirm_partial", True)
+        print(f"  (Dashboard: confirm_partial={choice})")
+        return bool(choice)
+
+    # CLI / terminal fallback — original interactive path.
     print("Agent 4 has already walked the ranked Agent 3 source list available in this handoff.")
     print("Choose:")
     print("  1. Stop and return to source discovery/ranking")
@@ -357,13 +428,21 @@ def _confirm_incomplete_coverage(uncovered_variables) -> bool:
         print("Please choose 1 to stop or 2 to continue anyway.")
 
 
-def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
+def run_agent4(payload: Agent3ToAgent4Payload, request=None, ui_choices: dict | None = None) -> Agent4Output:
     """
     `request` is the original RetrievalRequest (same object passed to
     run_agent3) -- optional only for backward compatibility / ad-hoc
     testing; without it, no bounding box or time range can be derived
     and every source falls back to full-download (still correct, just
     not storage-optimal).
+
+    `ui_choices` is provided by the Streamlit dashboard to answer the
+    three interactive prompts non-interactively:
+        confirm_partial   bool  — continue with partial variable coverage
+        wants_preprocessing bool — send to Agent 5 instead of raw download
+        size_limit_mb     int|None — auto-approve sizes below this limit
+    When None (CLI usage) all prompts fall through to the original
+    interactive input() path.
     """
     print("\n" + "=" * 70)
     print("AGENT 4 — INTELLIGENT RETRIEVAL")
@@ -428,6 +507,7 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
     approved, approved_credentials, total_bytes, still_uncovered = _resolve_and_approve_plan(
         ranked_ids, website_analyses, source_snapshots, requested_variables, bounding_box, time_range,
         pre_collected_credentials=payload.pre_collected_credentials,
+        ui_choices=ui_choices,
     )
 
     source_decisions = list(approved.values())
@@ -450,9 +530,16 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
         return output
 
     print(f"\nResolved {len(source_decisions)} source decision(s), total estimated downloadable size: {format_bytes(total_bytes)}")
+
+    # ------------------------------------------------------------------
+    # Step 2.5 — Interactive Incomplete Coverage Gate
+    # ------------------------------------------------------------------
+    # If the exhaustive fallback search checked every single website and 
+    # some variables are still missing, prompt the user for direction.
+    # ------------------------------------------------------------------
     if still_uncovered:
         print(f"NOTE: the following requested variables are not covered by any approved source: {', '.join(sorted(still_uncovered))}")
-        if not _confirm_incomplete_coverage(still_uncovered):
+        if not _confirm_incomplete_coverage(still_uncovered, ui_choices=ui_choices):
             coverage_table, retrieved_variables, coverage_percent = _build_coverage_table(
                 requested_variables, source_decisions, source_snapshots, []
             )
@@ -470,7 +557,9 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
                 download_location=None,
                 send_to_agent5=False,
                 notes=[
-                    "Retrieval stopped because approved Agent 3 ranked sources did not cover every requested variable.",
+                    "REQUEUE_TO_DISCOVERY: user chose to return to source discovery/ranking "
+                    "due to incomplete coverage. This is not an abort -- the caller (main.py) "
+                    "should loop back to Agent 3 with this output rather than terminating.",
                 ],
                 # FIX 4 — security_reports declared on Agent4Output, not set dynamically.
                 security_reports={},
@@ -481,22 +570,31 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
         print("Every requested variable is covered by the approved sources.")
 
     print("\nStep 3 -- Next step")
-    wants_preprocessing = input(
-        "What would you like to do? Type 'raw' to download retrieved raw datasets, "
-        "or 'preprocess' to continue directly to Agent 5 preprocessing: "
-    ).strip().lower().startswith("p")
+    if ui_choices is not None:
+        wants_preprocessing = bool(ui_choices.get("wants_preprocessing", False))
+        print(f"  (Dashboard: wants_preprocessing={wants_preprocessing})")
+    else:
+        wants_preprocessing = input(
+            "What would you like to do? Type 'raw' to download retrieved raw datasets, "
+            "or 'preprocess' to continue directly to Agent 5 preprocessing: "
+        ).strip().lower().startswith("p")
 
     location = None
     if downloadable_ids:
         if wants_preprocessing:
             location = DEFAULT_MANAGED_FOLDER
             print("Agent 5 preprocessing selected. Agent 4 will use the managed project data folder without asking for a custom location.")
+        elif ui_choices is not None:
+            # Dashboard mode: use user-specified path if provided, else managed folder.
+            location = ui_choices.get("save_path") or DEFAULT_MANAGED_FOLDER
+            print(f"  (Dashboard: download location = {location})")
         else:
             print(f"\nTotal download size: {format_bytes(total_bytes)}")
             print(f"Estimated local storage required: {format_bytes(total_bytes)}")
             print("Estimated download time depends on provider throughput and network speed.")
             location = ask_download_location()
-        ask_download_format()  # currently informational only -- see agent4_download_manager's honest scope note
+        if ui_choices is None:
+            ask_download_format()  # currently informational only -- CLI only
 
     print("\nStep 4 -- Downloading...")
     manifest = []
@@ -714,6 +812,7 @@ def run_agent4(payload: Agent3ToAgent4Payload, request=None) -> Agent4Output:
                         time_range,
                         pre_collected_credentials=payload.pre_collected_credentials,
                         initial_excluded_source_ids=failed_source_ids,
+                        ui_choices=ui_choices,
                     )
                     total_bytes += added_bytes
                     for new_sid, new_decision in new_decisions.items():

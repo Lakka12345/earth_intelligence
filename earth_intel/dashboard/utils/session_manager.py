@@ -17,6 +17,7 @@ def init_session_state() -> None:
         "agent1_result": None,
         "agent2_result": None,
         "agent3_result": None,
+        "agent4_result": None,
 
         # Clarification state
         "clarification_round": 0,
@@ -31,6 +32,12 @@ def init_session_state() -> None:
 
         # Selected dataset for detail panel
         "selected_dataset_id": None,
+
+        # Agent 4 download preferences
+        "a4_user_confirmed":      False,
+        "a4_save_path":           "",
+        "a4_size_limit_mb":       None,
+        "a4_wants_preprocessing": False,
 
         # Settings
         "max_datasets": 10,
@@ -70,12 +77,17 @@ def reset_session() -> None:
         "agent1_result",
         "agent2_result",
         "agent3_result",
+        "agent4_result",
         "clarification_round",
         "clarification_history",
         "pending_user_responses",
         "timings",
         "logs",
         "selected_dataset_id",
+        "a4_user_confirmed",
+        "a4_save_path",
+        "a4_size_limit_mb",
+        "a4_wants_preprocessing",
     ]
     for key in keys_to_reset:
         if key in st.session_state:

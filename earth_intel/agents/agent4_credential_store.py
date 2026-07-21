@@ -16,10 +16,16 @@ determined attacker with filesystem access. Users are warned about this.
 The fallback is only activated when keyring is genuinely unavailable,
 not just missing the pip package.
 
+CHANGED: added delete_all_credentials() to wipe every stored source at
+once — clears both the OS keyring (all earth_intel_agent4 entries) and
+every .cred file in the fallback directory. Call this to reset all
+credentials before re-entering fresh ones.
+
 Install keyring for full security: pip install keyring
 """
 
 import base64
+import glob
 import json
 import os
 from dataclasses import dataclass
@@ -33,6 +39,32 @@ except ImportError:
 
 _SERVICE_NAME  = "earth_intel_agent4"
 _FALLBACK_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".credentials")
+
+# Known source IDs used by the agent — extended when new sources are added.
+_KNOWN_SOURCE_IDS = [
+    "cmems",
+    "copernicus_marine",
+    "Copernicus Marine Service (CMEMS)",
+    "era5",
+    "cds",
+    "Copernicus Climate Data Store (ERA5)",
+    "noaa_tides",
+    "NOAA Tides and Currents API",
+    "argo",
+    "Argo Float Data (global, all GDACs)",
+    "erddap",
+    "hadisst",
+]
+
+_CREDENTIAL_FIELDS = (
+    "username",
+    "password",
+    "api_key",
+    "token",
+    "session_token",
+    "refresh_token",
+    "bearer_token",
+)
 
 
 # ── File-based fallback helpers ───────────────────────────────────────────
@@ -196,7 +228,7 @@ def delete_credentials(source_id: str) -> bool:
     deleted_keyring = False
     if keyring_available():
         try:
-            for field in ("username", "password", "api_key", "token", "session_token", "refresh_token", "bearer_token"):
+            for field in _CREDENTIAL_FIELDS:
                 try:
                     keyring.delete_password(_SERVICE_NAME, f"{source_id}::{field}")
                 except keyring.errors.PasswordDeleteError:
@@ -207,3 +239,55 @@ def delete_credentials(source_id: str) -> bool:
 
     deleted_file = _fallback_delete(source_id)
     return deleted_keyring or deleted_file
+
+
+def delete_all_credentials() -> dict:
+    """
+    Wipe ALL stored credentials for this agent — both OS keyring entries
+    (every known source ID under earth_intel_agent4) and every .cred file
+    in the fallback directory.
+
+    Returns a summary dict: { source_id: True/False, ... } plus a
+    '_files_removed' key listing any fallback .cred files deleted.
+
+    Use this to fully reset before re-entering fresh credentials.
+    """
+    results: dict = {}
+
+    # 1. Delete every known source from keyring + its file entry
+    for source_id in _KNOWN_SOURCE_IDS:
+        results[source_id] = delete_credentials(source_id)
+
+    # 2. Sweep the fallback dir for any .cred files not in _KNOWN_SOURCE_IDS
+    #    (e.g. sources added dynamically at runtime)
+    removed_files = []
+    if os.path.isdir(_FALLBACK_DIR):
+        for cred_file in glob.glob(os.path.join(_FALLBACK_DIR, "*.cred")):
+            try:
+                os.remove(cred_file)
+                removed_files.append(os.path.basename(cred_file))
+            except Exception as exc:
+                print(f"[Credential Store] Could not remove {cred_file}: {exc}")
+
+    results["_files_removed"] = removed_files
+
+    total = len(_KNOWN_SOURCE_IDS)
+    ok    = sum(1 for k, v in results.items() if k != "_files_removed" and v)
+    print(
+        f"[Credential Store] delete_all_credentials complete: "
+        f"{ok}/{total} known sources cleared, "
+        f"{len(removed_files)} fallback file(s) removed."
+    )
+    return results
+
+
+# ── CLI helper ────────────────────────────────────────────────────────────
+# Run directly to nuke all credentials:  python agent4_credential_store.py --clear-all
+
+if __name__ == "__main__":
+    import sys
+    if "--clear-all" in sys.argv:
+        summary = delete_all_credentials()
+        print("Removed fallback files:", summary.get("_files_removed", []))
+    else:
+        print("Usage: python agent4_credential_store.py --clear-all")

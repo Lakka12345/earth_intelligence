@@ -117,13 +117,197 @@ _KNOWN_DATASETS: List[Dict[str, Any]] = [
 
 
 def _var_to_dataset_id(variables: List[str]) -> str:
-    """Match requested variables to best known dataset_id."""
+    """Match requested variables to best known dataset_id.
+
+    NOTE: this only searches the hardcoded _KNOWN_DATASETS fallback list.
+    The IDs in that list (INCOIS_SST_Daily, INCOIS_OC, ...) are guesses
+    that do not match the live ERDDAP server's actual naming convention
+    (e.g. incois_tmi_3day, incois_quickscat_daily). Callers should prefer
+    _resolve_live_dataset_id() and only fall back to this as a last resort.
+    """
     vl = [v.lower() for v in variables]
     for ds in _KNOWN_DATASETS:
         for dv in ds["variables"]:
             if any(dv in v or v in dv for v in vl):
                 return ds["dataset_id"]
     return _KNOWN_DATASETS[0]["dataset_id"]  # default: SST
+
+
+def _dataset_id_exists(dataset_id: str) -> bool:
+    """Check the ERDDAP info endpoint to confirm a dataset_id is actually live."""
+    try:
+        resp = _get(f"{ERDDAP_INFO}/{dataset_id}/index.json")
+        return resp.ok
+    except Exception:
+        return False
+
+
+# Module-level cache for the full ERDDAP dataset list.
+# Populated once on first call to _live_dataset_list(); never re-fetched
+# in the same process run (datasets change rarely and we don't want to
+# hammer the server on every variable lookup).
+_ERDDAP_DATASET_CACHE: Optional[List[Dict[str, Any]]] = None
+
+# Memoizes _resolve_live_dataset_id() results per (variables, requested_id)
+# -- see that function's docstring for why this matters.
+_RESOLVED_DATASET_ID_CACHE: Dict[Tuple[Tuple[str, ...], str], str] = {}
+
+
+def _live_dataset_list() -> List[Dict[str, Any]]:
+    """
+    Fetch the complete INCOIS ERDDAP dataset catalogue once and cache it.
+
+    ERDDAP's /search/index.json returns HTTP 404 when a free-text query
+    matches zero datasets — that's documented ERDDAP behavior, not an
+    outage. Long natural-language variable names like "chlorophyll-a
+    concentration" or "nutrient concentrations (e.g., nitrogen,
+    phosphorus)" almost never match ERDDAP's indexed titles, so every
+    per-variable search was 404-ing and falling through to a hardcoded
+    guess that doesn't exist on the live server.
+
+    The fix: fetch /griddap/index.json once (the full catalogue, no
+    search term, so it never 404s on zero results) and match locally
+    using token overlap. This is cheaper than N ERDDAP search round-trips
+    and more reliable.
+    """
+    global _ERDDAP_DATASET_CACHE
+    if _ERDDAP_DATASET_CACHE is not None:
+        return _ERDDAP_DATASET_CACHE
+
+    datasets: List[Dict[str, Any]] = []
+    for endpoint, ds_type in (
+        (f"{ERDDAP_GRIDDAP}/index.json", "griddap"),
+        (f"{ERDDAP_TABLEDAP}/index.json", "tabledap"),
+    ):
+        try:
+            resp = requests.get(endpoint, timeout=20, verify=False,
+                                headers={"Accept": "application/json"})
+            if not resp.ok:
+                continue
+            data = resp.json()
+            cols = data.get("table", {}).get("columnNames", [])
+            rows = data.get("table", {}).get("rows", [])
+            for row in rows:
+                record = dict(zip(cols, row))
+                if record.get("Dataset ID"):
+                    # CHANGED: tag which endpoint this dataset actually lives
+                    # under. griddap and tabledap were previously merged into
+                    # one flat list with no way to tell them apart, so a
+                    # point/profile dataset (e.g. Argo floats -- always
+                    # tabledap, never griddap) resolved correctly by ID but
+                    # then had a griddap download URL built for it anyway,
+                    # producing a 404 for a dataset that actually exists.
+                    record["_erddap_type"] = ds_type
+                    datasets.append(record)
+        except Exception as exc:
+            logger.debug("incois _live_dataset_list: catalogue fetch failed for %s — %s", endpoint, exc)
+
+    _ERDDAP_DATASET_CACHE = datasets
+    if datasets:
+        logger.info("incois _live_dataset_list: cached %d datasets from ERDDAP", len(datasets))
+    else:
+        logger.warning("incois _live_dataset_list: ERDDAP catalogue unavailable; will use static fallback")
+    return datasets
+
+
+def _score_dataset_match(record: Dict[str, Any], variables: List[str]) -> int:
+    """Score an ERDDAP catalogue row against requested variables (higher = better)."""
+    haystack = " ".join([
+        str(record.get("Dataset ID", "")),
+        str(record.get("Title", "")),
+        str(record.get("Summary", "")),
+        str(record.get("Institution", "")),
+    ]).lower()
+    score = 0
+    for var in variables:
+        # Normalise: lowercase, drop parenthetical detail, split on punctuation
+        tokens = [t for t in var.lower().replace("(", " ").replace(")", " ")
+                  .replace(",", " ").replace("-", " ").split() if len(t) > 2]
+        for token in tokens:
+            if token in haystack:
+                score += 1
+    return score
+
+
+def _dataset_type_for_id(dataset_id: str) -> str:
+    """
+    Looks up whether a dataset_id lives under griddap or tabledap, using
+    the cached catalogue. Defaults to 'griddap' (the historical assumption)
+    only when the ID isn't found in the catalogue at all -- e.g. a static
+    _KNOWN_DATASETS guess, which are all griddap by construction.
+    """
+    for record in _live_dataset_list():
+        if str(record.get("Dataset ID", "")) == dataset_id:
+            return record.get("_erddap_type", "griddap")
+    return "griddap"
+
+
+def _resolve_live_dataset_id(variables: List[str], requested_id: Optional[str] = None) -> str:
+    """
+    Resolve a dataset_id that is confirmed to exist on the live ERDDAP server.
+
+    Uses the cached full catalogue (fetched once) and local token matching
+    instead of per-query ERDDAP search calls that 404 on zero results.
+
+    Order of preference:
+      1. requested_id, if given and confirmed live.
+      2. Best local match from the cached ERDDAP catalogue.
+      3. Static _KNOWN_DATASETS guess confirmed live.
+      4. Static _KNOWN_DATASETS guess anyway (will likely 404 but preserves
+         old fallback behavior rather than hard-failing).
+
+    CHANGED: results are memoized per (sorted variables tuple, requested_id).
+    Previously this re-resolved from scratch on every call, and different
+    call sites in this file (probe_metadata, resolve_download_asset,
+    fetch_subset, fetch_full) could each be invoked with a *different*
+    variables list for the same logical request as it flowed through the
+    orchestrator -- e.g. metadata probing seeing one variable subset and
+    the actual download seeing another. That produced a different
+    dataset_id at download time than the one reported during the access/
+    size steps, and the download would 404 against a dataset nobody was
+    told about. This cache doesn't fix a caller passing genuinely
+    different variables on purpose, but it does guarantee the *same*
+    variable list always resolves to the *same* dataset_id within a
+    single process run, and makes any upstream inconsistency visible in
+    the logs (variables differ -> different cache key -> different id)
+    rather than silently masked by fresh network calls each time.
+    """
+    cache_key = (tuple(sorted(v.lower() for v in variables)), requested_id or "")
+    cached = _RESOLVED_DATASET_ID_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    resolved = _resolve_live_dataset_id_uncached(variables, requested_id)
+    _RESOLVED_DATASET_ID_CACHE[cache_key] = resolved
+    return resolved
+
+
+def _resolve_live_dataset_id_uncached(variables: List[str], requested_id: Optional[str] = None) -> str:
+    if requested_id and _dataset_id_exists(requested_id):
+        return requested_id
+
+    live = _live_dataset_list()
+    if live:
+        scored = [(record, _score_dataset_match(record, variables)) for record in live]
+        best_record, best_score = max(scored, key=lambda x: x[1])
+        if best_score > 0:
+            ds_id = str(best_record.get("Dataset ID", ""))
+            logger.info(
+                "incois _resolve_live_dataset_id: local catalogue match score=%d, variables=%s -> %s",
+                best_score, variables, ds_id,
+            )
+            return ds_id
+
+    static_guess = _var_to_dataset_id(variables)
+    if _dataset_id_exists(static_guess):
+        return static_guess
+
+    logger.warning(
+        "incois _resolve_live_dataset_id: no live match found for variables=%s; "
+        "falling back to static guess %r which is NOT confirmed to exist on the "
+        "live ERDDAP server and will likely 404.", variables, static_guess,
+    )
+    return static_guess
 
 
 # ---------------------------------------------------------------------------
@@ -159,14 +343,22 @@ def _head(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Respons
 def _build_erddap_url(dataset_id: str, fmt: str = "nc",
                       lat_min=None, lat_max=None,
                       lon_min=None, lon_max=None,
-                      start_date=None, end_date=None) -> str:
+                      start_date=None, end_date=None,
+                      dataset_type: Optional[str] = None) -> str:
     """
-    Build an ERDDAP griddap download URL with optional spatial/temporal constraints.
+    Build an ERDDAP download URL with optional spatial/temporal constraints.
 
-    ERDDAP griddap URL format:
-      {base}/griddap/{dataset_id}.{format}?[variable][time_range][lat_range][lon_range]
+    CHANGED: dataset_type now selects griddap vs tabledap base path.
+    Previously this always built a griddap/ URL regardless of which
+    endpoint the dataset actually lives under -- point/profile datasets
+    (e.g. Argo floats, buoy time series) live under tabledap, never
+    griddap, so a griddap URL for them 404s even though the dataset
+    genuinely exists. If dataset_type isn't passed explicitly, it's
+    looked up from the cached catalogue.
     """
-    base_url = f"{ERDDAP_GRIDDAP}/{dataset_id}.{fmt}"
+    resolved_type = dataset_type or _dataset_type_for_id(dataset_id)
+    erddap_base = ERDDAP_TABLEDAP if resolved_type == "tabledap" else ERDDAP_GRIDDAP
+    base_url = f"{erddap_base}/{dataset_id}.{fmt}"
     # When no constraints given, return the base URL (ERDDAP will use defaults)
     constraints: List[str] = []
     if start_date:
@@ -255,41 +447,46 @@ class INCOISConnector(StaticDatasetConnector):
 
     def discover_datasets(self, snapshot=None, context=None, **kwargs) -> List[DatasetDescriptor]:
         """
-        Search ERDDAP for matching datasets.  Falls back to _KNOWN_DATASETS
-        when the ERDDAP search endpoint is unavailable.
+        Search the INCOIS ERDDAP catalogue for matching datasets using the
+        cached full dataset list instead of per-query ERDDAP search calls.
+
+        ERDDAP's /search/index.json returns HTTP 404 when zero results match
+        a query — that's normal ERDDAP behavior, but it caused the connector
+        to log spurious errors and fall through to hardcoded IDs that don't
+        exist on the live server. The fix: fetch /griddap/index.json once
+        (full catalogue, never 404s), cache it, and match locally.
         """
         r = self._as_dict(context or kwargs)
         keywords = r.get("keywords") or r.get("variables") or []
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        # Try ERDDAP search
-        search_term = " ".join(keywords) if keywords else "ocean"
-        logger.info("incois discover_datasets: ERDDAP search = %r", search_term)
-        try:
-            resp = _get(ERDDAP_SEARCH, params={"searchFor": search_term, "page": 1,
-                                                "itemsPerPage": 10})
-            data = resp.json()
-            rows = data.get("table", {}).get("rows", [])
-            cols = data.get("table", {}).get("columnNames", [])
-            idx  = {c: i for i, c in enumerate(cols)}
-
+        # Try catalogue-based local matching
+        live = _live_dataset_list()
+        if live:
+            scored = [
+                (record, _score_dataset_match(record, keywords))
+                for record in live
+            ]
+            scored.sort(key=lambda x: x[1], reverse=True)
             descriptors: List[DatasetDescriptor] = []
-            for row in rows:
-                ds_id    = row[idx.get("Dataset ID", 0)] if idx else row[0]
-                title    = row[idx.get("Title", 1)]      if idx else row[1]
+            for record, score in scored[:5]:  # top 5 matches
+                if score == 0 and descriptors:
+                    break  # stop once we've exhausted meaningful matches
+                ds_id = str(record.get("Dataset ID", ""))
+                title = str(record.get("Title", ds_id))
                 endpoint = f"{ERDDAP_GRIDDAP}/{ds_id}"
-                logger.info("incois: discovered ERDDAP dataset %s — %s", ds_id, title)
+                logger.info("incois: discovered ERDDAP dataset (score=%d) %s — %s", score, ds_id, title)
                 descriptors.append(DatasetDescriptor(
                     provider="INCOIS",
-                    dataset_name=str(title)[:120],
+                    dataset_name=title[:120],
                     collection_name="INCOIS ERDDAP",
-                    dataset_id=str(ds_id),
+                    dataset_id=ds_id,
                     api_endpoint=endpoint,
                     metadata_endpoint=f"{ERDDAP_INFO}/{ds_id}/index.json",
                     download_endpoint=endpoint,
                     supported_variables=keywords,
-                    temporal_coverage="Dataset dependent",
+                    temporal_coverage=str(record.get("Min Time", "Dataset dependent")),
                     spatial_coverage="Indian Ocean region",
                     supported_formats=["NetCDF", "CSV"],
                     authentication_required=False,
@@ -297,10 +494,8 @@ class INCOISConnector(StaticDatasetConnector):
                 ))
             if descriptors:
                 return descriptors
-        except Exception as exc:
-            logger.warning("incois discover_datasets: ERDDAP search failed — %s. "
-                           "Returning known datasets.", exc)
 
+        logger.warning("incois discover_datasets: ERDDAP catalogue unavailable. Returning known datasets.")
         # Match known datasets by variable
         if keywords:
             matched_id = _var_to_dataset_id(keywords)
@@ -320,7 +515,7 @@ class INCOISConnector(StaticDatasetConnector):
         variables = r.get("variables") or r.get("keywords") or []
         if isinstance(variables, str):
             variables = [variables]
-        dataset_id = r.get("dataset_id") or _var_to_dataset_id(variables)
+        dataset_id = _resolve_live_dataset_id(variables, r.get("dataset_id"))
         source_id = getattr(snapshot, "source_id", "incois")
 
         info_url = f"{ERDDAP_INFO}/{dataset_id}/index.json"
@@ -382,7 +577,7 @@ class INCOISConnector(StaticDatasetConnector):
         variables = r.get("variables") or r.get("keywords") or []
         if isinstance(variables, str):
             variables = [variables]
-        dataset_id = r.get("dataset_id") or _var_to_dataset_id(variables)
+        dataset_id = _resolve_live_dataset_id(variables, r.get("dataset_id"))
 
         download_url = _build_erddap_url(
             dataset_id,
@@ -452,7 +647,7 @@ class INCOISConnector(StaticDatasetConnector):
         variables = r.get("variables") or r.get("keywords") or []
         if isinstance(variables, str):
             variables = [variables]
-        dataset_id = r.get("dataset_id") or _var_to_dataset_id(variables)
+        dataset_id = _resolve_live_dataset_id(variables, r.get("dataset_id"))
 
         url = _build_erddap_url(
             dataset_id,
@@ -470,16 +665,23 @@ class INCOISConnector(StaticDatasetConnector):
     # fetch_subset  (ERDDAP griddap supports server-side subsetting natively)
     # ------------------------------------------------------------------
 
-    def fetch_subset(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
+    def fetch_subset(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> str:
         """
         Download a spatial/temporal subset via ERDDAP griddap constraint expressions.
         ERDDAP handles subsetting server-side; no local clipping required.
+
+        Returns the local file path as a string, matching the BaseConnector
+        contract (fetch_subset/fetch_full -> str). Previously this returned
+        the raw result dict from _download_url(), which download_manager's
+        _move_to_dest() then passed straight into os.path.exists() expecting
+        a string -- raising "_path_exists: path should be string, bytes,
+        os.PathLike or integer, not dict".
         """
         r = self._as_dict(fetch_request or kwargs)
         variables = r.get("variables") or r.get("keywords") or []
         if isinstance(variables, str):
             variables = [variables]
-        dataset_id = r.get("dataset_id") or _var_to_dataset_id(variables)
+        dataset_id = _resolve_live_dataset_id(variables, r.get("dataset_id"))
 
         url = _build_erddap_url(
             dataset_id,
@@ -492,24 +694,32 @@ class INCOISConnector(StaticDatasetConnector):
         )
         logger.info("incois fetch_subset: server-side subset via ERDDAP — %s", url)
         result = self._download_url(url, output_dir)
-        result["subset_note"] = "Spatial/temporal subsetting applied server-side via ERDDAP."
-        return result
+        if not result.get("success"):
+            raise RuntimeError(result.get("error") or f"incois fetch_subset failed for {url}")
+        return result["file_path"]
 
     # ------------------------------------------------------------------
     # fetch_full
     # ------------------------------------------------------------------
 
-    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> Dict[str, Any]:
-        """Download the full INCOIS dataset via ERDDAP griddap."""
+    def fetch_full(self, snapshot=None, fetch_request=None, credentials=None, output_dir=None, **kwargs) -> str:
+        """Download the full INCOIS dataset via ERDDAP griddap.
+
+        Returns the local file path as a string (see fetch_subset docstring
+        for why this must not be the raw result dict).
+        """
         r = self._as_dict(fetch_request or kwargs)
         variables = r.get("variables") or r.get("keywords") or []
         if isinstance(variables, str):
             variables = [variables]
-        dataset_id = r.get("dataset_id") or _var_to_dataset_id(variables)
+        dataset_id = _resolve_live_dataset_id(variables, r.get("dataset_id"))
 
         url = _build_erddap_url(dataset_id)
         logger.info("incois fetch_full: GET %s", url)
-        return self._download_url(url, output_dir)
+        result = self._download_url(url, output_dir)
+        if not result.get("success"):
+            raise RuntimeError(result.get("error") or f"incois fetch_full failed for {url}")
+        return result["file_path"]
 
     # ------------------------------------------------------------------
     # validate_download

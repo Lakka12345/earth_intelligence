@@ -1,0 +1,123 @@
+[
+  {
+    "dataset_id": "demo_dataset_001",
+    "dataset_name": "Demo Dataset",
+    "provider": "Demo Provider",
+    "filename": "demo_dataset.txt",
+    "file_path": "C:\\Users\\dell\\AppData\\Local\\Temp\\tmpewfoyuf3\\demo_dataset.txt",
+    "file_size": 40,
+    "algorithm": "SHA-256",
+    "checksum": "e3fa6f8166047158546e71968d83dd2828b92249cb6240127e809a5489ca580d",
+    "timestamp": "2026-06-29T10:03:58.128884+00:00"
+  },
+  {
+    "dataset_id": "demo_dataset_001",
+    "dataset_name": "Demo Dataset",
+    "provider": "Demo Provider",
+    "filename": "demo_dataset.txt",
+    "file_path": "C:\\Users\\dell\\AppData\\Local\\Temp\\tmprtuzzu0u\\demo_dataset.txt",
+    "file_size": 40,
+    "algorithm": "SHA-256",
+    "checksum": "e3fa6f8166047158546e71968d83dd2828b92249cb6240127e809a5489ca580d",
+    "timestamp": "2026-07-15T08:31:25.997894+00:00"
+  },
+  {
+    "dataset_id": "noaaSanctSound_Dection_Files",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": null,
+    "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "6d93f0aa89218004dddd7fbfae5475a22045d4f3b382b144cda41debe9027914",
+    "timestamp": "2026-07-16T07:15:22.542388+00:00"
+  },
+  {
+    "dataset_id": "erdHadISST",
+    "dataset_name": "NOAA CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch ERDDAP",
+    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_size": 485245472,
+    "algorithm": "SHA-256",
+    "checksum": "aeeadf37fc43b50d39985fe2c2a8ebd2dee92c9b6e3e7adfb38f5e705850a44c",
+    "timestamp": "2026-07-16T17:35:41.021250+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA CoastWatch ERDDAP",
+    "provider": "NOAA CoastWatch ERDDAP",
+    "filename": "NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\NOAA_CoastWatch_ERDDAP_noaa_erddap_coastwatch.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "14226609f106c2b612b5611c73368632812d73f1f70b1ff16e44e54c3eba9222",
+    "timestamp": "2026-07-17T07:10:48.943591+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "SST, Aqua MODIS, NPP, 0.0125°, West US, Day time (11 microns), 2002-present (3 Day Composite)",
+    "provider": "SST, Aqua MODIS, NPP, 0.0125°, West US, Day time (11 microns), 2002-present (3 Day Composite)",
+    "filename": "SST__Aqua_MODIS__NPP__0.0125___West_US__Day_time__11_microns___2002-present__3_D_erddap_erdMWsstd3day.dat",
+    "file_path": "C:\\Users\\tanvi\\Documents\\gitproject\\earth_intelligence\\earth_intel\\data\\SST__Aqua_MODIS__NPP__0.0125___West_US__Day_time__11_microns___2002-present__3_D_erddap_erdMWsstd3day.dat",
+    "file_size": 136512,
+    "algorithm": "SHA-256",
+    "checksum": "14226609f106c2b612b5611c73368632812d73f1f70b1ff16e44e54c3eba9222",
+    "timestamp": "2026-07-17T07:10:57.309394+00:00"
+  },
+  {
+    "dataset_id": "GISTEMP-v4",
+    "dataset_name": "NASA EarthData (Earthdata Login required)",
+    "provider": "NASA EarthData (Earthdata Login required)",
+    "filename": "NASA_EarthData__Earthdata_Login_required__nasa_earthdata.dat",
+    "file_path": "C:\\Users\\cthan\\Downloads\\NASA_EarthData__Earthdata_Login_required__nasa_earthdata.dat",
+    "file_size": 12881,
+    "algorithm": "SHA-256",
+    "checksum": "99d659d8c955c6599e93be3691467ff56eff80ee4b066c5cacfaaa6f7332ca9f",
+    "timestamp": "2026-07-16T12:49:41.814599+00:00"
+  },
+  {
+    "dataset_id": "open_meteo",
+    "dataset_name": "Open-Meteo Weather API",
+    "provider": "Open-Meteo Weather API",
+    "filename": "open_meteo_20260716T125104Z.json",
+    "file_path": "C:\\Users\\cthan\\Downloads\\open_meteo_20260716T125104Z.json",
+    "file_size": 219280,
+    "algorithm": "SHA-256",
+    "checksum": "1ca24d1e0124617951dcc37e69f59c580aa82e67da49060ac040bd8a6d5b8972",
+    "timestamp": "2026-07-16T12:51:04.061983+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\Downloads\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
+    "algorithm": "SHA-256",
+    "checksum": "295714f65a5e326f3e5062a61ed28e1187fa61ecfe30fed14bb64c43afa69493",
+    "timestamp": "2026-07-17T04:13:25.005995+00:00"
+  },
+  {
+    "dataset_id": "gfs-0p25",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": "NOAA GFS via NOMADS",
+    "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\cthan\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 505285056,
+    "algorithm": "SHA-256",
+    "checksum": "dab3df3658b6401dc7312434169bc36009d00385ec8e7eeae509635aeaf6893f",
+    "timestamp": "2026-07-17T04:20:18.242673+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\Downloads\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
+    "algorithm": "SHA-256",
+    "checksum": "295714f65a5e326f3e5062a61ed28e1187fa61ecfe30fed14bb64c43afa69493",
+    "timestamp": "2026-07-17T04:26:33.935043+00:00"
+  }
+]

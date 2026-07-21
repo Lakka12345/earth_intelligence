@@ -309,8 +309,26 @@ def render_understanding_summary_banner(
     if revision_round:
         title += f"  (revision {revision_round})"
 
+    readiness = output.retrieval_readiness.value
+    if readiness == "proceed_with_assumptions":
+        notice = (
+            "⚠️  Proceeding with assumptions -- not all gaps were resolved "
+            "(e.g. the clarification round limit was reached). Review the "
+            "ASSUMPTIONS and REMAINING GAPS sections below carefully before "
+            "continuing."
+        )
+    elif readiness == "clarification_required":
+        notice = (
+            "⚠️  Clarification is still required -- this summary reflects "
+            "the current best understanding, but Agent 2 has open questions "
+            "that were not resolved."
+        )
+    else:
+        notice = "✅  Understanding is fully resolved -- no outstanding gaps."
+
     return (
         f"{header}\n{title}\n{header}\n\n"
+        f"{notice}\n\n"
         f"{render_understanding_summary(output)}\n\n"
         f"{header}"
     )

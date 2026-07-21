@@ -12,18 +12,23 @@ _NODES = [
     ("🧠", "Agent 1", "Intent"),
     ("💬", "Agent 2", "Clarify"),
     ("🔍", "Agent 3", "Discovery"),
-    ("✅", "Agent 4", "Verify"),
-    ("📦", "Results", ""),
+    ("📦", "Agent 4", "Retrieve"),
+    ("⚙️", "Agent 5", "Preprocess"),
+    ("✅", "Results", ""),
 ]
 
 _STAGE_MAP = {
-    "idle":       [None,        None,        None,        None,        None],
-    "running_a1": ["running",   None,        None,        None,        None],
-    "running_a2": ["completed", "running",   None,        None,        None],
-    "clarifying": ["completed", "running",   None,        None,        None],
-    "running_a3": ["completed", "completed", "running",   None,        None],
-    "done":       ["completed", "completed", "completed", "waiting",   "completed"],
-    "error":      ["failed",    None,        None,        None,        None],
+    "idle":       [None,        None,        None,        None,        None,        None],
+    "running_a1": ["running",   None,        None,        None,        None,        None],
+    "running_a2": ["completed", "running",   None,        None,        None,        None],
+    "clarifying":     ["completed", "running",   None,        None,        None,        None],
+    "confirm_understanding": ["completed", "running", None,   None,        None,        None],
+    "running_a3": ["completed", "completed", "running",   None,        None,        None],
+    "agent3_ranking": ["completed", "completed", "running", None,       None,        None],
+    "running_a4": ["completed", "completed", "completed", "running",   None,        None],
+    "running_a5": ["completed", "completed", "completed", "completed", "running",   None],
+    "done":       ["completed", "completed", "completed", "completed", "completed", "completed"],
+    "error":      ["failed",    None,        None,        None,        None,        None],
 }
 
 # Visual config per status key
@@ -44,13 +49,13 @@ def render_pipeline() -> None:
     statuses = _STAGE_MAP.get(stage, [None] * 5)
 
     cols = st.columns(len(_NODES) * 2 - 1)
-    col_indices = [0, 2, 4, 6, 8]
+    col_indices = [0, 2, 4, 6, 8, 10]
 
     for i, (icon, name, sub) in enumerate(_NODES):
         status_key = (statuses[i] if i < len(statuses) else None) or "waiting"
         cfg = _STATUS_CONFIG.get(status_key, _STATUS_CONFIG["waiting"])
 
-        timing = st.session_state.timings.get(f"agent{i+1}", None)
+        timing = st.session_state.timings.get(f"agent{i+1}", None) if i < len(_NODES) - 1 else None
         timing_html = (
             f"<div style='font-size:10px;color:#64748b;margin-top:4px;'>{timing:.1f}s</div>"
             if timing else ""

@@ -58,6 +58,35 @@ except ImportError:
 _FALLBACK_CACHE_PATH = os.path.join("data", ".credentials_cache.json")
 _KEYRING_SERVICE_PREFIX = "agent4_source_credentials"
 
+# ---------------------------------------------------------------------------
+# Session-level credential registry
+# ---------------------------------------------------------------------------
+# Many providers in the same run share a single sign-on identity (e.g. a
+# researcher's personal email/password used to register on several small
+# data portals in one sitting). This registry remembers every credential
+# entered or reused *during this process's lifetime* — keyed by provider
+# name — purely in memory (never written to disk itself; persistence to
+# disk is still handled separately by store_save_provider_credentials /
+# save_credentials). It lets _login_required_menu offer "reuse the
+# credentials you just used for <other provider>?" instead of re-asking
+# from scratch for every single source.
+_SESSION_CREDENTIALS: Dict[str, Credentials] = {}
+
+
+def _register_session_credentials(provider_name: str, credentials: Optional[Credentials]) -> None:
+    """Remember a credential set against `provider_name` for the rest of this session."""
+    if credentials is None:
+        return
+    _SESSION_CREDENTIALS[provider_name] = credentials
+
+
+def _session_credential_choices(exclude_provider: str) -> Dict[str, Credentials]:
+    """All session-registered credentials except the ones for the provider being resolved."""
+    return {
+        name: creds for name, creds in _SESSION_CREDENTIALS.items()
+        if name != exclude_provider
+    }
+
 
 def _obfuscate(value: str) -> str:
     return base64.b64encode(value.encode("utf-8")).decode("ascii")
@@ -82,6 +111,51 @@ def _write_fallback_cache(cache: dict) -> None:
     os.makedirs(os.path.dirname(_FALLBACK_CACHE_PATH) or ".", exist_ok=True)
     with open(_FALLBACK_CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(cache, f, indent=2)
+
+
+def clear_all_cached_credentials() -> None:
+    """
+    Wipe the local fallback credential cache (data/.credentials_cache.json)
+    AND clear the OS keyring entries for all known providers.
+
+    Call this to fully reset before entering fresh credentials.
+    This clears the cache that delete_all_credentials() in
+    agent4_credential_store.py does NOT touch.
+    """
+    # 1. Wipe the JSON fallback cache
+    if os.path.exists(_FALLBACK_CACHE_PATH):
+        try:
+            os.remove(_FALLBACK_CACHE_PATH)
+            print(f"[Access Resolver] Removed fallback cache: {_FALLBACK_CACHE_PATH}")
+        except Exception as exc:
+            print(f"[Access Resolver] Could not remove fallback cache: {exc}")
+    else:
+        print(f"[Access Resolver] No fallback cache found at {_FALLBACK_CACHE_PATH} (already clean).")
+
+    # 2. Clear OS keyring entries for known providers
+    if _KEYRING_AVAILABLE:
+        known_providers = [
+            "Copernicus Marine Service (CMEMS)",
+            "Copernicus Climate Data Store (ERA5)",
+            "Copernicus Data Space (Sentinel Hub)",
+            "Copernicus Land Monitoring Service",
+            "NOAA Tides and Currents API",
+            "NOAA GFS via NOMADS",
+            "INCOIS Ocean Data Portal",
+            "Argo Float Data (global, all GDACs)",
+            "GDACS (Global Disaster Alerts)",
+        ]
+        for provider in known_providers:
+            service_id = f"{_KEYRING_SERVICE_PREFIX}:{provider}"
+            try:
+                keyring.delete_password(service_id, provider)
+                print(f"[Access Resolver] Cleared keyring entry for: {provider}")
+            except Exception:
+                pass  # Not stored in keyring — skip silently
+
+    # 3. Also clear the session registry for this run
+    _SESSION_CREDENTIALS.clear()
+    print("[Access Resolver] Session credential registry cleared.")
 
 
 def save_credentials(provider_name: str, username: str, password: str) -> None:
@@ -150,6 +224,7 @@ def resolve_access(
     snapshot: SourceSnapshot,
     analysis: WebsiteAnalysisResult,
     pre_collected_credentials: Optional[Dict[str, dict]] = None,
+    ui_choices: Optional[dict] = None,
 ) -> "tuple[SourceDecision, Optional[Credentials]]":
     """
     Returns (decision, credentials).
@@ -161,6 +236,17 @@ def resolve_access(
       3. Payment required → user chooses skip or payment redirect.
       4. Login required → 4-option menu (existing / new / skip / alternatives).
       5. Unconfirmed access → same 4-option menu.
+
+    `ui_choices` (dashboard mode): when not None, every branch below that
+    would otherwise call input()/getpass() instead makes a safe,
+    non-blocking decision using ui_choices["credential_choices"].get(sid),
+    a dict the dashboard builds from a Streamlit form:
+        {"username": str, "password": str, "api_key": str, "token": str,
+         "skip": bool, "persist": bool}
+    If no entry exists for a source that needs fresh credentials, the
+    source is skipped (never blocks). Automated new-account registration
+    (Playwright) is CLI-only and is never attempted in dashboard mode —
+    it falls back to the same "skip if no credentials provided" behavior.
     """
     acc = analysis.accessibility
     sid = snapshot.source_id
@@ -196,27 +282,87 @@ def resolve_access(
             None,
         )
 
-    # 2. Stored credentials from a previous run — reuse silently.
+    if ui_choices is not None:
+        return _resolve_access_dashboard(sid, snapshot, acc, ui_choices)
+
+    # 2. Stored credentials from a previous run — validate before reusing.
     stored = store_load_credentials(sid)
     if stored:
         effective_token = stored.bearer_token or stored.refresh_token or stored.token
-        print(f"  Using previously saved credentials for {snapshot.name} (no login needed this run).")
-        return (
-            SourceDecision(
-                source_id=sid,
-                decision=AccessDecisionType.user_provided_credentials,
-                credentials_used=True,
-                credentials_persisted=True,
-                notes="Reused credentials saved from an earlier run.",
-            ),
-            Credentials(
-                username=stored.username,
-                password=stored.password,
-                api_key=stored.api_key,
-                token=effective_token or stored.session_token,
-                session_token=stored.session_token,
-            ),
+        reused_credentials = Credentials(
+            username=stored.username,
+            password=stored.password,
+            api_key=stored.api_key,
+            token=effective_token or stored.session_token,
+            session_token=stored.session_token,
         )
+        # Quick sanity check: stored credentials must have at least one
+        # non-empty field. Empty/blank records from a failed previous run
+        # are treated as missing so the user is re-prompted rather than
+        # silently forwarding broken credentials downstream.
+        has_content = any([
+            stored.username, stored.password, stored.api_key,
+            stored.token, stored.session_token,
+            stored.bearer_token, stored.refresh_token,
+        ])
+        if has_content:
+            print(f"\n  Saved credentials were found for {snapshot.name}.")
+            print("  What would you like to do?")
+            print("    1. Use the saved credentials")
+            print("    2. Enter new/different credentials")
+            print("    3. Skip this source")
+            print("    4. Search alternative sources instead")
+            while True:
+                saved_choice = input("  Your choice [1/2/3/4]: ").strip()
+                if saved_choice == "1":
+                    print(f"  Using previously saved credentials for {snapshot.name}.")
+                    print("  [Tip] If this source fails with a 401 error, choose option 2 next time to re-enter credentials.")
+                    _register_session_credentials(snapshot.name, reused_credentials)
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.user_provided_credentials,
+                            credentials_used=True,
+                            credentials_persisted=True,
+                            notes="Reused credentials saved from an earlier run (user confirmed).",
+                        ),
+                        reused_credentials,
+                    )
+                if saved_choice == "2":
+                    return _prompt_user_credentials(sid, snapshot)
+                if saved_choice == "3":
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.skipped_declined,
+                            notes="User skipped this source despite saved credentials being available.",
+                        ),
+                        None,
+                    )
+                if saved_choice == "4":
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.skipped_declined,
+                            notes="User requested alternative sources despite saved credentials being available.",
+                        ),
+                        None,
+                    )
+                print("  Please enter 1, 2, 3, or 4.")
+        else:
+            # Stored record is empty/blank — delete it and fall through to prompt.
+            print(
+                f"  WARNING: Stored credentials for {snapshot.name} appear empty or corrupt "
+                f"— clearing and re-prompting."
+            )
+            from agents.agent4_credential_store import delete_credentials as store_delete_credentials
+            store_delete_credentials(sid)
+            # Also clear the fallback JSON cache entry for this provider
+            cache = _load_fallback_cache()
+            service_id = f"{_KEYRING_SERVICE_PREFIX}:{snapshot.name}"
+            if service_id in cache:
+                del cache[service_id]
+                _write_fallback_cache(cache)
 
     # 3. Paid access.
     if acc.payment_required:
@@ -245,6 +391,129 @@ def resolve_access(
 
 
 # ---------------------------------------------------------------------------
+# Dashboard mode — non-interactive credential resolution (no input()/getpass())
+# ---------------------------------------------------------------------------
+
+def _resolve_access_dashboard(
+    sid: str,
+    snapshot: SourceSnapshot,
+    acc,
+    ui_choices: dict,
+) -> "tuple[SourceDecision, Optional[Credentials]]":
+    choice = ((ui_choices.get("credential_choices") or {}).get(sid)) or {}
+
+    # 2. Stored credentials from a previous run — reuse automatically unless
+    #    the dashboard form explicitly asked to skip or provided fresh values.
+    stored = store_load_credentials(sid)
+    if stored and not choice.get("skip") and not any(
+        [choice.get("username"), choice.get("password"), choice.get("api_key"), choice.get("token")]
+    ):
+        effective_token = stored.bearer_token or stored.refresh_token or stored.token
+        has_content = any([
+            stored.username, stored.password, stored.api_key,
+            stored.token, stored.session_token,
+            stored.bearer_token, stored.refresh_token,
+        ])
+        if has_content:
+            print(f"  Saved credentials found for {snapshot.name} — reusing automatically (dashboard mode).")
+            reused_credentials = Credentials(
+                username=stored.username,
+                password=stored.password,
+                api_key=stored.api_key,
+                token=effective_token or stored.session_token,
+                session_token=stored.session_token,
+            )
+            _register_session_credentials(snapshot.name, reused_credentials)
+            return (
+                SourceDecision(
+                    source_id=sid,
+                    decision=AccessDecisionType.user_provided_credentials,
+                    credentials_used=True,
+                    credentials_persisted=True,
+                    notes="Reused credentials saved from an earlier run (dashboard auto-reuse).",
+                ),
+                reused_credentials,
+            )
+
+    # 3. Payment required — never automated; skip unless the dashboard form
+    #    explicitly opted into the payment-redirect path.
+    if acc.payment_required:
+        if choice.get("accept_payment_redirect"):
+            print(f"  Payment required for {snapshot.name} — user opted for payment redirect (dashboard mode).")
+            return (
+                SourceDecision(
+                    source_id=sid,
+                    decision=AccessDecisionType.payment_redirect,
+                    notes=f"Waiting for user payment at {snapshot.url}.",
+                ),
+                None,
+            )
+        print(f"  Payment required for {snapshot.name} — auto-skipping (dashboard mode).")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="Payment required; auto-declined in dashboard mode. Alternate source will be substituted if available.",
+            ),
+            None,
+        )
+
+    # 4 & 5. Login required (confirmed or unconfirmed) — use credentials the
+    #    dashboard form collected, if any; otherwise skip (never blocks).
+    if choice.get("skip"):
+        print(f"  User chose to skip {snapshot.name} (dashboard mode).")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="User skipped this source via the dashboard credential form.",
+            ),
+            None,
+        )
+
+    has_fresh = any([choice.get("username"), choice.get("password"), choice.get("api_key"), choice.get("token")])
+    if not has_fresh:
+        print(f"  No credentials provided for {snapshot.name} — auto-skipping (dashboard mode).")
+        return (
+            SourceDecision(
+                source_id=sid,
+                decision=AccessDecisionType.skipped_declined,
+                notes="Source requires login and no credentials were provided via the dashboard; skipped.",
+            ),
+            None,
+        )
+
+    manual_credentials = Credentials(
+        username=choice.get("username", ""),
+        password=choice.get("password", ""),
+        api_key=choice.get("api_key") or None,
+        token=choice.get("token") or None,
+    )
+
+    if choice.get("persist"):
+        store_save_provider_credentials(
+            sid,
+            username=choice.get("username", ""),
+            password=choice.get("password", ""),
+            api_key=choice.get("api_key") or None,
+            bearer_token=choice.get("token") or None,
+        )
+        print(f"  Credentials for {snapshot.name} saved securely (dashboard mode).")
+
+    _register_session_credentials(snapshot.name, manual_credentials)
+    return (
+        SourceDecision(
+            source_id=sid,
+            decision=AccessDecisionType.user_provided_credentials,
+            credentials_used=True,
+            credentials_persisted=bool(choice.get("persist")),
+            notes="User-supplied credentials via dashboard form.",
+        ),
+        manual_credentials,
+    )
+
+
+# ---------------------------------------------------------------------------
 # 4-option login menu
 # ---------------------------------------------------------------------------
 
@@ -267,6 +536,57 @@ def _login_required_menu(
     if registration_url:
         print(f"  Register:  {registration_url}")
     print(f"  Login:     {login_url}")
+
+    # ------------------------------------------------------------------
+    # Session-level credential reuse offer
+    # ------------------------------------------------------------------
+    # If credentials were already entered (or silently reused) for a
+    # *different* provider earlier in this same run, offer to reuse them
+    # here before falling through to the full 4-option menu. Common case:
+    # one personal email/password used to register on several small
+    # portals in a single session.
+    reuse_candidates = _session_credential_choices(provider_name)
+    if reuse_candidates:
+        names = list(reuse_candidates.keys())
+        print("\n  You've already entered credentials for these provider(s) this session:")
+        for i, name in enumerate(names, start=1):
+            print(f"    {i}. {name}")
+        reuse_choice = input(
+            "  Reuse one of these for this provider too? "
+            "Enter a number, or press Enter to skip: "
+        ).strip()
+        if reuse_choice:
+            try:
+                idx = int(reuse_choice)
+                if 1 <= idx <= len(names):
+                    chosen_name = names[idx - 1]
+                    chosen_credentials = reuse_candidates[chosen_name]
+                    persist = input(
+                        f"  Save these credentials for {provider_name} too so you're never asked again? (yes/no): "
+                    ).strip().lower() in ("yes", "y")
+                    if persist:
+                        store_save_provider_credentials(
+                            sid,
+                            username=chosen_credentials.username,
+                            password=chosen_credentials.password,
+                            api_key=chosen_credentials.api_key,
+                            bearer_token=chosen_credentials.token,
+                        )
+                        print(f"  Credentials saved for {provider_name}.")
+                    _register_session_credentials(provider_name, chosen_credentials)
+                    return (
+                        SourceDecision(
+                            source_id=sid,
+                            decision=AccessDecisionType.user_provided_credentials,
+                            credentials_used=True,
+                            credentials_persisted=persist,
+                            notes=f"Reused session credentials originally entered for {chosen_name}.",
+                        ),
+                        chosen_credentials,
+                    )
+                print("  Not a valid number -- continuing to the normal menu.")
+            except ValueError:
+                print("  Not a valid number -- continuing to the normal menu.")
 
     while True:
         print(
@@ -369,6 +689,9 @@ def _create_new_account(
     save_credentials(snapshot.name, email, password)
     print(f"  Credentials for {snapshot.name} saved securely — you will not be asked again.")
 
+    new_credentials = Credentials(username=email, password=password)
+    _register_session_credentials(snapshot.name, new_credentials)
+
     return (
         SourceDecision(
             source_id=sid,
@@ -377,13 +700,28 @@ def _create_new_account(
             credentials_persisted=True,
             notes="Account created via automated registration assistant; credentials cached.",
         ),
-        Credentials(username=email, password=password),
+        new_credentials,
     )
 
 
 # ---------------------------------------------------------------------------
 # Credential prompt (existing account path)
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# CLI helper
+# ---------------------------------------------------------------------------
+# Run directly to wipe ALL cached credentials before re-entering fresh ones:
+#   python agent4_access_resolver.py --clear-all
+
+if __name__ == "__main__":
+    import sys
+    if "--clear-all" in sys.argv:
+        clear_all_cached_credentials()
+        print("\nAll cached credentials cleared. Re-run your agent to enter fresh credentials.")
+    else:
+        print("Usage: python agent4_access_resolver.py --clear-all")
+
 
 def _prompt_user_credentials(
     source_id: str,
@@ -433,6 +771,13 @@ def _prompt_user_credentials(
         print(f"  Credentials saved. {snapshot.name} will authenticate automatically on future runs.")
 
     effective_token = bearer_token or refresh_token
+    manual_credentials = Credentials(
+        username=username,
+        password=password,
+        api_key=api_key,
+        token=effective_token,
+    )
+    _register_session_credentials(snapshot.name, manual_credentials)
     return (
         SourceDecision(
             source_id=source_id,
@@ -441,10 +786,5 @@ def _prompt_user_credentials(
             credentials_persisted=persist,
             notes="User-supplied credentials.",
         ),
-        Credentials(
-            username=username,
-            password=password,
-            api_key=api_key,
-            token=effective_token,
-        ),
+        manual_credentials,
     )

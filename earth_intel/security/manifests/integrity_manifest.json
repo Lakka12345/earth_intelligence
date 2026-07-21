@@ -1,34 +1,123 @@
 [
   {
-    "dataset_id": "demo_dataset_001",
-    "dataset_name": "Demo Dataset",
-    "provider": "Demo Provider",
-    "filename": "demo_dataset.txt",
-    "file_path": "C:\\Users\\dell\\AppData\\Local\\Temp\\tmpewfoyuf3\\demo_dataset.txt",
-    "file_size": 40,
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
     "algorithm": "SHA-256",
-    "checksum": "e3fa6f8166047158546e71968d83dd2828b92249cb6240127e809a5489ca580d",
-    "timestamp": "2026-06-29T10:03:58.128884+00:00"
+    "checksum": "295714f65a5e326f3e5062a61ed28e1187fa61ecfe30fed14bb64c43afa69493",
+    "timestamp": "2026-07-18T14:04:25.662239+00:00"
   },
   {
-    "dataset_id": "demo_dataset_001",
-    "dataset_name": "Demo Dataset",
-    "provider": "Demo Provider",
-    "filename": "demo_dataset.txt",
-    "file_path": "C:\\Users\\dell\\AppData\\Local\\Temp\\tmprtuzzu0u\\demo_dataset.txt",
-    "file_size": 40,
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
     "algorithm": "SHA-256",
-    "checksum": "e3fa6f8166047158546e71968d83dd2828b92249cb6240127e809a5489ca580d",
-    "timestamp": "2026-07-15T08:31:25.997894+00:00"
+    "checksum": "295714f65a5e326f3e5062a61ed28e1187fa61ecfe30fed14bb64c43afa69493",
+    "timestamp": "2026-07-19T14:21:10.296486+00:00"
   },
   {
-    "dataset_id": "noaaSanctSound_Dection_Files",
+    "dataset_id": "gfs-0p25",
     "dataset_name": "NOAA GFS via NOMADS",
-    "provider": null,
+    "provider": "NOAA GFS via NOMADS",
     "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
-    "file_path": "C:\\Users\\dell\\Downloads\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 513994355,
+    "algorithm": "SHA-256",
+    "checksum": "d3cd5ee709c3817d61e0cee6392db693faac4a343b8a723630e39a79eecaba16",
+    "timestamp": "2026-07-19T14:21:58.001597+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
+    "algorithm": "SHA-256",
+    "checksum": "295714f65a5e326f3e5062a61ed28e1187fa61ecfe30fed14bb64c43afa69493",
+    "timestamp": "2026-07-19T14:22:03.388606+00:00"
+  },
+  {
+    "dataset_id": "gdacs-eq-tc-fl-vo-wf-dr",
+    "dataset_name": "Argo Float Data (global, all GDACs)",
+    "provider": "Argo Float Data (global, all GDACs)",
+    "filename": "Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\Argo_Float_Data__global__all_GDACs__argo_gdac_global.dat",
+    "file_size": 327,
+    "algorithm": "SHA-256",
+    "checksum": "b676781958f3f580352217f800d6adac099663ceffdfbb900f31ac1a29e590d8",
+    "timestamp": "2026-07-20T06:04:50.522636+00:00"
+  },
+  {
+    "dataset_id": "gfs-0p25",
+    "dataset_name": "NOAA GFS via NOMADS",
+    "provider": "NOAA GFS via NOMADS",
+    "filename": "NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\NOAA_GFS_via_NOMADS_noaa_gfs_nomads.dat",
+    "file_size": 512742832,
+    "algorithm": "SHA-256",
+    "checksum": "ccfda2b8109335cee66fbbc01a05551ea3fd18c7499b04b2763f8b8eed814b3b",
+    "timestamp": "2026-07-20T08:20:31.826761+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 298,
+    "algorithm": "SHA-256",
+    "checksum": "53a35106a2c4d300a1d6be04bbd3a9aa97b5902a840b7372a64a0a9bc6dd6c94",
+    "timestamp": "2026-07-20T08:20:35.296848+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
+    "algorithm": "SHA-256",
+    "checksum": "68d64ed02caeef11ffbb43be5ba7973b68c20735c291c3c34bd17060149d0429",
+    "timestamp": "2026-07-20T08:26:16.433987+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 298,
+    "algorithm": "SHA-256",
+    "checksum": "53a35106a2c4d300a1d6be04bbd3a9aa97b5902a840b7372a64a0a9bc6dd6c94",
+    "timestamp": "2026-07-20T08:27:25.851678+00:00"
+  },
+  {
+    "dataset_id": "gdacs-fl",
+    "dataset_name": "GDACS (Global Disaster Alerts)",
+    "provider": "GDACS (Global Disaster Alerts)",
+    "filename": "GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\GDACS__Global_Disaster_Alerts__gdacs.dat",
+    "file_size": 299,
+    "algorithm": "SHA-256",
+    "checksum": "68d64ed02caeef11ffbb43be5ba7973b68c20735c291c3c34bd17060149d0429",
+    "timestamp": "2026-07-20T09:16:53.356638+00:00"
+  },
+  {
+    "dataset_id": "erdlasFnOscursLL",
+    "dataset_name": "NOAA NCEI",
+    "provider": "NOAA NCEI",
+    "filename": "NOAA_NCEI_noaa_ncei.dat",
+    "file_path": "C:\\Users\\cthan\\ai model\\earth_intelligence\\earth_intel\\data\\NOAA_NCEI_noaa_ncei.dat",
     "file_size": 136512,
     "algorithm": "SHA-256",
+<<<<<<< HEAD
     "checksum": "6d93f0aa89218004dddd7fbfae5475a22045d4f3b382b144cda41debe9027914",
     "timestamp": "2026-07-16T07:15:22.542388+00:00"
   },
@@ -53,5 +142,9 @@
     "algorithm": "SHA-256",
     "checksum": "4642a743293980d1c1a075451f0ff78bc87a7280bf9a22453597b1550fbec510",
     "timestamp": "2026-07-16T12:33:18.230168+00:00"
+=======
+    "checksum": "ff320416f2ab84a7f2eee1a9ae8a213dfee05749562e1d745773d9e74e6be194",
+    "timestamp": "2026-07-20T15:37:15.222359+00:00"
+>>>>>>> cc1656dfae7aa0dc2853064d73058ceec1cec18a
   }
 ]

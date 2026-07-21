@@ -181,7 +181,19 @@ _CATALOG_ENDPOINT_OVERRIDES: Dict[str, str] = {
     "openaq":        "https://api.openaq.org/v2/",
     "noaa_ncei":     "https://www.ncei.noaa.gov/access/services/data/v1/",
     "nasa_earthdata":"https://cmr.earthdata.nasa.gov/search/",
-    "copernicus":    "https://cds.climate.copernicus.eu/api/v2/",
+    # CHANGED: a single "copernicus" key matched every Copernicus-branded
+    # source by substring (Data Space, Land Monitoring, CDS all contain
+    # "copernicus" in their name), silently rewriting all of them to the
+    # same CDS endpoint whenever any of them tripped the bare-domain
+    # check. Each Copernicus service is a distinct product with its own
+    # API base -- these must never collapse into one key. Order matters:
+    # more specific keys are checked first (see loop below).
+    "copernicus climate data store": "https://cds.climate.copernicus.eu/api/",
+    "copernicus cds":                "https://cds.climate.copernicus.eu/api/",
+    "copernicus data space":         "https://catalogue.dataspace.copernicus.eu/resto/",
+    "copernicus land":               "https://land.copernicus.eu/api/",
+    "copernicus marine":             "https://data.marine.copernicus.eu/api/",
+    "copernicus atmosphere":         "https://ads.atmosphere.copernicus.eu/api/",
     "usgs":          "https://waterservices.usgs.gov/nwis/",
     "ecmwf":         "https://api.ecmwf.int/v1/",
     "imd":           "https://internal.imd.gov.in/section/nhac/dynamic/",
@@ -191,6 +203,89 @@ _CATALOG_ENDPOINT_OVERRIDES: Dict[str, str] = {
     "worldbank":     "https://api.worldbank.org/v2/",
     "ocha":          "https://api.hpc.tools/v2/",
 }
+
+
+# Path segments that mark a page as a human-facing "browse/download" landing
+# page rather than a machine-readable endpoint, even when the path has two
+# or more segments (e.g. /en/open-data, /data/downloads, /products/catalogue).
+# These are checked ONLY when the URL has no API marker and no data-file
+# extension — a URL like /erddap/griddap/x.nc still passes fine.
+_LANDING_PAGE_SEGMENT_MARKERS = (
+    "open-data", "opendata", "open_data", "downloads", "download",
+    "datasets", "dataset", "data-portal", "dataportal", "resources",
+    "products", "catalogue", "library", "publications", "en", "home",
+)
+
+
+def _is_landing_page_url(url: str) -> bool:
+    """
+    Returns True when a URL's path is composed entirely of "landing page"
+    segments (browse/marketing pages) and it carries no API marker and no
+    data-file extension. This catches multi-segment landing pages that
+    _is_bare_domain_url misses, e.g. https://www.deltares.nl/en/open-data.
+    """
+    from urllib.parse import urlparse
+    lower = url.lower()
+
+    has_api_marker = any(marker in lower for marker in _DATA_API_PATH_MARKERS)
+    has_data_ext = any(lower.rstrip("/").endswith(ext) for ext in
+                        (".nc", ".nc4", ".hdf", ".h5", ".csv", ".json", ".tif", ".tiff",
+                         ".grib", ".grb", ".grb2", ".zip", ".gz", ".tar"))
+    if has_api_marker or has_data_ext:
+        return False
+
+    try:
+        path = urlparse(url).path.rstrip("/")
+    except Exception:
+        return False
+
+    segments = [s for s in path.split("/") if s]
+    if not segments:
+        return False  # handled by _is_bare_domain_url already
+
+    return all(seg.lower() in _LANDING_PAGE_SEGMENT_MARKERS for seg in segments)
+
+
+def _resolve_landing_page_to_data_endpoint(
+    url: str, timeout: int = PROBE_TIMEOUT_SECONDS
+) -> Optional[str]:
+    """
+    Lightweight, best-effort crawl of an HTML landing page to find a real
+    data endpoint linked from it — a .nc/.csv/.json/.tif file, or an
+    ERDDAP/THREDDS/CKAN/STAC/WCS/WFS entry point. Returns the first strong
+    match found, or None if nothing usable is on the page.
+
+    This is intentionally cheap (single GET, one page, no recursion) so it
+    never becomes the bottleneck of Phase 1. It exists so that a landing
+    page isn't just dropped when it is, in fact, one click away from the
+    real endpoint — which is common for provider "open data" pages that
+    link out to their ERDDAP/THREDDS server or a downloadable file.
+    """
+    import re
+    from urllib.parse import urljoin
+
+    try:
+        resp = requests.get(url, timeout=timeout, headers={"User-Agent": "EarthIntelligenceAgent/1.0"})
+        if resp.status_code >= 400 or "text/html" not in resp.headers.get("Content-Type", "").lower():
+            return None
+        html = resp.text
+    except Exception:
+        return None
+
+    hrefs = re.findall(r'href=["\']([^"\']+)["\']', html, flags=re.IGNORECASE)
+    candidates = [urljoin(url, h) for h in hrefs]
+
+    # Prefer explicit data-file links first, then API/service entry points.
+    data_exts = (".nc", ".nc4", ".hdf", ".h5", ".csv", ".json", ".tif", ".tiff",
+                 ".grib", ".grb", ".grb2")
+    for link in candidates:
+        if link.lower().rstrip("/").endswith(data_exts):
+            return link
+    for link in candidates:
+        if any(marker in link.lower() for marker in _DATA_API_PATH_MARKERS):
+            if not _is_portal_url(link):
+                return link
+    return None
 
 
 def _is_bare_domain_url(url: str) -> bool:
@@ -362,7 +457,11 @@ def _resolve_catalog_endpoint(candidate: CandidateSource) -> Optional[str]:
     sid   = _normalise(candidate.source_id)
     name  = _normalise(candidate.name)
 
-    for key, endpoint in _CATALOG_ENDPOINT_OVERRIDES.items():
+    # Sort by key length descending so a more specific key (e.g.
+    # "copernicus land") is always checked before a shorter, broader one
+    # that might also appear as a substring -- prevents any future
+    # re-introduction of the same collision bug.
+    for key, endpoint in sorted(_CATALOG_ENDPOINT_OVERRIDES.items(), key=lambda kv: -len(kv[0])):
         norm_key = _normalise(key)
         if norm_key in sid or norm_key in name:
             return endpoint
@@ -425,6 +524,7 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
 
     for c in candidates:
         origin = getattr(c, "discovery_origin", "") or ""
+        was_rescued_by_override = False
 
         # ── Stage 1: bare-domain check (ALL origins) ─────────────────
         if _is_bare_domain_url(c.url):
@@ -432,6 +532,7 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
             if replacement:
                 rescued.append(f"{c.name}  ({c.url} → {replacement})")
                 c.url = replacement
+                was_rescued_by_override = True
                 # fall through to Stage 2 with the corrected URL
             else:
                 dropped.append(c)
@@ -444,8 +545,42 @@ def _filter_landing_pages(candidates: List[CandidateSource]) -> List[CandidateSo
             dropped.append(c)
             continue
 
-        curated = origin in ("catalog", "provider_registry", "qdrant_cache")
-        if not curated and not _is_api_url(c.url):
+        # ── Stage 2b: multi-segment landing pages (ALL origins) ──────
+        # Catches pages like /en/open-data that _is_bare_domain_url
+        # misses because they have 2+ path segments. Try a cheap crawl
+        # to rescue the real endpoint before giving up on the source —
+        # this is the main fix for HTML pages ending up in Qdrant instead
+        # of the actual download/API endpoint.
+        if not was_rescued_by_override and _is_landing_page_url(c.url):
+            resolved = _resolve_landing_page_to_data_endpoint(c.url)
+            if resolved:
+                rescued.append(f"{c.name}  ({c.url} → {resolved})")
+                c.url = resolved
+            else:
+                dropped.append(c)
+                continue
+
+        # CHANGED: curated origins ("catalog", "provider_registry",
+        # "qdrant_cache") no longer get a blanket bypass here. That
+        # bypass is exactly what let landing pages like
+        # https://www.deltares.nl/en/open-data reach Qdrant when the
+        # LLM/catalog labelled them as a trusted origin. Curated origins
+        # are still trusted for *authority scoring* elsewhere, but the
+        # URL itself must still look like a real data endpoint.
+        #
+        # CHANGED AGAIN: a URL that was just rescued via
+        # _CATALOG_ENDPOINT_OVERRIDES is a hand-curated, manually verified
+        # real API endpoint (that's the entire purpose of maintaining that
+        # dict) -- re-vetoing it with the generic _is_api_url() marker
+        # list (which only recognises a fixed set of path segments like
+        # "/api/", "/erddap/", "/dods/") was dropping genuinely correct,
+        # rescued endpoints like IMD's "/section/nhac/dynamic/",
+        # Copernicus Data Space's "/resto/", ReliefWeb's "/v1/", NASA
+        # Earthdata's "/search/", and USGS's "/nwis/" immediately after
+        # rescuing them -- silently undoing the rescue for every provider
+        # whose real path shape doesn't happen to match that narrow list.
+        # Trust the override; skip the generic heuristic for these.
+        if not was_rescued_by_override and not _is_api_url(c.url):
             dropped.append(c)
             continue
 

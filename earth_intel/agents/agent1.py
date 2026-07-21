@@ -243,7 +243,55 @@ def normalize_domain_references(parsed: dict) -> dict:
     return parsed
 
 
-def run_agent1(query: str) -> ScientificIntentOutput:
+class ClarificationNeeded(Exception):
+    """Raised when Agent 1 determines the query needs clarification before proceeding."""
+    def __init__(self, questions: list[str]):
+        self.questions = questions
+        super().__init__("Clarification required before analysis.")
+
+
+def check_clarification_needed(query: str, client: Groq) -> list[str] | None:
+    """
+    Ask the LLM whether the query is specific enough to proceed.
+    Returns a list of clarification questions if needed, or None if the query
+    is clear enough to parse directly.
+    """
+    clarification_prompt = f"""You are a scientific data analysis assistant. A user has submitted this query:
+
+"{query}"
+
+Assess whether this query has enough detail to identify:
+1. The specific scientific variable(s) of interest (e.g. SST, NDVI, rainfall)
+2. A geographic location or region
+3. A time period or date range
+
+If the query is missing one or more of these AND reasonable defaults cannot be assumed, 
+return a JSON object with this exact structure:
+{{"needs_clarification": true, "questions": ["question 1", "question 2"]}}
+
+If the query is clear enough to proceed (even with reasonable assumptions), return:
+{{"needs_clarification": false, "questions": []}}
+
+Return ONLY the JSON object, no other text."""
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": clarification_prompt}],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        raw = response.choices[0].message.content
+        parsed = extract_json_from_text(raw)
+        if parsed.get("needs_clarification") and parsed.get("questions"):
+            return parsed["questions"]
+    except Exception as e:
+        print(f"[Agent 1] Clarification check failed (non-fatal): {e}")
+
+    return None
+
+
+def run_agent1(query: str, skip_clarification: bool = False) -> ScientificIntentOutput:
 
     if not query or not query.strip():
         raise ValueError("Query cannot be empty.")
@@ -251,6 +299,15 @@ def run_agent1(query: str) -> ScientificIntentOutput:
     client = Groq(
         api_key=os.getenv("GROQ_API_KEY")
     )
+
+    # NOTE: Agent 1 no longer performs its own clarification check.
+    # Per the intended architecture, Agent 1's job is scientific
+    # understanding + identifying gaps/variables; Agent 2 (run_agent2)
+    # is the sole owner of deciding whether clarification is needed and
+    # generating the actual questions, using Agent 1's plan as input.
+    # `skip_clarification` and `ClarificationNeeded` are kept below only
+    # for backward compatibility with any external callers that still
+    # reference them — they are no longer invoked from this function.
 
     prompt = f"""
 {build_system_prompt()}

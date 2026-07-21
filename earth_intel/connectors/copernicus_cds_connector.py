@@ -37,8 +37,8 @@ from models.website_analysis_schemas import SourceSnapshot
 
 # ── constants ──────────────────────────────────────────────────────────────────
 
-_CDS_API_BASE = "https://cds.climate.copernicus.eu/api/v2"
-_CDS_CATALOGUE = "https://cds.climate.copernicus.eu/api/v2/resources"
+_CDS_API_BASE = "https://cds.climate.copernicus.eu/api"
+_CDS_CATALOGUE = "https://cds.climate.copernicus.eu/api/catalogue/v1/collections"
 
 _HTML_SIGNATURES = (b"<!DOCTYPE", b"<html", b"<HTML", b"<head")
 
@@ -154,8 +154,8 @@ class CopernicusCDSConnector(StaticDatasetConnector):
         ),
         priority=25,
     )
-    provider_keywords = ("copernicus", "copernicus climate", "cds", "era5", "ecmwf")
-    api_keywords = ("cdsapi", "cds", "era5")
+    provider_keywords = ("copernicus climate data store", "cds.climate.copernicus", "era5", "ecmwf reanalysis")
+    api_keywords = ("cdsapi", "era5")
 
     datasets = [
         DatasetDescriptor(
@@ -197,23 +197,45 @@ class CopernicusCDSConnector(StaticDatasetConnector):
     # ── helpers ────────────────────────────────────────────────────────────────
 
     def _cds_credentials(self, credentials: Optional[Credentials]) -> Optional[Dict[str, str]]:
-        """Return dict with url+key for cdsapi.Client, or None if unavailable."""
+        """Return dict with url+key for cdsapi.Client, or None if unavailable.
+
+        IMPORTANT: The CDS API migrated from the old v2 endpoint
+        (https://cds.climate.copernicus.eu/api/v2) to the new one
+        (https://cds.climate.copernicus.eu/api) in late 2024. The old
+        endpoint returns 404 for ALL requests now, which is what was
+        producing "CDS REST submit failed: 404 API endpoint not found"
+        on every run. The auth format also changed: old format was
+        "UID:api-key", new format is just the personal access token as
+        a plain string (no UID prefix). ~/.cdsapirc must use the new url
+        and key format or it will 404 too.
+        """
+        new_url = _CDS_API_BASE  # already set to new endpoint above
+
         if credentials:
             if credentials.api_key:
-                return {
-                    "url": _CDS_API_BASE,
-                    "key": credentials.api_key,
-                }
+                return {"url": new_url, "key": credentials.api_key}
             if credentials.username and credentials.password:
-                # Some older CDS setups use UID:key notation
-                return {
-                    "url": _CDS_API_BASE,
-                    "key": f"{credentials.username}:{credentials.password}",
-                }
-        # Fall back to ~/.cdsapirc if present
+                # Old "UID:key" format — try it as-is since some users
+                # still have this; cdsapi will 401 if it's wrong but
+                # won't 404 on the new endpoint.
+                return {"url": new_url, "key": f"{credentials.username}:{credentials.password}"}
+
+        # Fall back to ~/.cdsapirc if present. If the file still has the
+        # old url (api/v2), patch it in memory so the request goes to the
+        # new endpoint without requiring the user to edit the file.
         rc = os.path.expanduser("~/.cdsapirc")
         if os.path.exists(rc):
-            return {}  # cdsapi reads rc file automatically
+            try:
+                import yaml
+                with open(rc) as f:
+                    cfg = yaml.safe_load(f) or {}
+                old_url = cfg.get("url", "")
+                # Old endpoint always 404s on the new CDS; override it
+                if "api/v2" in old_url or not old_url:
+                    cfg["url"] = new_url
+                return {"url": cfg.get("url", new_url), "key": cfg.get("key", "")} if cfg.get("key") else {}
+            except Exception:
+                return {}  # cdsapi reads rc file automatically as fallback
         return None
 
     def _catalogue_metadata(self, dataset_id: str) -> Optional[Dict[str, Any]]:
@@ -485,7 +507,19 @@ class CopernicusCDSConnector(StaticDatasetConnector):
             client_kwargs["url"] = creds.get("url", _CDS_API_BASE)
             client_kwargs["key"] = creds["key"]
         c = cdsapi.Client(**client_kwargs)
-        c.retrieve(dataset_id, req, dest)
+        try:
+            c.retrieve(dataset_id, req, dest)
+        except Exception as exc:
+            if "401" in str(exc) or "not allowed" in str(exc).lower():
+                raise RuntimeError(
+                    f"CDS cdsapi retrieve failed for '{dataset_id}': {exc}\n"
+                    "This is almost always NOT an invalid key -- it means the CDS "
+                    "account behind this token has not accepted the dataset's "
+                    "'Terms of Use' on the CDS website. Log in at "
+                    f"https://cds.climate.copernicus.eu, open the '{dataset_id}' "
+                    "dataset page, and click 'Accept terms' -- then retry."
+                ) from exc
+            raise
         self.validate_download(dest)
         return dest
 
@@ -497,50 +531,66 @@ class CopernicusCDSConnector(StaticDatasetConnector):
         creds: Dict[str, str],
     ) -> str:
         """
-        Fall-back: use CDS REST API directly.
-        POST a retrieve job → poll → download result.
+        Fall-back: use CDS REST API directly (new endpoint, post-2024).
+
+        Old endpoint (api/v2/tasks/retrieve) is permanently dead → 404.
+        New endpoint: POST https://cds.climate.copernicus.eu/api/retrieve/v1/processes/retrieve/execution
+        Auth: Bearer token (personal access token, no UID prefix).
         """
         import time
         import json as _json
 
         api_key = creds.get("key", "")
+        new_base = _CDS_API_BASE  # https://cds.climate.copernicus.eu/api
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
         }
 
-        # Submit job
+        # Submit job to new OGC API Processes endpoint
+        submit_url = f"{new_base}/retrieve/v1/processes/retrieve/execution"
         r = requests.post(
-            f"{_CDS_API_BASE}/tasks/retrieve",
+            submit_url,
             headers=headers,
-            json={"dataset": dataset_id, "inputs": req},
+            json={"inputs": {"dataset": dataset_id, **req}},
             timeout=60,
             verify=False,
         )
         if not r.ok:
+            if r.status_code == 401:
+                raise RuntimeError(
+                    f"CDS REST submit failed: 401 {r.text[:200]}\n"
+                    "This is almost always NOT an invalid key -- it means the CDS "
+                    "account behind this token has not accepted the dataset's "
+                    "'Terms of Use' on the CDS website. This is a one-time manual "
+                    "step per dataset: log in at https://cds.climate.copernicus.eu, "
+                    f"open the '{dataset_id}' dataset page, and click 'Accept terms' "
+                    "-- then retry. If you HAVE accepted the terms, re-check that the "
+                    "personal access token (not the old UID:key) is saved correctly."
+                )
             raise RuntimeError(
-                f"CDS REST submit failed: {r.status_code} {r.text[:200]}"
+                f"CDS REST submit failed: {r.status_code} {r.text[:300]}"
             )
         job = r.json()
-        job_id = job.get("request_id") or job.get("job_id")
+        job_id = job.get("jobID") or job.get("request_id") or job.get("job_id")
         if not job_id:
             raise RuntimeError(f"CDS REST: no job_id in response: {job}")
 
-        # Poll
+        # Poll new status endpoint
+        status_url = f"{new_base}/retrieve/v1/jobs/{job_id}"
         for _ in range(120):  # up to ~20 minutes
             time.sleep(10)
-            s = requests.get(
-                f"{_CDS_API_BASE}/tasks/{job_id}",
-                headers=headers,
-                timeout=30,
-                verify=False,
-            )
+            s = requests.get(status_url, headers=headers, timeout=30, verify=False)
             if not s.ok:
                 continue
             state = s.json()
-            status = state.get("state", "")
-            if status == "completed":
-                result_url = state.get("result", {}).get("href")
+            status = state.get("status", "")
+            if status == "successful":
+                result_url = (
+                    state.get("links", [{}])[0].get("href")
+                    or state.get("result", {}).get("href")
+                )
                 if not result_url:
                     raise RuntimeError("CDS REST: job completed but no download URL.")
                 dl = requests.get(result_url, headers=headers, stream=True, timeout=600, verify=False)
@@ -550,8 +600,8 @@ class CopernicusCDSConnector(StaticDatasetConnector):
                         f.write(chunk)
                 self.validate_download(dest)
                 return dest
-            if status in ("failed", "error"):
-                raise RuntimeError(f"CDS REST job failed: {state.get('error', state)}")
+            if status in ("failed", "dismissed"):
+                raise RuntimeError(f"CDS REST job failed: {state.get('message', state)}")
 
         raise RuntimeError("CDS REST: job timed out after 20 minutes.")
 

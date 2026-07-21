@@ -811,6 +811,102 @@ def _ensure_scope_question_present(
     return parsed
 
 
+def _ensure_retrieval_preferences_question_present(
+    parsed: dict,
+    agent1_plan: ScientificIntentOutput,
+    round_number: int,
+    merged_resolved: list[dict],
+) -> dict:
+    """
+    Guarantees at least one question is shown to the user on round 1 even
+    when location AND time are already known from the query (e.g. "floods
+    in Mumbai 2020").  In that case every location/time question gets
+    filtered by _filter_redundant_questions_from_known_state, leaving
+    prioritized_questions=[], and the dashboard jumps straight to Agent 3
+    without ever asking the user anything.
+
+    This injector fires ONLY when:
+      - round_number == 1 (we never re-ask preferences in later rounds)
+      - prioritized_questions is empty (all questions were filtered)
+      - location AND time are both known (that is why they were filtered)
+
+    It injects a non-critical question asking the user to confirm or
+    narrow their variable priorities and any additional preferences, so
+    the clarification panel always appears at least once.
+    """
+    if round_number != 1:
+        return parsed
+
+    questions = parsed.get("prioritized_questions")
+    if not isinstance(questions, list):
+        questions = []
+
+    if questions:
+        # Some questions survived the filter — nothing to inject.
+        return parsed
+
+    known_location = _has_known_location(
+        agent1_plan, parsed=parsed, merged_resolved=merged_resolved
+    )
+    known_time = _has_known_time_period(
+        agent1_plan, parsed=parsed, merged_resolved=merged_resolved
+    )
+
+    if not (known_location and known_time):
+        # Location or time still missing — other injectors cover that case.
+        return parsed
+
+    # Build a variable list from Agent 1's plan for the question text.
+    variables: list[str] = []
+    try:
+        for v in (agent1_plan.variables or []):
+            name = getattr(v, "variable_name", None) or getattr(v, "name", None)
+            if name:
+                variables.append(name)
+    except Exception:
+        pass
+    variables_text = (
+        ", ".join(variables[:6]) if variables else "the identified variables"
+    )
+
+    preferences_question = {
+        "question": (
+            f"The system has identified the following variables to retrieve: "
+            f"{variables_text}. "
+            "Are there any you'd like to prioritise, remove, or add? "
+            "Also let us know if you have preferences on data format "
+            "(e.g. NetCDF, GeoTIFF, CSV) or spatial resolution."
+        ),
+        "priority": "low",
+        "rationale": (
+            "Location and time period are already known from your query. "
+            "This question confirms variable scope and format preferences "
+            "before retrieval begins."
+        ),
+        "resolves_gaps": ["variable_priority", "data_format_preference"],
+        "is_scope_question": False,
+        "is_preferences_question": True,
+    }
+
+    parsed["prioritized_questions"] = [preferences_question]
+    parsed["clarification_needed"] = True
+    # Keep readiness as-is if it's already a proceed state; otherwise
+    # require clarification so the panel is shown.
+    if parsed.get("retrieval_readiness") not in (
+        "proceed_with_assumptions", "ready"
+    ):
+        parsed["retrieval_readiness"] = "clarification_required"
+
+    if isinstance(parsed.get("refined_scientific_plan"), dict):
+        rsp = parsed["refined_scientific_plan"]
+        if rsp.get("retrieval_readiness") not in (
+            "proceed_with_assumptions", "ready"
+        ):
+            rsp["retrieval_readiness"] = "clarification_required"
+
+    return parsed
+
+
 # ──────────────────────────────────────────────────────────────────────
 _FIELD_CONCEPT_ALIASES = {
     "location": {
@@ -1037,16 +1133,46 @@ def _filter_redundant_questions_from_known_state(
         )
     )
 
-    if not filtered and not has_blocking_gap:
-        parsed["clarification_needed"] = False
-        if parsed.get("retrieval_readiness") == "clarification_required":
-            parsed["retrieval_readiness"] = "ready"
+    # ------------------------------------------------------------------ #
+    # If filtering removed ALL questions but there are still non-critical  #
+    # gaps (e.g. variable priority, data format preferences) OR we haven't #
+    # asked the user anything at all yet (round 1), inject a catch-all     #
+    # question so the clarification panel always fires at least once.       #
+    # Without this guard the LLM's location/time questions get filtered,   #
+    # prioritized_questions becomes [], and the dashboard jumps straight to #
+    # Agent 3 without ever talking to the user.                            #
+    # ------------------------------------------------------------------ #
+    non_critical_gaps = parsed.get("non_critical_gaps")
+    has_non_critical = (
+        isinstance(non_critical_gaps, list) and len(non_critical_gaps) > 0
+    )
 
-        rsp = parsed.get("refined_scientific_plan")
-        if isinstance(rsp, dict) and (
-            rsp.get("retrieval_readiness") == "clarification_required"
-        ):
-            rsp["retrieval_readiness"] = parsed["retrieval_readiness"]
+    if not filtered:
+        if has_non_critical:
+            # Surface at least the first non-critical gap as a question so
+            # the user gets a chance to answer it before retrieval starts.
+            first_gap = non_critical_gaps[0] if non_critical_gaps else {}
+            gap_name = first_gap.get("gap_name", "data preferences") if isinstance(first_gap, dict) else "data preferences"
+            gap_description = first_gap.get("description", f"Please clarify your {gap_name} to improve retrieval accuracy.") if isinstance(first_gap, dict) else f"Please clarify your {gap_name}."
+            filtered.append({
+                "question": gap_description,
+                "priority": "low",
+                "rationale": f"Non-critical gap surfaced by filter backstop: {gap_name}",
+                "resolves_gaps": [gap_name],
+                "is_scope_question": False,
+            })
+            parsed["prioritized_questions"] = filtered
+        elif not has_blocking_gap:
+            # Truly nothing left to ask — mark as ready.
+            parsed["clarification_needed"] = False
+            if parsed.get("retrieval_readiness") == "clarification_required":
+                parsed["retrieval_readiness"] = "proceed_with_assumptions"
+
+            rsp = parsed.get("refined_scientific_plan")
+            if isinstance(rsp, dict) and (
+                rsp.get("retrieval_readiness") == "clarification_required"
+            ):
+                rsp["retrieval_readiness"] = parsed["retrieval_readiness"]
 
     return parsed
 
@@ -1902,6 +2028,21 @@ Optional user clarification responses (latest round):
                 parsed,
                 agent1_plan,
                 round_number,
+            )
+
+            # ---------------------------------------------------------- #
+            # Guarantee at least one question reaches the user on round 1 #
+            # even when location + time are already fully known from the  #
+            # original query (e.g. "floods in Mumbai 2020").  This fires  #
+            # BEFORE the filter so the preferences question cannot itself  #
+            # be removed as redundant -- it asks about variables/format,  #
+            # not location/time, so the filter won't touch it.            #
+            # ---------------------------------------------------------- #
+            parsed = _ensure_retrieval_preferences_question_present(
+                parsed,
+                agent1_plan,
+                round_number,
+                merged_resolved,
             )
 
             # ---------------------------------------------------------- #

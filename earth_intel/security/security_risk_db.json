@@ -1603,9 +1603,9 @@
     }
   },
   {
-    "assessment_id": "7942b734-9d03-4a79-bf57-7b12cab1e8ab",
-    "timestamp": "2026-07-16T12:33:18.407494+00:00",
-    "overall_security_score": 67.69,
+    "assessment_id": "32a1bf99-8eda-4f6f-8b4f-91dc5833f4a4",
+    "timestamp": "2026-07-16T17:35:42.113164+00:00",
+    "overall_security_score": 67.65,
     "overall_risk_level": "MEDIUM",
     "recommended_action": "WARN",
     "confidence_score": 0.94,
@@ -1639,9 +1639,9 @@
       },
       "Provider Trust": {
         "present": true,
-        "raw_score": 43.93,
+        "raw_score": 43.75,
         "weight": 0.2,
-        "weighted": 8.79,
+        "weighted": 8.75,
         "flags": [],
         "summary": "Provider 'NOAA CoastWatch ERDDAP' trust score is 44/100 [LOW TRUST]."
       },
@@ -1684,9 +1684,9 @@
     }
   },
   {
-    "assessment_id": "7942b734-9d03-4a79-bf57-7b12cab1e8ab",
-    "timestamp": "2026-07-16T12:33:18.407494+00:00",
-    "overall_security_score": 67.69,
+    "assessment_id": "32a1bf99-8eda-4f6f-8b4f-91dc5833f4a4",
+    "timestamp": "2026-07-16T17:35:42.113164+00:00",
+    "overall_security_score": 67.65,
     "overall_risk_level": "MEDIUM",
     "recommended_action": "WARN",
     "confidence_score": 0.94,
@@ -1720,11 +1720,2591 @@
       },
       "Provider Trust": {
         "present": true,
-        "raw_score": 43.93,
+        "raw_score": 43.75,
         "weight": 0.2,
-        "weighted": 8.79,
+        "weighted": 8.75,
         "flags": [],
         "summary": "Provider 'NOAA CoastWatch ERDDAP' trust score is 44/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "b671ec7d-dc9f-41bf-be3d-7e9f1085a3a9",
+    "timestamp": "2026-07-16T12:51:07.890947+00:00",
+    "overall_security_score": 68.74,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 36.47,
+        "weight": 0.2,
+        "weighted": 7.29,
+        "flags": [],
+        "summary": "Provider 'Deltares Open Data' trust score is 36/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 47.88,
+        "weight": 0.15,
+        "weighted": 7.18,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 3 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "b671ec7d-dc9f-41bf-be3d-7e9f1085a3a9",
+    "timestamp": "2026-07-16T12:51:07.890947+00:00",
+    "overall_security_score": 68.74,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 36.47,
+        "weight": 0.2,
+        "weighted": 7.29,
+        "flags": [],
+        "summary": "Provider 'Deltares Open Data' trust score is 36/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 47.88,
+        "weight": 0.15,
+        "weighted": 7.18,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 3 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "893769c8-4451-4772-8308-9c245929b495",
+    "timestamp": "2026-07-16T16:05:34.065527+00:00",
+    "overall_security_score": 76.17,
+    "overall_risk_level": "LOW",
+    "recommended_action": "ALLOW",
+    "confidence_score": 0.68,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Risk is low. Consider adding missing security reports to increase confidence."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 40.43,
+        "weight": 0.2,
+        "weighted": 8.09,
+        "flags": [],
+        "summary": "Provider 'Argo Float Data (global, all GDACs)' trust score is 40/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "893769c8-4451-4772-8308-9c245929b495",
+    "timestamp": "2026-07-16T16:05:34.065527+00:00",
+    "overall_security_score": 76.17,
+    "overall_risk_level": "LOW",
+    "recommended_action": "ALLOW",
+    "confidence_score": 0.68,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Risk is low. Consider adding missing security reports to increase confidence."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 40.43,
+        "weight": 0.2,
+        "weighted": 8.09,
+        "flags": [],
+        "summary": "Provider 'Argo Float Data (global, all GDACs)' trust score is 40/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "7c254b63-551e-46b3-a237-168a9b852f63",
+    "timestamp": "2026-07-16T16:38:34.835955+00:00",
+    "overall_security_score": 75.14,
+    "overall_risk_level": "LOW",
+    "recommended_action": "ALLOW",
+    "confidence_score": 0.68,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Risk is low. Consider adding missing security reports to increase confidence."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 37.85,
+        "weight": 0.2,
+        "weighted": 7.57,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "7c254b63-551e-46b3-a237-168a9b852f63",
+    "timestamp": "2026-07-16T16:38:34.835955+00:00",
+    "overall_security_score": 75.14,
+    "overall_risk_level": "LOW",
+    "recommended_action": "ALLOW",
+    "confidence_score": 0.68,
+    "active_flags": [],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Cross-Agent Verification security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Risk is low. Consider adding missing security reports to increase confidence."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 37.85,
+        "weight": 0.2,
+        "weighted": 7.57,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": false,
+        "raw_score": 70.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Cross-agent verification report not provided."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "7bf9af9d-2539-45fc-8d25-4c59e8309621",
+    "timestamp": "2026-07-16T18:03:30.593075+00:00",
+    "overall_security_score": 65.38,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 44.79,
+        "weight": 0.2,
+        "weighted": 8.96,
+        "flags": [],
+        "summary": "Provider 'INCOIS THREDDS — SST_IO_20250603' trust score is 45/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "7bf9af9d-2539-45fc-8d25-4c59e8309621",
+    "timestamp": "2026-07-16T18:03:30.593075+00:00",
+    "overall_security_score": 65.38,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 44.79,
+        "weight": 0.2,
+        "weighted": 8.96,
+        "flags": [],
+        "summary": "Provider 'INCOIS THREDDS — SST_IO_20250603' trust score is 45/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "b28318b6-a081-4f38-928b-941a7c2370fc",
+    "timestamp": "2026-07-16T19:00:56.829741+00:00",
+    "overall_security_score": 62.36,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 35.74,
+        "weight": 0.2,
+        "weighted": 7.15,
+        "flags": [],
+        "summary": "Provider 'Argo Float Data (global, all GDACs)' trust score is 36/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "b28318b6-a081-4f38-928b-941a7c2370fc",
+    "timestamp": "2026-07-16T19:00:56.829741+00:00",
+    "overall_security_score": 62.36,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 35.74,
+        "weight": 0.2,
+        "weighted": 7.15,
+        "flags": [],
+        "summary": "Provider 'Argo Float Data (global, all GDACs)' trust score is 36/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "4fe3112d-e586-404f-aeb4-55a88e88999e",
+    "timestamp": "2026-07-16T19:34:50.268307+00:00",
+    "overall_security_score": 63.2,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.25,
+        "weight": 0.2,
+        "weighted": 7.65,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "4fe3112d-e586-404f-aeb4-55a88e88999e",
+    "timestamp": "2026-07-16T19:34:50.268307+00:00",
+    "overall_security_score": 63.2,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.25,
+        "weight": 0.2,
+        "weighted": 7.65,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "12503db9-3a65-407d-9ad5-9d05877357ba",
+    "timestamp": "2026-07-17T02:41:45.525048+00:00",
+    "overall_security_score": 63.2,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.25,
+        "weight": 0.2,
+        "weighted": 7.65,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "12503db9-3a65-407d-9ad5-9d05877357ba",
+    "timestamp": "2026-07-17T02:41:45.525048+00:00",
+    "overall_security_score": 63.2,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.25,
+        "weight": 0.2,
+        "weighted": 7.65,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "b293c372-f3e2-4c01-9685-bfb0d06fe4d7",
+    "timestamp": "2026-07-17T04:08:42.823635+00:00",
+    "overall_security_score": 62.86,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.58,
+        "weight": 0.2,
+        "weighted": 7.72,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 39/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 0.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "b293c372-f3e2-4c01-9685-bfb0d06fe4d7",
+    "timestamp": "2026-07-17T04:08:42.823635+00:00",
+    "overall_security_score": 62.86,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.73,
+    "active_flags": [
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Cross-Agent Verification"
+    ],
+    "reports_missing": [
+      "Integrity",
+      "Validation",
+      "Provenance"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Run the Integrity security module and include its report in the next assessment.",
+      "Run the Validation security module and include its report in the next assessment.",
+      "Run the Provenance security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.58,
+        "weight": 0.2,
+        "weighted": 7.72,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 39/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Integrity report not provided; no tamper evidence available."
+      },
+      "Validation": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.15,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Validation report not provided; dataset contents unverified."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 0.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": false,
+        "raw_score": 65.0,
+        "weight": 0.1,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provenance report not provided; lineage cannot be confirmed."
+      }
+    }
+  },
+  {
+    "assessment_id": "291b5a1a-96ae-45ce-9bee-b91f57228e26",
+    "timestamp": "2026-07-17T04:20:50.564877+00:00",
+    "overall_security_score": 65.0,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 37.45,
+        "weight": 0.2,
+        "weighted": 7.49,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 37/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 21.63,
+        "weight": 0.15,
+        "weighted": 3.24,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "291b5a1a-96ae-45ce-9bee-b91f57228e26",
+    "timestamp": "2026-07-17T04:20:50.564877+00:00",
+    "overall_security_score": 65.0,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 37.45,
+        "weight": 0.2,
+        "weighted": 7.49,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 37/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 21.63,
+        "weight": 0.15,
+        "weighted": 3.24,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "92551653-9fff-4c56-b0b6-043a7c2d6a20",
+    "timestamp": "2026-07-17T04:27:51.682368+00:00",
+    "overall_security_score": 66.53,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.18,
+        "weight": 0.2,
+        "weighted": 7.64,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "92551653-9fff-4c56-b0b6-043a7c2d6a20",
+    "timestamp": "2026-07-17T04:27:51.682368+00:00",
+    "overall_security_score": 66.53,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.18,
+        "weight": 0.2,
+        "weighted": 7.64,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 38/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "eab42fad-b7e5-4795-83f9-1917a3e8b8e7",
+    "timestamp": "2026-07-17T06:20:58.163274+00:00",
+    "overall_security_score": 67.38,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 42.38,
+        "weight": 0.2,
+        "weighted": 8.48,
+        "flags": [],
+        "summary": "Provider 'NRL HYCOM+NCODA, GLBu0.08/expt 91.0, Global, 1/12 deg, 2013-2014, at Depths' trust score is 42/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "eab42fad-b7e5-4795-83f9-1917a3e8b8e7",
+    "timestamp": "2026-07-17T06:20:58.163274+00:00",
+    "overall_security_score": 67.38,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 42.38,
+        "weight": 0.2,
+        "weighted": 8.48,
+        "flags": [],
+        "summary": "Provider 'NRL HYCOM+NCODA, GLBu0.08/expt 91.0, Global, 1/12 deg, 2013-2014, at Depths' trust score is 42/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "7d419952-9943-4d48-9797-5dcc3b04c4ef",
+    "timestamp": "2026-07-17T06:52:47.617089+00:00",
+    "overall_security_score": 65.32,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 39.05,
+        "weight": 0.2,
+        "weighted": 7.81,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 39/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 21.63,
+        "weight": 0.15,
+        "weighted": 3.24,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "7d419952-9943-4d48-9797-5dcc3b04c4ef",
+    "timestamp": "2026-07-17T06:52:47.617089+00:00",
+    "overall_security_score": 65.32,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 39.05,
+        "weight": 0.2,
+        "weighted": 7.81,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 39/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 21.63,
+        "weight": 0.15,
+        "weighted": 3.24,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "2e1a42c4-9bf1-42eb-bc77-8f480acdd27a",
+    "timestamp": "2026-07-17T08:13:35.130436+00:00",
+    "overall_security_score": 66.46,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 44.74,
+        "weight": 0.2,
+        "weighted": 8.95,
+        "flags": [],
+        "summary": "Provider 'NOAA GFS via NOMADS' trust score is 45/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 21.63,
+        "weight": 0.15,
+        "weighted": 3.24,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "2e1a42c4-9bf1-42eb-bc77-8f480acdd27a",
+    "timestamp": "2026-07-17T08:13:35.130436+00:00",
+    "overall_security_score": 66.46,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 44.74,
+        "weight": 0.2,
+        "weighted": 8.95,
+        "flags": [],
+        "summary": "Provider 'NOAA GFS via NOMADS' trust score is 45/100 [LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 21.63,
+        "weight": 0.15,
+        "weighted": 3.24,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "da88816d-85b3-4b42-9233-b22dca428af9",
+    "timestamp": "2026-07-17T08:27:32.550612+00:00",
+    "overall_security_score": 73.62,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.86,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [
+      "Provider Trust"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Run the Provider Trust security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": false,
+        "raw_score": 60.0,
+        "weight": 0.2,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provider trust report not provided; using neutral assumption."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "da88816d-85b3-4b42-9233-b22dca428af9",
+    "timestamp": "2026-07-17T08:27:32.550612+00:00",
+    "overall_security_score": 73.62,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.86,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [
+      "Provider Trust"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Run the Provider Trust security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": false,
+        "raw_score": 60.0,
+        "weight": 0.2,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provider trust report not provided; using neutral assumption."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "6a855a75-53f7-4ca3-bcf0-336bc17b4911",
+    "timestamp": "2026-07-18T06:18:53.424078+00:00",
+    "overall_security_score": 67.85,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.92,
+        "weight": 0.2,
+        "weighted": 7.78,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 39/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 38.63,
+        "weight": 0.15,
+        "weighted": 5.79,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 3 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "6a855a75-53f7-4ca3-bcf0-336bc17b4911",
+    "timestamp": "2026-07-18T06:18:53.424078+00:00",
+    "overall_security_score": 67.85,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.94,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Provider Trust",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": true,
+        "raw_score": 38.92,
+        "weight": 0.2,
+        "weighted": 7.78,
+        "flags": [],
+        "summary": "Provider 'GDACS (Global Disaster Alerts)' trust score is 39/100 [VERY LOW TRUST]."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 38.63,
+        "weight": 0.15,
+        "weighted": 5.79,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 3 error(s), 5 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "a96f3956-5be4-43cf-b76b-d0becd4cc36a",
+    "timestamp": "2026-07-18T14:04:25.701431+00:00",
+    "overall_security_score": 73.62,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.86,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [
+      "Provider Trust"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Run the Provider Trust security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": false,
+        "raw_score": 60.0,
+        "weight": 0.2,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provider trust report not provided; using neutral assumption."
+      },
+      "Integrity": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.15,
+        "weighted": 15.0,
+        "flags": [],
+        "summary": "Dataset integrity verified (score 100/100)."
+      },
+      "Validation": {
+        "present": true,
+        "raw_score": 30.88,
+        "weight": 0.15,
+        "weighted": 4.63,
+        "flags": [
+          "validation_failed"
+        ],
+        "summary": "Validation FAILED — 4 error(s), 3 warning(s)."
+      },
+      "Cross-Agent Verification": {
+        "present": true,
+        "raw_score": 2.67,
+        "weight": 0.1,
+        "weighted": 0.27,
+        "flags": [
+          "cross_agent_inconsistency"
+        ],
+        "summary": "Cross-agent verification FAILED — 5 inconsistency(ies) found."
+      },
+      "Provenance": {
+        "present": true,
+        "raw_score": 90.0,
+        "weight": 0.1,
+        "weighted": 9.0,
+        "flags": [],
+        "summary": "Provenance confirmed (score 90/100)."
+      }
+    }
+  },
+  {
+    "assessment_id": "a96f3956-5be4-43cf-b76b-d0becd4cc36a",
+    "timestamp": "2026-07-18T14:04:25.701431+00:00",
+    "overall_security_score": 73.62,
+    "overall_risk_level": "MEDIUM",
+    "recommended_action": "WARN",
+    "confidence_score": 0.86,
+    "active_flags": [
+      "validation_failed",
+      "cross_agent_inconsistency"
+    ],
+    "reports_provided": [
+      "Prompt Injection",
+      "Integrity",
+      "Validation",
+      "Cross-Agent Verification",
+      "Provenance"
+    ],
+    "reports_missing": [
+      "Provider Trust"
+    ],
+    "recommendations": [
+      "Re-run cross-agent verification after reviewing agent outputs manually.",
+      "Investigate which agent produced the inconsistent output.",
+      "Repeat dataset validation after addressing the reported schema/content errors.",
+      "Run the Provider Trust security module and include its report in the next assessment.",
+      "Proceed with caution. Log this request and monitor for anomalies."
+    ],
+    "risk_breakdown": {
+      "Prompt Injection": {
+        "present": true,
+        "raw_score": 100.0,
+        "weight": 0.3,
+        "weighted": 30.0,
+        "flags": [],
+        "summary": "No prompt injection detected (safety score 100/100)."
+      },
+      "Provider Trust": {
+        "present": false,
+        "raw_score": 60.0,
+        "weight": 0.2,
+        "weighted": 0.0,
+        "flags": [],
+        "summary": "Provider trust report not provided; using neutral assumption."
       },
       "Integrity": {
         "present": true,
